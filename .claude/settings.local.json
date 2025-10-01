@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//home/enterpriseuser/.config/Next-Client/**)",
+      "Read(//home/enterpriseuser/dev/Next-Client-1.10.0/squashfs-root/resources/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

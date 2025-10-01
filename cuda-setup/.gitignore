@@ -1,0 +1,8 @@
+# Compiled CUDA binaries
+cuda-test
+*.o
+*.out
+
+# Temporary files
+*.tmp
+*.log

@@ -1,0 +1,28 @@
+# Backups
+*.backup
+*.backup-*
+
+# IDE history
+.history/
+
+# Cache files
+.cache/
+
+# Build results
+result
+result-*
+
+# Local configuration overrides
+local.nix
+
+# Editor temporary files
+*~
+.*.swp
+.*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Nix build outputs
+.direnv/
