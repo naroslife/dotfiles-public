@@ -90,8 +90,6 @@ let
     gd = "git diff";
     gdt = "git difftool";
 
-    claude = "~/.claude/local/claude";
-
     # Next-Client launcher with restored environment variables
     nextclient = "~/dotfiles-public/wsl-fixes/test-restored-vars.sh";
 

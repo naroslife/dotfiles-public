@@ -15,7 +15,6 @@
     WSLENV = "PATH/l:XDG_CONFIG_HOME/up";
     # Improve performance by using Windows TEMP for temporary files
     TMPDIR = "/tmp";
-    PATH = "$HOME/.local/bin:/usr/local/cuda/bin:$PATH";
 
     # NVIDIA CUDA configuration for WSL2
     CUDA_HOME = "/usr/local/cuda";
@@ -32,10 +31,6 @@
     # Clipboard integration aliases for WSL
     pbcopy = "clip.exe";
     pbpaste = "powershell.exe Get-Clipboard";
-
-    # Windows app shortcuts
-    code = "code.exe";
-    explorer = "explorer.exe";
 
     # WSL GUI application launchers
     # Launch AppImage files with proper environment setup

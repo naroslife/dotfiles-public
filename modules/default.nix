@@ -4,6 +4,7 @@
     ./core.nix
     ./environment.nix
     ./user-config.nix
+    ./secrets.nix
     ./shells
     ./dev
     ./cli

@@ -167,6 +167,7 @@
   };
 
   # Session path
+  # Note: Home Manager automatically appends system PATH after these entries
   home.sessionPath = [
     "${config.home.homeDirectory}/bin"
     "${config.home.homeDirectory}/.local/bin"
@@ -176,7 +177,6 @@
     "${config.home.homeDirectory}/.gem/bin"
     "${config.home.homeDirectory}/.dotnet/tools"
     "${pkgs.poetry}/bin"
-    "\${PATH}"
   ];
 
   # Create necessary directories
