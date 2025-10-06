@@ -1,0 +1,451 @@
+#!/usr/bin/env bash
+#
+# nix-deploy - Deploy Nix environments to restricted remote machines
+#
+# This script orchestrates the deployment of locally compiled Nix environments
+# to remote machines that may have limited or no internet access.
+#
+# Usage:
+#   nix-deploy --target <target-name> [options]
+#   nix-deploy --help
+#
+# Author: Nix Deploy Team
+# Version: 1.0.0
+
+set -euo pipefail
+
+# Script directory and paths
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+LIB_DIR="$SCRIPT_DIR/lib"
+REMOTE_DIR="$SCRIPT_DIR/remote"
+CONFIG_DIR="${NIX_DEPLOY_CONFIG_DIR:-$HOME/.config/nix-deploy}"
+
+# Source libraries
+source "$LIB_DIR/utils.sh"
+source "$LIB_DIR/config.sh"
+source "$LIB_DIR/builder.sh"
+source "$LIB_DIR/packager.sh"
+source "$LIB_DIR/transfer.sh"
+
+# Default values
+TARGET=""
+CONFIG_FILE=""
+DRY_RUN=false
+VERBOSE=false
+INTERACTIVE=true
+PROFILE=""
+FLAKE_REF=""
+RESUME=false
+ROLLBACK=false
+FORCE=false
+DEBUG=false
+
+# Colors and formatting
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+PURPLE='\033[0;35m'
+CYAN='\033[0;36m'
+BOLD='\033[1m'
+RESET='\033[0m'
+
+# Print functions
+print_header() {
+    echo -e "\n${BOLD}${BLUE}=== $1 ===${RESET}\n"
+}
+
+print_info() {
+    echo -e "${GREEN}[INFO]${RESET} $1"
+}
+
+print_warn() {
+    echo -e "${YELLOW}[WARN]${RESET} $1" >&2
+}
+
+print_error() {
+    echo -e "${RED}[ERROR]${RESET} $1" >&2
+}
+
+print_debug() {
+    if $DEBUG; then
+        echo -e "${PURPLE}[DEBUG]${RESET} $1" >&2
+    fi
+}
+
+print_step() {
+    echo -e "${CYAN}→${RESET} $1"
+}
+
+# Help message
+show_help() {
+    cat << EOF
+${BOLD}nix-deploy${RESET} - Deploy Nix environments to restricted remote machines
+
+${BOLD}USAGE:${RESET}
+    nix-deploy --target TARGET [OPTIONS]
+    nix-deploy config COMMAND
+    nix-deploy --help
+
+${BOLD}OPTIONS:${RESET}
+    -t, --target TARGET        Target machine to deploy to (required)
+    -c, --config FILE          Use specific configuration file
+    -p, --profile PROFILE      Nix profile/user to deploy
+    -f, --flake REF            Flake reference to build and deploy
+
+    --dry-run                  Show what would be done without doing it
+    --resume                   Resume interrupted deployment
+    --rollback                 Rollback to previous generation
+    --force                    Force deployment even if validation fails
+
+    -i, --interactive          Interactive mode (default)
+    -n, --non-interactive      Non-interactive mode
+    -v, --verbose              Enable verbose output
+    -d, --debug                Enable debug output
+    -h, --help                 Show this help message
+
+${BOLD}CONFIG COMMANDS:${RESET}
+    config create-target NAME  Create new target configuration
+    config edit-target NAME    Edit target configuration
+    config list-targets        List all configured targets
+    config validate            Validate all configurations
+    config show-target NAME    Show target configuration
+
+${BOLD}EXAMPLES:${RESET}
+    # Interactive deployment to configured target
+    nix-deploy --target prod-server
+
+    # Deploy specific profile
+    nix-deploy --target prod-server --profile enterpriseuser
+
+    # Dry run to see what would happen
+    nix-deploy --target prod-server --dry-run
+
+    # Non-interactive deployment with all config
+    nix-deploy --target prod-server --config custom.yaml --non-interactive
+
+    # Create new target configuration
+    nix-deploy config create-target dev-wsl
+
+    # Resume interrupted deployment
+    nix-deploy --target prod-server --resume
+
+${BOLD}CONFIGURATION:${RESET}
+    Configurations are stored in: $CONFIG_DIR
+
+    Main config:     $CONFIG_DIR/config.yaml
+    Targets:         $CONFIG_DIR/targets/*.yaml
+    Profiles:        $CONFIG_DIR/profiles/*.yaml
+
+${BOLD}ENVIRONMENT VARIABLES:${RESET}
+    NIX_DEPLOY_CONFIG_DIR      Override configuration directory
+    NIX_DEPLOY_CACHE_DIR       Override cache directory
+    NIX_DEPLOY_LOG_LEVEL       Set log level (debug, info, warn, error)
+    NIX_DEPLOY_NO_COLOR        Disable colored output
+
+${BOLD}DOCUMENTATION:${RESET}
+    For more information, see:
+    https://github.com/naroslife/dotfiles-public/tree/main/nix-deploy
+
+EOF
+}
+
+# Parse command line arguments
+parse_args() {
+    if [[ $# -eq 0 ]]; then
+        show_help
+        exit 1
+    fi
+
+    # Handle config subcommand separately
+    if [[ "${1:-}" == "config" ]]; then
+        shift
+        handle_config_command "$@"
+        exit 0
+    fi
+
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -t|--target)
+                TARGET="$2"
+                shift 2
+                ;;
+            -c|--config)
+                CONFIG_FILE="$2"
+                shift 2
+                ;;
+            -p|--profile)
+                PROFILE="$2"
+                shift 2
+                ;;
+            -f|--flake)
+                FLAKE_REF="$2"
+                shift 2
+                ;;
+            --dry-run)
+                DRY_RUN=true
+                shift
+                ;;
+            --resume)
+                RESUME=true
+                shift
+                ;;
+            --rollback)
+                ROLLBACK=true
+                shift
+                ;;
+            --force)
+                FORCE=true
+                shift
+                ;;
+            -i|--interactive)
+                INTERACTIVE=true
+                shift
+                ;;
+            -n|--non-interactive)
+                INTERACTIVE=false
+                shift
+                ;;
+            -v|--verbose)
+                VERBOSE=true
+                shift
+                ;;
+            -d|--debug)
+                DEBUG=true
+                VERBOSE=true
+                shift
+                ;;
+            -h|--help)
+                show_help
+                exit 0
+                ;;
+            *)
+                print_error "Unknown option: $1"
+                show_help
+                exit 1
+                ;;
+        esac
+    done
+
+    # Validate required arguments
+    if [[ -z "$TARGET" ]]; then
+        print_error "Target is required. Use --target TARGET"
+        exit 1
+    fi
+}
+
+# Handle config subcommands
+handle_config_command() {
+    local cmd="${1:-}"
+    shift || true
+
+    case "$cmd" in
+        create-target)
+            create_target_config "$@"
+            ;;
+        edit-target)
+            edit_target_config "$@"
+            ;;
+        list-targets)
+            list_targets
+            ;;
+        show-target)
+            show_target_config "$@"
+            ;;
+        validate)
+            validate_all_configs
+            ;;
+        *)
+            print_error "Unknown config command: $cmd"
+            echo "Available commands: create-target, edit-target, list-targets, show-target, validate"
+            exit 1
+            ;;
+    esac
+}
+
+# Main deployment workflow
+main() {
+    parse_args "$@"
+
+    print_header "Nix Deploy - Remote Deployment Tool"
+    print_info "Target: $TARGET"
+
+    if $DRY_RUN; then
+        print_warn "DRY RUN MODE - No changes will be made"
+    fi
+
+    # Initialize configuration
+    print_step "Loading configuration..."
+    init_config "$TARGET" "$CONFIG_FILE"
+
+    # Validate configuration
+    print_step "Validating configuration..."
+    validate_config || {
+        if ! $FORCE; then
+            print_error "Configuration validation failed. Use --force to override."
+            exit 1
+        fi
+        print_warn "Configuration validation failed but continuing due to --force"
+    }
+
+    # Interactive configuration if needed
+    if $INTERACTIVE && ! validate_required_config; then
+        print_step "Gathering missing configuration interactively..."
+        gather_interactive_config
+    fi
+
+    # Display deployment plan
+    print_header "Deployment Plan"
+    show_deployment_plan
+
+    if $INTERACTIVE && ! $DRY_RUN; then
+        echo -n "Proceed with deployment? [y/N] "
+        read -r response
+        if [[ ! "$response" =~ ^[Yy] ]]; then
+            print_info "Deployment cancelled by user"
+            exit 0
+        fi
+    fi
+
+    # Handle special modes
+    if $ROLLBACK; then
+        print_header "Rolling Back Deployment"
+        rollback_deployment
+        exit 0
+    fi
+
+    if $RESUME; then
+        print_header "Resuming Previous Deployment"
+        resume_deployment
+    fi
+
+    # Phase 1: Build
+    print_header "Phase 1: Building Nix Environment"
+    local build_result
+    build_result=$(build_nix_environment)
+
+    if [[ -z "$build_result" ]]; then
+        print_error "Build failed"
+        exit 1
+    fi
+    print_info "Build successful: $build_result"
+
+    # Phase 2: Package
+    print_header "Phase 2: Packaging Closure"
+    local package_path
+    package_path=$(package_closure "$build_result")
+
+    if [[ -z "$package_path" ]]; then
+        print_error "Packaging failed"
+        exit 1
+    fi
+    print_info "Package created: $package_path"
+
+    # Phase 3: Transfer
+    print_header "Phase 3: Transferring to Remote"
+    if ! $DRY_RUN; then
+        transfer_to_remote "$package_path"
+    else
+        print_info "Would transfer: $package_path"
+    fi
+
+    # Phase 4: Remote Installation
+    print_header "Phase 4: Remote Installation"
+    if ! $DRY_RUN; then
+        execute_remote_installation
+    else
+        print_info "Would execute remote installation"
+    fi
+
+    # Phase 5: Validation
+    print_header "Phase 5: Post-Deployment Validation"
+    if ! $DRY_RUN; then
+        validate_deployment
+    else
+        print_info "Would validate deployment"
+    fi
+
+    print_header "Deployment Complete"
+    print_info "Successfully deployed to $TARGET"
+
+    # Show post-deployment information
+    show_post_deployment_info
+}
+
+# Show deployment plan
+show_deployment_plan() {
+    local target_config
+    target_config=$(get_target_config)
+
+    cat << EOF
+${BOLD}Target:${RESET}         $(get_config_value "target.name")
+${BOLD}Host:${RESET}           $(get_config_value "connection.host")
+${BOLD}User:${RESET}           $(get_config_value "connection.user")
+${BOLD}Platform:${RESET}       $(get_config_value "platform.type")
+${BOLD}Architecture:${RESET}   $(get_config_value "platform.arch")
+${BOLD}Profile:${RESET}        ${PROFILE:-$(get_config_value "deployment.home_manager.profile_name")}
+${BOLD}Flake:${RESET}          ${FLAKE_REF:-$(get_config_value "deployment.home_manager.flake_ref")}
+
+${BOLD}Options:${RESET}
+  - Nix Installation:    $(get_config_value "deployment.nix.install_if_missing")
+  - Backup Existing:     $(get_config_value "deployment.options.backup_existing_profile")
+  - Shell Integration:   $(get_config_value "deployment.options.setup_shell_integration")
+  - Post Validation:     $(get_config_value "deployment.options.post_deploy_validation")
+EOF
+}
+
+# Show post-deployment information
+show_post_deployment_info() {
+    cat << EOF
+
+${BOLD}${GREEN}✓ Deployment Successful${RESET}
+
+${BOLD}Next Steps:${RESET}
+1. SSH to the remote machine:
+   ${CYAN}ssh $(get_config_value "connection.user")@$(get_config_value "connection.host")${RESET}
+
+2. Verify the deployment:
+   ${CYAN}nix-env --list-generations${RESET}
+   ${CYAN}home-manager generations${RESET}
+
+3. Source your shell configuration:
+   ${CYAN}source ~/.bashrc${RESET}
+   Or start a new shell session
+
+${BOLD}Rollback (if needed):${RESET}
+   ${CYAN}nix-deploy --target $TARGET --rollback${RESET}
+
+${BOLD}Logs:${RESET}
+   Local:  $CONFIG_DIR/logs/deploy-$(date +%Y%m%d-%H%M%S).log
+   Remote: /tmp/nix-deploy/deploy.log
+
+EOF
+}
+
+# Trap for cleanup
+cleanup() {
+    local exit_code=$?
+    if [[ $exit_code -ne 0 ]]; then
+        print_error "Deployment failed with exit code $exit_code"
+        print_info "Check logs at: $CONFIG_DIR/logs/deploy-latest.log"
+
+        if $INTERACTIVE; then
+            echo -n "Save deployment state for resume? [Y/n] "
+            read -r response
+            if [[ ! "$response" =~ ^[Nn] ]]; then
+                save_deployment_state
+                print_info "Deployment state saved. Resume with: nix-deploy --target $TARGET --resume"
+            fi
+        fi
+    fi
+
+    # Clean up temporary files if not resumable
+    if ! $RESUME && [[ -d "${TEMP_DIR:-}" ]]; then
+        rm -rf "$TEMP_DIR"
+    fi
+}
+
+trap cleanup EXIT
+
+# Run main function
+main "$@"
