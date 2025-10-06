@@ -45,7 +45,7 @@
     launch-next = "bash ${config.home.homeDirectory}/dotfiles-public/wsl-fixes/launch-next-client.sh";
 
     # APT network switching for Enterprise repos (WSL-specific utility)
-    apt-switch = "sudo bash ${config.home.homeDirectory}/dotfiles-public/scripts/apt-network-switch.sh";
+    apt-network-switch = "sudo bash ${config.home.homeDirectory}/dotfiles-public/scripts/apt-network-switch.sh";
   };
 
   programs.zsh.shellAliases = {

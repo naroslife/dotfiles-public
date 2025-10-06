@@ -92,12 +92,6 @@ let
 
     claude = "~/.claude/local/claude";
 
-    # APT network management (Enterprise and WSL specific)
-    apt-switch = "apt-network-switch";
-    apt-update = "apt-network-switch"; # Override default with network-aware version
-    apt-check = "apt-status";
-    apt-public = "echo 'Forcing public repos...' && sudo mkdir -p /etc/apt/sources.list.d/disabled && sudo mv /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/disabled/ 2>/dev/null; echo 'deb http://archive.ubuntu.com/ubuntu/ jammy main restricted universe multiverse\ndeb http://archive.ubuntu.com/ubuntu/ jammy-updates main restricted universe multiverse\ndeb http://archive.ubuntu.com/ubuntu/ jammy-backports main restricted universe multiverse\ndeb http://security.ubuntu.com/ubuntu/ jammy-security main restricted universe multiverse' | sudo tee /etc/apt/sources.list > /dev/null && sudo apt update";
-
     # Next-Client launcher with restored environment variables
     nextclient = "~/dotfiles-public/wsl-fixes/test-restored-vars.sh";
 
