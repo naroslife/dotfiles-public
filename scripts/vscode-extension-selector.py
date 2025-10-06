@@ -8,10 +8,18 @@ Features:
 - Multi-select with checkboxes
 - Preserves commented extensions
 - Automatic backup before saving
+
+Keyboard Shortcuts:
+- Enter/Space: Toggle current extension selection
+- s: Save and exit
+- a: Select all extensions
+- d: Deselect all extensions
+- q/Escape: Quit without saving
 """
 
 import json
 import os
+import signal
 import sys
 from dataclasses import dataclass
 from datetime import datetime
@@ -20,17 +28,14 @@ from typing import Dict, List, Optional, Set
 
 from textual.app import App, ComposeResult
 from textual.binding import Binding
-from textual.containers import Container, Horizontal, Vertical
+from textual.containers import Vertical
 from textual.widgets import (
-    Button,
-    Checkbox,
     Footer,
     Header,
     Label,
     Static,
     Tree,
 )
-from textual.widgets.tree import TreeNode
 
 
 @dataclass
@@ -118,32 +123,31 @@ class ExtensionSelector(App):
     CSS = """
     Screen {
         layout: grid;
-        grid-size: 2 2;
-        grid-rows: auto 1fr;
-    }
-
-    Header {
-        column-span: 2;
+        grid-size: 2 1;
+        grid-rows: 1fr;
     }
 
     #extensions-panel {
         height: 100%;
         border: solid $primary;
         padding: 1;
+        layout: vertical;
     }
 
     #preview-panel {
         height: 100%;
         border: solid $accent;
         padding: 1;
+        layout: vertical;
     }
 
     Tree {
-        height: 100%;
+        height: 1fr;
+        overflow-y: auto;
     }
 
     ExtensionPreview {
-        height: 100%;
+        height: 1fr;
     }
 
     .category-header {
@@ -156,7 +160,7 @@ class ExtensionSelector(App):
         Binding("q", "quit", "Quit"),
         Binding("escape", "quit", "Quit"),
         Binding("s", "save", "Save"),
-        Binding("enter", "save", "Save"),
+        Binding("enter", "toggle_current", "Toggle"),
         Binding("a", "select_all", "Select All"),
         Binding("d", "deselect_all", "Deselect All"),
         Binding("space", "toggle_current", "Toggle", show=False),
@@ -188,7 +192,7 @@ class ExtensionSelector(App):
         yield Header()
 
         with Vertical(id="extensions-panel"):
-            self.extensions_label = Label(f"Extensions ({len(self.extensions_by_id)} total)")
+            self.extensions_label = Label("Extensions")  # Will be updated after data is loaded
             yield self.extensions_label
             self.extensions_tree = Tree("Extensions")
             yield self.extensions_tree
@@ -202,12 +206,20 @@ class ExtensionSelector(App):
 
     def on_mount(self) -> None:
         """Load data and populate tree on mount."""
+        # Set up signal handlers for clean exit
+        signal.signal(signal.SIGINT, self._signal_handler)
+        signal.signal(signal.SIGTERM, self._signal_handler)
+
         try:
             self.load_data()
             self.update_extensions_count()
             self.populate_tree()
         except Exception as e:
             self.exit(message=f"Error loading data: {e}")
+
+    def _signal_handler(self, _signum, _frame):
+        """Handle signals for clean shutdown."""
+        self.exit(message="\n✓ Exiting cleanly...")
 
     def load_data(self) -> None:
         """Load extensions from JSON files."""
@@ -313,6 +325,7 @@ class ExtensionSelector(App):
 
         self.extensions_tree.clear()
         root = self.extensions_tree.root
+        root.expand()  # Ensure root is expanded
 
         for category in self.categories:
             cat_label = f"{category.name.title()} [{category.active_count}/{category.total_count}]"
@@ -328,13 +341,12 @@ class ExtensionSelector(App):
                 ext_node.data = {"type": "extension", "extension": extension}
 
     def on_tree_node_selected(self, event: Tree.NodeSelected) -> None:
-        """Handle tree node selection."""
+        """Handle tree node selection (when Enter is pressed)."""
         node = event.node
 
         if node.data and node.data["type"] == "extension":
-            extension = node.data["extension"]
-            if self.preview:
-                self.preview.update_preview(extension)
+            # Toggle the extension selection when Enter is pressed
+            self.action_toggle_current()
 
     def on_tree_node_highlighted(self, event: Tree.NodeHighlighted) -> None:
         """Handle tree node highlight (cursor moved)."""
@@ -347,6 +359,17 @@ class ExtensionSelector(App):
         elif node and node.data and node.data["type"] == "category":
             if self.preview:
                 self.preview.update_preview(None)
+
+    def on_key(self, event) -> None:
+        """Handle key events to intercept Space key on extensions."""
+        # Only handle Space key when Tree has focus
+        if event.key == "space" and self.extensions_tree and self.extensions_tree.has_focus:
+            node = self.extensions_tree.cursor_node
+            # If on an extension node, toggle it and prevent default behavior
+            if node and node.data and node.data.get("type") == "extension":
+                self.action_toggle_current()
+                event.prevent_default()
+                event.stop()
 
     def action_toggle_current(self) -> None:
         """Toggle selection for the current extension."""
@@ -363,7 +386,12 @@ class ExtensionSelector(App):
             else:
                 self.selected_ids.add(extension.id)
 
+            # Refresh tree to update checkbox
             self.refresh_tree()
+
+            # Update preview
+            if self.preview:
+                self.preview.update_preview(extension)
 
     def action_select_all(self) -> None:
         """Select all extensions."""
@@ -467,9 +495,25 @@ class ExtensionSelector(App):
 
 
 def main() -> None:
-    """Entry point."""
-    app = ExtensionSelector()
-    app.run()
+    """Entry point with proper cleanup handling."""
+    app = None
+    try:
+        app = ExtensionSelector()
+        app.run()
+    except KeyboardInterrupt:
+        # Handle Ctrl+C gracefully
+        if app:
+            app.exit(message="\n✓ Interrupted. Exiting cleanly...")
+        else:
+            print("\n✓ Interrupted. Exiting cleanly...")
+        sys.exit(0)
+    except Exception as e:
+        # Handle any unexpected errors
+        if app:
+            app.exit(message=f"\n✗ Error: {e}")
+        else:
+            print(f"\n✗ Error: {e}")
+        sys.exit(1)
 
 
 if __name__ == "__main__":
