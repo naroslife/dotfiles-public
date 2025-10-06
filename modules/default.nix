@@ -3,6 +3,7 @@
   imports = [
     ./core.nix
     ./environment.nix
+    ./user-config.nix
     ./shells
     ./dev
     ./cli

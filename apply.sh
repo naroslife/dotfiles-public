@@ -1,245 +1,383 @@
 #!/usr/bin/env bash
-set -e
+# Dotfiles Setup Script - Refactored Version
+#
+# This script provides an interactive setup experience for the dotfiles repository.
+# It handles Nix installation, git submodules, and Home Manager configuration.
+#
+# Usage:
+#   ./apply.sh [OPTIONS]
+#
+# Options:
+#   -y, --yes           Answer yes to all prompts
+#   -n, --no-backup     Don't create backups
+#   -u, --user USER     Specify username for flake mode
+#   -v, --verbose       Enable verbose logging
+#   -h, --help          Show this help message
 
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+set -euo pipefail
 
-# Function to print colored output
-print_color() {
-    local color=$1
-    shift
-    echo -e "${color}$*${NC}"
+# Source common utilities
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=lib/common.sh
+source "$SCRIPT_DIR/lib/common.sh"
+
+# Configuration
+readonly NIX_INSTALL_URL="https://nixos.org/nix/install"
+readonly NIX_INSTALL_CHECKSUM="751c3bb0b72d2b1c79975e8b45325ce80ee17f5c64ae59e11e1d2fce01aeccad"
+readonly CONFIG_DIR="$HOME/.config"
+
+# Script state
+ASSUME_YES=false
+CREATE_BACKUPS=true
+TARGET_USER=""
+SETUP_GITHUB_CLI=false
+INTERACTIVE_CONFIG=false
+
+# Parse command line arguments
+parse_arguments() {
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            -y|--yes)
+                ASSUME_YES=true
+                shift
+                ;;
+            -n|--no-backup)
+                CREATE_BACKUPS=false
+                shift
+                ;;
+            -u|--user)
+                TARGET_USER="$2"
+                shift 2
+                ;;
+            -v|--verbose)
+                LOG_LEVEL=$LOG_LEVEL_DEBUG
+                shift
+                ;;
+            -i|--interactive)
+                INTERACTIVE_CONFIG=true
+                shift
+                ;;
+            -h|--help)
+                show_help
+                exit 0
+                ;;
+            *)
+                die "Unknown option: $1. Use --help for usage information."
+                ;;
+        esac
+    done
 }
 
-# Function to print step headers
-print_step() {
-    echo
-    print_color "$BLUE" "══════════════════════════════════════════════════"
-    print_color "$BLUE" "  $1"
-    print_color "$BLUE" "══════════════════════════════════════════════════"
-    echo
+show_help() {
+    cat << EOF
+Dotfiles Setup Script
+
+This script provides an interactive setup experience for the dotfiles repository.
+It handles Nix installation, git submodules, and Home Manager configuration.
+
+USAGE:
+    $0 [OPTIONS]
+
+OPTIONS:
+    -y, --yes           Answer yes to all prompts
+    -n, --no-backup     Don't create backups of existing configurations
+    -u, --user USER     Specify username for flake mode
+    -i, --interactive   Configure user-specific settings interactively
+    -v, --verbose       Enable verbose logging
+    -h, --help          Show this help message
+
+EXAMPLES:
+    $0                          # Interactive setup
+    $0 -y -u myuser            # Non-interactive with specific user
+    $0 --interactive           # Configure user-specific settings
+    $0 --verbose --no-backup   # Verbose mode without backups
+
+EOF
 }
 
-# Function to check if command exists
-command_exists() {
-    command -v "$1" >/dev/null 2>&1
-}
+# Validation functions
+validate_prerequisites() {
+    log_info "Validating prerequisites"
 
-# Function to detect WSL
-is_wsl() {
-    [ -f /proc/sys/fs/binfmt_misc/WSLInterop ]
-}
+    # Check if git is available
+    require_command git "Please install git: sudo apt install git (Ubuntu/Debian) or brew install git (macOS)"
 
-# Main script
-print_color "$GREEN" "🚀 Dotfiles Setup Script"
-print_color "$GREEN" "========================"
-
-# Step 1: Check for Nix
-print_step "Checking for Nix installation"
-if ! command_exists nix; then
-    print_color "$YELLOW" "Nix is not installed."
-    read -p "Would you like to install Nix? (y/n) " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        print_color "$GREEN" "Installing Nix..."
-        sh <(curl -L https://nixos.org/nix/install) --daemon
-
-        # Source Nix
-        # shellcheck disable=SC1091
-        if [ -e '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh' ]; then
-            . '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh'
-        fi
-    else
-        print_color "$RED" "Nix is required. Exiting."
-        exit 1
+    # Validate repository state
+    if [[ ! -d ".git" ]]; then
+        die "This script must be run from the dotfiles repository root"
     fi
-else
-    print_color "$GREEN" "✓ Nix is installed"
-fi
 
-# Step 2: Enable flakes and nix-command
-print_step "Checking Nix experimental features"
-if ! nix --version 2>&1 | grep -q "flakes"; then
-    print_color "$YELLOW" "Enabling experimental features..."
-    mkdir -p ~/.config/nix
-    echo "experimental-features = nix-command flakes" >> ~/.config/nix/nix.conf
-fi
-print_color "$GREEN" "✓ Experimental features enabled"
+    # Check for required files
+    local required_files=("flake.nix" "home.nix")
+    for file in "${required_files[@]}"; do
+        if [[ ! -f "$file" ]]; then
+            die "Required file not found: $file"
+        fi
+    done
 
-# Step 3: Check for git
-print_step "Checking for git"
-if ! command_exists git; then
-    print_color "$RED" "Git is not installed. Please install git first."
-    exit 1
-fi
-print_color "$GREEN" "✓ Git is installed"
+    # Validate Nix files
+    if command -v nix >/dev/null 2>&1; then
+        validate_config_file "flake.nix" "nix"
+        validate_config_file "home.nix" "nix"
+    fi
 
-# Step 4: Initialize/update git submodules if .gitmodules exists
-if [ -f .gitmodules ]; then
-    print_step "Initializing git submodules"
-    git submodule update --init --recursive
-    print_color "$GREEN" "✓ Git submodules initialized"
-fi
+    log_info "Prerequisites validation passed"
+}
 
-# Step 5: Detect username and environment
-print_step "Detecting user configuration"
-CURRENT_USER=$(whoami)
-print_color "$BLUE" "Current user: $CURRENT_USER"
+# Nix installation with enhanced security
+install_nix() {
+    log_info "Installing Nix package manager"
 
-# Detect git configuration
-if command_exists git; then
-    GIT_EMAIL=$(git config --global user.email 2>/dev/null || echo "")
-    GIT_NAME=$(git config --global user.name 2>/dev/null || echo "")
+    local temp_installer
+    temp_installer=$(mktemp)
+    TEMP_FILES="${TEMP_FILES:-} $temp_installer"
 
-    if [ -n "$GIT_EMAIL" ] && [ -n "$GIT_NAME" ]; then
-        print_color "$GREEN" "✓ Git config detected: $GIT_NAME <$GIT_EMAIL>"
+    # Download with checksum verification
+    fetch_url "$NIX_INSTALL_URL" "$temp_installer" "$NIX_INSTALL_CHECKSUM"
 
-        # Ask if user wants to override
-        read -p "Use this git configuration? (y/n/edit) " -n 1 -r
-        echo
-        if [[ $REPLY =~ ^[Ee]$ ]]; then
-            # Edit mode - allow user to override
-            read -r -p "Enter git user name [$GIT_NAME]: " NEW_GIT_NAME
-            read -r -p "Enter git email [$GIT_EMAIL]: " NEW_GIT_EMAIL
+    # Install Nix
+    if ! sh "$temp_installer" --daemon; then
+        die "Nix installation failed"
+    fi
 
-            # Use new values if provided, otherwise keep existing
-            if [ -n "$NEW_GIT_NAME" ]; then
-                GIT_NAME=$NEW_GIT_NAME
-            fi
-            if [ -n "$NEW_GIT_EMAIL" ]; then
-                GIT_EMAIL=$NEW_GIT_EMAIL
-            fi
+    # Source Nix environment
+    if [[ -f "/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh" ]]; then
+        # shellcheck source=/dev/null
+        source "/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh"
+    fi
 
-            print_color "$GREEN" "✓ Using custom git config: $GIT_NAME <$GIT_EMAIL>"
-        elif [[ ! $REPLY =~ ^[Yy]$ ]]; then
-            # User doesn't want to use git config
-            print_color "$YELLOW" "Git configuration will not be used"
-            GIT_EMAIL=""
-            GIT_NAME=""
+    log_info "Nix installation completed successfully"
+}
+
+# Enhanced Nix setup check
+check_nix_installation() {
+    log_info "Checking Nix installation"
+
+    if ! command -v nix >/dev/null 2>&1; then
+        log_warn "Nix is not installed or not in PATH"
+
+        if $ASSUME_YES || ask_yes_no "Would you like to install Nix?"; then
+            install_nix
+        else
+            die "Nix is required for this setup. Please install it manually."
+        fi
+    else
+        log_info "Nix is already installed"
+
+        # Verify Nix is working
+        if ! nix --version >/dev/null 2>&1; then
+            die "Nix is installed but not working properly. Please check your installation."
         fi
 
-        export GIT_EMAIL
-        export GIT_NAME
+        log_debug "Nix version: $(nix --version)"
+    fi
+}
+
+# Git submodule management
+setup_git_submodules() {
+    log_info "Setting up git submodules"
+
+    # Check if submodules are configured
+    if [[ ! -f ".gitmodules" ]] || [[ ! -s ".gitmodules" ]]; then
+        log_info "No git submodules configured, skipping"
+        return 0
+    fi
+
+    local use_submodules=false
+    if $ASSUME_YES; then
+        use_submodules=true
     else
-        print_color "$YELLOW" "No git configuration found"
+        if ask_yes_no "Initialize git submodules for enhanced shell functionality?"; then
+            use_submodules=true
+        fi
+    fi
 
-        # Offer to set git config
-        read -p "Would you like to configure git user info? (y/n) " -n 1 -r
-        echo
-        if [[ $REPLY =~ ^[Yy]$ ]]; then
-            read -r -p "Enter git user name: " GIT_NAME
-            read -r -p "Enter git email: " GIT_EMAIL
+    if $use_submodules; then
+        log_info "Initializing git submodules"
+        if ! git submodule update --init --recursive; then
+            log_warn "Failed to initialize some submodules, continuing anyway"
+        else
+            log_info "Git submodules initialized successfully"
+        fi
+    else
+        log_info "Skipping git submodules"
+    fi
+}
 
-            if [ -n "$GIT_NAME" ] && [ -n "$GIT_EMAIL" ]; then
-                export GIT_EMAIL
-                export GIT_NAME
-                print_color "$GREEN" "✓ Git config set: $GIT_NAME <$GIT_EMAIL>"
+# User selection for flake mode
+select_user() {
+    if [[ -n "$TARGET_USER" ]]; then
+        log_info "Using specified user: $TARGET_USER"
+        return 0
+    fi
+
+    if $ASSUME_YES; then
+        # Use current user as default in non-interactive mode
+        TARGET_USER=$(whoami)
+        log_info "Using current user: $TARGET_USER"
+        return 0
+    fi
+
+    # Extract available users from flake.nix
+    local available_users
+    if ! available_users=$(nix eval --json .#homeConfigurations --apply 'configs: builtins.attrNames configs' 2>/dev/null | jq -r '.[]' 2>/dev/null); then
+        log_warn "Could not extract user list from flake.nix, using current user"
+        TARGET_USER=$(whoami)
+        return 0
+    fi
+
+    echo "Available user configurations:"
+    local user_array=()
+    while IFS= read -r user; do
+        echo "  - $user"
+        user_array+=("$user")
+    done <<< "$available_users"
+
+    if [[ ${#user_array[@]} -eq 1 ]]; then
+        TARGET_USER="${user_array[0]}"
+        log_info "Only one user configuration available, using: $TARGET_USER"
+    else
+        while true; do
+            read -p "Enter username for configuration: " -r TARGET_USER
+            if [[ " ${user_array[*]} " == *" $TARGET_USER "* ]]; then
+                break
             else
-                print_color "$YELLOW" "Incomplete git configuration, skipping"
+                log_warn "Invalid username. Please choose from: ${user_array[*]}"
+            fi
+        done
+    fi
+}
+
+# Home Manager application
+apply_home_manager() {
+    log_info "Applying Home Manager configuration"
+
+    # Backup existing configurations if requested
+    if $CREATE_BACKUPS; then
+        log_info "Creating backups of existing configurations"
+        for config_file in "$HOME/.bashrc" "$HOME/.zshrc" "$HOME/.profile"; do
+            if [[ -f "$config_file" ]]; then
+                backup_file "$config_file"
+            fi
+        done
+    fi
+
+    # Apply configuration
+    local home_manager_cmd="nix run home-manager/master -- switch --impure --flake \".#$TARGET_USER\""
+
+    log_info "Executing: $home_manager_cmd"
+    if ! eval "$home_manager_cmd"; then
+        die "Home Manager configuration failed"
+    fi
+
+    log_info "Home Manager configuration applied successfully"
+}
+
+# WSL-specific optimizations
+apply_wsl_optimizations() {
+    if ! is_wsl; then
+        return 0
+    fi
+
+    log_info "Applying WSL-specific optimizations"
+
+    # Check if WSL init script exists and is executable
+    local wsl_init_script="$SCRIPT_DIR/wsl-init.sh"
+    if [[ -f "$wsl_init_script" && -x "$wsl_init_script" ]]; then
+        log_info "Running WSL initialization script"
+        if ! "$wsl_init_script"; then
+            log_warn "WSL initialization script failed, continuing anyway"
+        fi
+    else
+        log_debug "WSL init script not found or not executable: $wsl_init_script"
+    fi
+}
+
+# GitHub CLI setup
+setup_github_cli() {
+    if ! $SETUP_GITHUB_CLI; then
+        return 0
+    fi
+
+    log_info "Setting up GitHub CLI"
+
+    if ! command -v gh >/dev/null 2>&1; then
+        log_warn "GitHub CLI not found. Install it through your package manager."
+        return 0
+    fi
+
+    if ! gh auth status >/dev/null 2>&1; then
+        log_info "GitHub CLI not authenticated"
+        if $ASSUME_YES || ask_yes_no "Would you like to authenticate GitHub CLI now?"; then
+            if ! gh auth login; then
+                log_warn "GitHub CLI authentication failed"
+            else
+                log_info "GitHub CLI authenticated successfully"
             fi
         fi
+    else
+        log_info "GitHub CLI already authenticated"
     fi
-fi
+}
 
-# Export current user for dynamic detection in flake
-export CURRENT_USER
+# Run interactive user configuration
+run_user_configuration() {
+    # Source the user config module
+    # shellcheck source=lib/user_config.sh
+    source "$SCRIPT_DIR/lib/user_config.sh"
 
-# Check if user has a predefined configuration
-KNOWN_USERS="naroslife enterpriseuser"
-if echo "$KNOWN_USERS" | grep -qw "$CURRENT_USER"; then
-    print_color "$GREEN" "✓ Predefined configuration found for $CURRENT_USER"
-    USERNAME=$CURRENT_USER
-else
-    print_color "$YELLOW" "No predefined configuration for $CURRENT_USER"
-    print_color "$YELLOW" "Will create dynamic configuration using detected settings"
-    print_color "$YELLOW" "Available predefined users: $KNOWN_USERS"
+    if $INTERACTIVE_CONFIG || (! $ASSUME_YES && ask_yes_no "Would you like to configure user-specific settings?" n); then
+        log_info "Starting interactive user configuration"
+        if run_interactive_config; then
+            log_info "User configuration completed successfully"
 
-    read -r -p "Use current user ($CURRENT_USER) or enter a predefined username: " USERNAME
-
-    # If empty, use current user
-    if [ -z "$USERNAME" ]; then
-        USERNAME=$CURRENT_USER
-        print_color "$GREEN" "Using current user: $USERNAME"
+            # Export configuration for use in Home Manager
+            export_user_config
+        else
+            log_warn "User configuration skipped or cancelled"
+        fi
     fi
-fi
+}
 
-# Step 6: Backup old configuration if it exists
-if [ -f home.nix ] && [ ! -f home.nix.backup ]; then
-    print_step "Backing up old configuration"
-    cp home.nix home.nix.backup
-    print_color "$GREEN" "✓ Old configuration backed up to home.nix.backup"
-fi
+# Main setup orchestration
+main() {
+    log_info "🚀 Starting dotfiles setup"
+    log_info "Platform: $(detect_platform)"
 
-# Step 7: Apply the configuration
-print_step "Applying Home Manager configuration"
-print_color "$YELLOW" "This will:"
-print_color "$YELLOW" "  • Install all packages defined in modules/"
-print_color "$YELLOW" "  • Configure shells (bash, zsh, elvish)"
-print_color "$YELLOW" "  • Set up development tools"
-print_color "$YELLOW" "  • Configure modern CLI tools"
-if is_wsl; then
-    print_color "$YELLOW" "  • Apply WSL-specific optimizations"
-fi
+    # Parse command line arguments
+    parse_arguments "$@"
 
-read -p "Continue? (y/n) " -n 1 -r
-echo
-if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-    print_color "$RED" "Aborted."
-    exit 1
-fi
+    # Show configuration
+    log_debug "Configuration:"
+    log_debug "  ASSUME_YES: $ASSUME_YES"
+    log_debug "  CREATE_BACKUPS: $CREATE_BACKUPS"
+    log_debug "  TARGET_USER: ${TARGET_USER:-auto}"
+    log_debug "  INTERACTIVE_CONFIG: $INTERACTIVE_CONFIG"
+    log_debug "  LOG_LEVEL: $LOG_LEVEL"
 
-# Use the new flake configuration
-print_color "$GREEN" "Building and activating configuration..."
-if nix run home-manager/master -- switch --impure --flake ".#$USERNAME" -b backup; then
-    print_color "$GREEN" "✅ Configuration applied successfully!"
-else
-    print_color "$RED" "❌ Configuration failed. Please check the error messages above."
-    exit 1
-fi
+    # Setup steps
+    validate_prerequisites
+    run_user_configuration
+    check_nix_installation
+    setup_git_submodules
+    select_user
+    apply_home_manager
+    apply_wsl_optimizations
 
-# Step 8: WSL-specific setup
-if is_wsl; then
-    print_step "WSL-specific setup"
-
-    # Check APT network configuration
-    if [ -x "$HOME/.nix-profile/bin/apt-network-switch" ]; then
-        print_color "$YELLOW" "Checking APT network configuration..."
-        "$HOME/.nix-profile/bin/apt-network-switch" --quiet || true
+    # Optional GitHub CLI setup
+    if ! $ASSUME_YES && ask_yes_no "Would you like to set up GitHub CLI authentication?"; then
+        SETUP_GITHUB_CLI=true
+        setup_github_cli
     fi
 
-    print_color "$GREEN" "✓ WSL setup complete"
-fi
+    log_info "✅ Dotfiles setup completed successfully!"
+    log_info ""
+    log_info "🔄 Please restart your shell or run: source ~/.bashrc"
 
-# Step 9: Post-installation tasks
-print_step "Post-installation tasks"
-
-# Configure GitHub CLI if installed
-if command_exists gh; then
-    read -p "Would you like to authenticate GitHub CLI? (y/n) " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        gh auth login
+    if is_wsl; then
+        log_info "🖥️  WSL detected - GUI applications should work after restart"
     fi
-fi
+}
 
-# Final instructions
-print_step "Setup Complete! 🎉"
-print_color "$GREEN" "Your dotfiles have been successfully installed!"
-print_color "$YELLOW" ""
-print_color "$YELLOW" "Next steps:"
-print_color "$YELLOW" "  1. Restart your shell or run: source ~/.bashrc"
-print_color "$YELLOW" "  2. Try some modern CLI tools:"
-print_color "$YELLOW" "     • 'eza' instead of 'ls'"
-print_color "$YELLOW" "     • 'bat' instead of 'cat'"
-print_color "$YELLOW" "     • 'fd' instead of 'find'"
-print_color "$YELLOW" "     • 'rg' instead of 'grep'"
-print_color "$YELLOW" ""
-print_color "$YELLOW" "To update your configuration:"
-print_color "$YELLOW" "  • Edit files in modules/"
-print_color "$YELLOW" "  • Run: ./apply.sh"
-print_color "$YELLOW" ""
-print_color "$YELLOW" "For more information, see README.md"
+# Run main function with all arguments
+main "$@"
