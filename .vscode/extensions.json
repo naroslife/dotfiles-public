@@ -1,0 +1,152 @@
+{
+    "recommendations": [
+        // C++ & Build Tools
+        "ms-vscode.cpptools", // C/C++ tools
+        "ms-vscode.cpptools-extension-pack", // C++ extension pack
+        "ms-vscode.cpptools-themes", // C++ tools themes
+        "jeff-hykin.better-cpp-syntax", // Better C++ syntax
+        "llvm-vs-code-extensions.vscode-clangd", // clangd language server
+        "xaver.clang-format", // Clang-Format support
+        "ms-vscode.makefile-tools", // Makefile tools
+        "cschlosser.doxdocgen", // Doxygen documentation generator
+        "matepek.vscode-catch2-test-adapter", // Catch2 test adapter
+        "akiramiyakoda.cppincludeguard", // C++ include guard
+        "brobeson.ctest-lab", // CTest integration
+        "cheshirekow.cmake-format", // CMake formatter
+        "ms-vscode.cmake-tools", // CMake tools
+        "notskm.clang-tidy", // Clang-tidy integration
+        "krosf.vscode-valgrind", // Valgrind integration
+        "vadimcn.vscode-lldb", // LLDB debugger
+        "webfreak.debug", // Native debug
+
+        // Python
+        "ms-python.python", // Python extensions
+        "ms-python.vscode-pylance", // Python language server
+        "ms-python.debugpy", // Python debugger
+        "ms-python.black-formatter", // Black Python formatter
+        "ms-python.autopep8", // Autopep8 formatter
+        "ms-python.vscode-python-envs", // Python environments
+        "kevinrose.vsc-python-indent", // Python indent support
+        "njpwerner.autodocstring", // Python autodocstring
+        "wholroyd.jinja", // Jinja template support
+
+        // Java Development (Optional - uncomment if needed)
+        // "redhat.java", // Java Language Support by Red Hat
+        // "vscjava.vscode-java-pack", // Java Extension Pack (includes debugger, test runner, etc.)
+
+        // Other Languages
+        "rust-lang.rust-analyzer", // Rust analyzer
+        // "1yib.rust-bundle", // Rust bundle (alternative to rust-analyzer - uncomment if preferred)
+        "golang.go", // Go language support
+        "mattn.vscode-elvish", // Elvish extension
+        "elves.elvish", // Alternative Elvish extension
+        "jnoortheen.nix-ide", // Nix IDE
+        "mads-hartmann.bash-ide-vscode", // Bash IDE extensions
+        // "ms-vscode.powershell", // PowerShell language support (uncomment if needed)
+
+        // Remote Development
+        "ms-vscode-remote.remote-ssh", // Remote development via SSH
+        "ms-vscode-remote.remote-ssh-edit", // Remote SSH editing
+        "ms-vscode-remote.remote-ssh-explorer", // Remote SSH explorer
+        "ms-vscode-remote.remote-containers", // Development in containers
+        "ms-vscode-remote.remote-wsl", // WSL support
+
+        // Git & Version Control
+        "eamodio.gitlens", // GitLens for Git integration
+        "mhutchie.git-graph", // Git graph visualization
+        "donjayamanne.githistory", // Git history
+        "github.vscode-pull-request-github", // GitHub PR integration
+        "gitkraken.gitkraken-authentication", // GitKraken authentication
+        "codezombiech.gitignore", // .gitignore support
+        "xyz.local-history", // Local history tracking
+        // "gitlab.gitlab-workflow", // GitLab workflow integration (uncomment for GitLab projects)
+
+        // AI & Productivity
+        "github.copilot", // GitHub Copilot AI
+        "github.copilot-chat", // GitHub Copilot Chat
+        "anthropic.claude-code", // Claude Code assistant
+        "ms-vsliveshare.vsliveshare", // Live Share for collaboration
+        // "github.codespaces", // GitHub Codespaces support (uncomment if using Codespaces)
+
+        // Editor Enhancement
+        "vscodevim.vim", // Vim keybindings
+        "k--kato.intellij-idea-keybindings", // IntelliJ IDEA keybindings
+        "christian-kohler.path-intellisense", // Path IntelliSense
+        "editorconfig.editorconfig", // EditorConfig support
+        "usernamehw.errorlens", // Error lens
+        "gruntfuggly.todo-tree", // TODO tree
+        "wayou.vscode-todo-highlight", // TODO highlight
+        "mikestead.dotenv", // .env file support
+        "rioj7.command-variable", // Command variable support
+        "jasonlhy.hungry-delete", // Hungry delete
+        "zardoy.outline-utils", // Outline utilities
+        "visualstudioexptteam.vscodeintellicode", // IntelliCode
+        "visualstudioexptteam.intellicode-api-usage-examples", // IntelliCode API examples
+
+        // Formatters & Linters
+        "esbenp.prettier-vscode", // Prettier formatting
+        "foxundermoon.shell-format", // Shell script formatter
+        "kamadorueda.alejandra", // Alejandra Nix formatter
+        "timonwong.shellcheck", // ShellCheck linter
+        "rogalmic.bash-debug", // Bash debugger
+        // "streetsidesoftware.code-spell-checker", // Spell checker (uncomment if you want spell checking)
+        // "sonarsource.sonarlint-vscode", // SonarLint code quality and security (uncomment for code analysis)
+
+        // Tasks & Automation
+        "actboy168.tasks", // Tasks extension
+        "augustocdias.tasks-shell-input", // Tasks shell input
+        "spencerwmiles.vscode-task-buttons", // Task buttons
+
+        // Containers & Cloud
+        "ms-azuretools.vscode-docker", // Docker support
+        "ms-azuretools.vscode-containers", // Containers extension
+        "docker.docker", // Docker official extension
+        "ms-kubernetes-tools.vscode-kubernetes-tools", // Kubernetes tools
+        "hashicorp.terraform", // Terraform support
+        "amazonwebservices.aws-toolkit-vscode", // AWS Toolkit
+        // "redhat.ansible", // Ansible language support (uncomment for infrastructure as code)
+
+        // Team & Enterprise Tools
+        "atlassian.atlascode", // Atlassian/Jira integration
+        "tabeyti.jenkins-jack", // Jenkins integration
+
+        // Documentation & Diagrams
+        "yzhang.markdown-all-in-one", // Markdown all-in-one
+        "bierner.markdown-mermaid", // Markdown Mermaid diagrams
+        "jebbs.plantuml", // PlantUML support
+
+        // Themes & UI
+        "pkief.material-icon-theme", // Material icon theme
+        "be5invis.vscode-icontheme-nomo-dark", // Nomo Dark icon theme
+        "dracula-theme.theme-dracula", // Dracula theme
+        "johnpapa.vscode-peacock", // Peacock for color customization
+
+        // Utilities
+        "formulahendry.auto-rename-tag", // Auto rename tag
+        "naumovs.color-highlight", // Color highlight
+        "redhat.vscode-yaml", // YAML language support
+        "humao.rest-client", // REST client
+        "mechatroner.rainbow-csv", // Rainbow CSV viewer
+        "slevesque.vscode-multiclip", // Multiple clipboards
+        "zainchen.json", // JSON tools
+        "dotjoshjohnson.xml", // XML tools
+        "george-alisson.html-preview-vscode", // HTML preview
+        "pnp.polacode", // Code snapshots
+        "ibm.output-colorizer", // Colorize output
+        "wix.vscode-import-cost", // Import cost display
+
+        // Environment & Configuration
+        "mkhl.direnv", // direnv support
+        "arrterian.nix-env-selector", // Nix environment selector
+        "pinage404.nix-extension-pack", // Nix extension pack
+        "necatiarslan.environment-variable-vscode-extension", // Environment variables
+
+        // JavaScript/TypeScript/Node.js
+        "christian-kohler.npm-intellisense", // NPM IntelliSense
+        "afractal.node-essentials", // Node essentials
+        "dbaeumer.vscode-eslint", // ESLint
+        "orta.vscode-jest", // Jest testing
+        "wallabyjs.quokka-vscode", // Quokka.js live scratchpad
+        // "ms-vscode.vscode-typescript-next" // TypeScript nightly build (uncomment for latest TypeScript features)
+    ]
+}

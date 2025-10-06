@@ -5,7 +5,6 @@
     ./languages.nix
     ./containers.nix
     ./ssh.nix
-    ./vscode.nix
   ];
 
   home.packages = with pkgs; [

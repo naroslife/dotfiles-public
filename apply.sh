@@ -85,23 +85,85 @@ if [ -f .gitmodules ]; then
     print_color "$GREEN" "✓ Git submodules initialized"
 fi
 
-# Step 5: Detect username
+# Step 5: Detect username and environment
 print_step "Detecting user configuration"
 CURRENT_USER=$(whoami)
 print_color "$BLUE" "Current user: $CURRENT_USER"
 
-# Check if user has a configuration
-if grep -q "\"$CURRENT_USER\"" flake.nix 2>/dev/null; then
-    print_color "$GREEN" "✓ Configuration found for $CURRENT_USER"
+# Detect git configuration
+if command_exists git; then
+    GIT_EMAIL=$(git config --global user.email 2>/dev/null || echo "")
+    GIT_NAME=$(git config --global user.name 2>/dev/null || echo "")
+
+    if [ -n "$GIT_EMAIL" ] && [ -n "$GIT_NAME" ]; then
+        print_color "$GREEN" "✓ Git config detected: $GIT_NAME <$GIT_EMAIL>"
+
+        # Ask if user wants to override
+        read -p "Use this git configuration? (y/n/edit) " -n 1 -r
+        echo
+        if [[ $REPLY =~ ^[Ee]$ ]]; then
+            # Edit mode - allow user to override
+            read -r -p "Enter git user name [$GIT_NAME]: " NEW_GIT_NAME
+            read -r -p "Enter git email [$GIT_EMAIL]: " NEW_GIT_EMAIL
+
+            # Use new values if provided, otherwise keep existing
+            if [ -n "$NEW_GIT_NAME" ]; then
+                GIT_NAME=$NEW_GIT_NAME
+            fi
+            if [ -n "$NEW_GIT_EMAIL" ]; then
+                GIT_EMAIL=$NEW_GIT_EMAIL
+            fi
+
+            print_color "$GREEN" "✓ Using custom git config: $GIT_NAME <$GIT_EMAIL>"
+        elif [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            # User doesn't want to use git config
+            print_color "$YELLOW" "Git configuration will not be used"
+            GIT_EMAIL=""
+            GIT_NAME=""
+        fi
+
+        export GIT_EMAIL
+        export GIT_NAME
+    else
+        print_color "$YELLOW" "No git configuration found"
+
+        # Offer to set git config
+        read -p "Would you like to configure git user info? (y/n) " -n 1 -r
+        echo
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            read -r -p "Enter git user name: " GIT_NAME
+            read -r -p "Enter git email: " GIT_EMAIL
+
+            if [ -n "$GIT_NAME" ] && [ -n "$GIT_EMAIL" ]; then
+                export GIT_EMAIL
+                export GIT_NAME
+                print_color "$GREEN" "✓ Git config set: $GIT_NAME <$GIT_EMAIL>"
+            else
+                print_color "$YELLOW" "Incomplete git configuration, skipping"
+            fi
+        fi
+    fi
+fi
+
+# Export current user for dynamic detection in flake
+export CURRENT_USER
+
+# Check if user has a predefined configuration
+KNOWN_USERS="naroslife enterpriseuser"
+if echo "$KNOWN_USERS" | grep -qw "$CURRENT_USER"; then
+    print_color "$GREEN" "✓ Predefined configuration found for $CURRENT_USER"
     USERNAME=$CURRENT_USER
 else
-    print_color "$YELLOW" "No configuration found for $CURRENT_USER"
-    print_color "$YELLOW" "Available configurations: naroslife, enterpriseuser"
-    read -r -p "Enter username to use: " USERNAME
+    print_color "$YELLOW" "No predefined configuration for $CURRENT_USER"
+    print_color "$YELLOW" "Will create dynamic configuration using detected settings"
+    print_color "$YELLOW" "Available predefined users: $KNOWN_USERS"
 
-    if ! grep -q "\"$USERNAME\"" flake.nix 2>/dev/null; then
-        print_color "$RED" "Invalid username. Exiting."
-        exit 1
+    read -r -p "Use current user ($CURRENT_USER) or enter a predefined username: " USERNAME
+
+    # If empty, use current user
+    if [ -z "$USERNAME" ]; then
+        USERNAME=$CURRENT_USER
+        print_color "$GREEN" "Using current user: $USERNAME"
     fi
 fi
 

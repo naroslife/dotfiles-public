@@ -1,9 +1,6 @@
-g{
+{
   "permissions": {
-    "allow": [
-      "WebFetch",
-      "Bash"
-    ],
+    "allow": ["WebFetch", "Bash"],
     "deny": [],
     "additionalDirectories": [
       "/",
@@ -18,7 +15,6 @@ g{
       "/lib32",
       "/lib64"
     ]
-    
   },
   "model": "opus",
   "statusLine": {

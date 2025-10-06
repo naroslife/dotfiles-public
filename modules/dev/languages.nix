@@ -64,6 +64,7 @@
       mypy # Static type checker
       pytest # Testing framework
       requests # HTTP library
+      textual # Modern TUI framework
     ]))
 
     # Ruby with tmuxinator

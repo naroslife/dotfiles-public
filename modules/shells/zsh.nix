@@ -56,6 +56,7 @@
       '')
       ''
         # Key bindings
+        bindkey '^a' beginning-of-line
         bindkey '^w' autosuggest-execute
         bindkey '^e' autosuggest-accept
         bindkey '^u' autosuggest-toggle

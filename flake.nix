@@ -33,16 +33,46 @@
         ];
       };
 
-      # User configurations
+      # Function to detect user info from environment
+      detectUserInfo = username:
+        let
+          # Try to get git config if available
+          gitEmail = builtins.getEnv "GIT_EMAIL";
+          gitName = builtins.getEnv "GIT_NAME";
+
+          # Default mappings for known users
+          knownUsers = {
+            naroslife = {
+              email = "robi54321@gmail.com";
+              fullName = "Robert Nagy";
+            };
+            enterpriseuser = {
+              email = "enterpriseuser@gmail.com";
+              fullName = "User enterpriseuser";
+            };
+          };
+
+          # Check if user is known
+          isKnown = builtins.hasAttr username knownUsers;
+        in
+        if isKnown then
+          knownUsers.${username}
+        else if gitEmail != "" && gitName != "" then
+          {
+            email = gitEmail;
+            fullName = gitName;
+          }
+        else
+          {
+            email = "${username}@example.com";
+            fullName = username;
+          };
+
+      # User configurations (can be extended)
       users = {
-        naroslife = {
-          email = "naroslife@gmail.com";
-          fullName = "Naros Life";
-        };
-        enterpriseuser = {
-          email = "enterpriseuser@gmail.com";
-          fullName = "User enterpriseuser";
-        };
+        naroslife = detectUserInfo "naroslife";
+        enterpriseuser = detectUserInfo "enterpriseuser";
+        # Dynamic user detection - will be added at build time
       };
 
       # Function to create a home-manager configuration for a user
@@ -73,13 +103,20 @@
           };
         };
       };
+
+      # Dynamically add current user if detected via environment variable
+      currentUser = builtins.getEnv "CURRENT_USER";
+      allUsers =
+        if currentUser != "" && !(builtins.hasAttr currentUser users)
+        then users // { "${currentUser}" = detectUserInfo currentUser; }
+        else users;
     in
     {
       # Generate home configurations for all users
       homeConfigurations = builtins.foldl'
-        (acc: username: acc // mkHomeConfig username users.${username})
+        (acc: username: acc // mkHomeConfig username allUsers.${username})
         { }
-        (builtins.attrNames users);
+        (builtins.attrNames allUsers);
 
       # Convenience aliases for common operations
       apps.${system} = {
@@ -92,12 +129,13 @@
             # Detect username
             USERNAME="''${1:-$(whoami)}"
 
-            # Check if configuration exists for this user
-            if [[ "$USERNAME" != "naroslife" && "$USERNAME" != "enterpriseuser" ]]; then
-              echo "Error: No configuration found for user '$USERNAME'"
-              echo "Available users: naroslife, enterpriseuser"
-              echo "Usage: nix run . [username]"
-              exit 1
+            # Export current user for dynamic detection
+            export CURRENT_USER="$USERNAME"
+
+            # Get git info if available
+            if command -v git &>/dev/null; then
+              export GIT_EMAIL=$(git config --global user.email 2>/dev/null || echo "")
+              export GIT_NAME=$(git config --global user.name 2>/dev/null || echo "")
             fi
 
             echo "Activating home-manager configuration for $USERNAME..."
