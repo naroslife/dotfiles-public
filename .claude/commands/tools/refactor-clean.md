@@ -1,5 +1,5 @@
 ---
-model: claude-sonnet-4-0
+model: default
 ---
 
 # Refactor and Clean Code
@@ -59,7 +59,7 @@ def process_order(order):
     # 50 lines of validation
     # 30 lines of calculation
     # 40 lines of notification
-    
+
 # After
 def process_order(order):
     validate_order(order)
@@ -105,7 +105,7 @@ class InsufficientInventoryError(Exception):
 def validate_order(order):
     if not order.items:
         raise OrderValidationError("Order must contain at least one item")
-    
+
     for item in order.items:
         if item.quantity <= 0:
             raise OrderValidationError(f"Invalid quantity for {item.name}")
@@ -116,14 +116,14 @@ def validate_order(order):
 def calculate_discount(order: Order, customer: Customer) -> Decimal:
     """
     Calculate the total discount for an order based on customer tier and order value.
-    
+
     Args:
         order: The order to calculate discount for
         customer: The customer making the order
-        
+
     Returns:
         The discount amount as a Decimal
-        
+
     Raises:
         ValueError: If order total is negative
     """
@@ -140,7 +140,7 @@ class TestOrderProcessor:
         order = Order(items=[])
         with pytest.raises(OrderValidationError):
             validate_order(order)
-    
+
     def test_calculate_discount_vip_customer(self):
         order = create_test_order(total=1000)
         customer = Customer(tier="VIP")
@@ -173,7 +173,7 @@ Before:
 
 After:
 - validateInput(): 20 lines, complexity: 4
-- transformData(): 25 lines, complexity: 5  
+- transformData(): 25 lines, complexity: 5
 - saveResults(): 15 lines, complexity: 3
 - 95% test coverage
 - Clear separation of concerns
@@ -196,7 +196,7 @@ If breaking changes are introduced:
 class LegacyOrderProcessor:
     def __init__(self):
         self.processor = OrderProcessor()
-    
+
     def process(self, order_data):
         # Convert legacy format
         order = Order.from_legacy(order_data)
@@ -257,7 +257,7 @@ Rate issues found and improvements made:
 
 **Critical**: Security vulnerabilities, data corruption risks, memory leaks
 **High**: Performance bottlenecks, maintainability blockers, missing tests
-**Medium**: Code smells, minor performance issues, incomplete documentation  
+**Medium**: Code smells, minor performance issues, incomplete documentation
 **Low**: Style inconsistencies, minor naming issues, nice-to-have features
 
 ## Output Format

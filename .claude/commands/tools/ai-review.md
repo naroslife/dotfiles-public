@@ -1,5 +1,5 @@
 ---
-model: claude-sonnet-4-0
+model: default
 ---
 
 # AI/ML Code Review

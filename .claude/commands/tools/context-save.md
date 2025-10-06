@@ -1,5 +1,5 @@
 ---
-model: claude-sonnet-4-0
+model: default
 ---
 
 Save current project context for future agent coordination:

@@ -1,5 +1,5 @@
 ---
-model: claude-sonnet-4-0
+model: default
 ---
 
 Implement minimal code to make failing tests pass in TDD green phase:

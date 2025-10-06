@@ -1,5 +1,5 @@
 ---
-model: claude-sonnet-4-0
+model: default
 ---
 
 Write comprehensive failing tests following TDD red phase principles:

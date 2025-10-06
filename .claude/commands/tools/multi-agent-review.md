@@ -1,5 +1,5 @@
 ---
-model: claude-sonnet-4-0
+model: default
 ---
 
 Perform comprehensive multi-agent code review with specialized reviewers:

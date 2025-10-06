@@ -1,5 +1,5 @@
 ---
-model: claude-sonnet-4-0
+model: default
 ---
 
 # Standup Notes Generator
@@ -36,16 +36,16 @@ Generate daily standup notes by reviewing Obsidian vault context and Jira ticket
    ```
    Morning!
    Yesterday:
-   
+
    • [Completed tasks from Jira and Obsidian notes]
    • [Key accomplishments and milestones]
-   
+
    Today:
-   
+
    • [In-progress Jira tickets]
    • [Planned work from tickets and notes]
    • [Meetings from calendar/notes]
-   
+
    Note: [Any blockers, dependencies, or important context]
    ```
 

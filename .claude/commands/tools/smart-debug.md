@@ -1,5 +1,5 @@
 ---
-model: claude-sonnet-4-0
+model: default
 ---
 
 Debug complex issues using specialized debugging agents:
@@ -53,11 +53,11 @@ Prompt: "Profile and debug performance issue: $ARGUMENTS. Include:
 1. **Quick Fix** - Minimal change to resolve issue
    - Implementation details
    - Risk assessment
-   
+
 2. **Proper Fix** - Best long-term solution
    - Refactoring requirements
    - Testing needs
-   
+
 3. **Preventive Measures** - Avoid similar issues
    - Code patterns to adopt
    - Tests to add
