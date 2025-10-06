@@ -107,6 +107,16 @@ let
 
     # Claude session cleaner - removes old Claude AI session files
     claude-clean = "python ${config.home.homeDirectory}/dotfiles-public/scripts/claude-session-cleaner.py";
+
+    # CUDA development tools (cross-platform)
+    # Test CUDA installation and runtime
+    cuda-test = "bash ${config.home.homeDirectory}/dotfiles-public/cuda-setup/test-cuda.sh";
+
+    # Install CUDA toolkit and drivers
+    cuda-install = "bash ${config.home.homeDirectory}/dotfiles-public/cuda-setup/install-cuda.sh";
+
+    # Compile and test CUDA programs
+    cuda-compile-test = "bash ${config.home.homeDirectory}/dotfiles-public/cuda-setup/compile-test.sh";
   };
 in
 {

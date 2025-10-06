@@ -44,16 +44,6 @@
     # Launch Next.js client with restored environment variables
     launch-next = "bash ${config.home.homeDirectory}/dotfiles-public/wsl-fixes/launch-next-client.sh";
 
-    # CUDA development tools
-    # Test CUDA installation and runtime
-    cuda-test = "bash ${config.home.homeDirectory}/dotfiles-public/cuda-setup/test-cuda.sh";
-
-    # Install CUDA toolkit and drivers for WSL2
-    cuda-install = "bash ${config.home.homeDirectory}/dotfiles-public/cuda-setup/install-cuda.sh";
-
-    # Compile and test CUDA programs
-    cuda-compile-test = "bash ${config.home.homeDirectory}/dotfiles-public/cuda-setup/compile-test.sh";
-
     # APT network switching for Enterprise repos (WSL-specific utility)
     apt-switch = "sudo bash ${config.home.homeDirectory}/dotfiles-public/scripts/apt-network-switch.sh";
   };
@@ -73,16 +63,6 @@
 
     # Launch Next.js client with restored environment variables
     launch-next = "bash ${config.home.homeDirectory}/dotfiles-public/wsl-fixes/launch-next-client.sh";
-
-    # CUDA development tools
-    # Test CUDA installation and runtime
-    cuda-test = "bash ${config.home.homeDirectory}/dotfiles-public/cuda-setup/test-cuda.sh";
-
-    # Install CUDA toolkit and drivers for WSL2
-    cuda-install = "bash ${config.home.homeDirectory}/dotfiles-public/cuda-setup/install-cuda.sh";
-
-    # Compile and test CUDA programs
-    cuda-compile-test = "bash ${config.home.homeDirectory}/dotfiles-public/cuda-setup/compile-test.sh";
 
     # APT network switching for Enterprise repos (WSL-specific utility)
     apt-switch = "sudo bash ${config.home.homeDirectory}/dotfiles-public/scripts/apt-network-switch.sh";
