@@ -100,6 +100,13 @@ let
 
     # Next-Client launcher with restored environment variables
     nextclient = "~/dotfiles-public/wsl-fixes/test-restored-vars.sh";
+
+    # Dotfiles management scripts
+    # VSCode extension selector - interactive TUI for managing VSCode extensions
+    vscode-ext = "python ${config.home.homeDirectory}/dotfiles-public/scripts/vscode-extension-selector.py";
+
+    # Claude session cleaner - removes old Claude AI session files
+    claude-clean = "python ${config.home.homeDirectory}/dotfiles-public/scripts/claude-session-cleaner.py";
   };
 in
 {
