@@ -20,6 +20,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=lib/common.sh
 source "$SCRIPT_DIR/lib/common.sh"
+# shellcheck source=lib/sops_bootstrap.sh
+source "$SCRIPT_DIR/lib/sops_bootstrap.sh"
 
 # Configuration
 readonly NIX_INSTALL_URL="https://nixos.org/nix/install"
@@ -504,6 +506,10 @@ main() {
     run_user_configuration
     check_nix_installation
     setup_git_submodules
+
+    # Bootstrap sops-nix if needed (before Home Manager)
+    bootstrap_sops
+
     select_user
     apply_home_manager
     apply_wsl_optimizations

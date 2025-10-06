@@ -7,7 +7,7 @@
     defaultSopsFile = ../secrets/secrets.yaml;
 
     # Validate sops files at build time
-    validateSopsFiles = false;  # Set to true once you've created secrets.yaml
+    validateSopsFiles = true;  # Set to true once you've created secrets.yaml
 
     # Age key configuration
     age = {
