@@ -11,9 +11,9 @@ fi
 readonly NIX_SETUP_LOADED=1
 
 # Source common utilities
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+_NIX_MODULE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=lib/common.sh
-source "$SCRIPT_DIR/../common.sh"
+source "$_NIX_MODULE_DIR/../common.sh"
 
 # Configuration
 readonly NIX_INSTALL_URL="https://nixos.org/nix/install"

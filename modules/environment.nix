@@ -9,24 +9,26 @@ let
 in
 {
   # Session environment variables
+  # Values sourced from config.dotfiles.defaults (single source of truth)
   home.sessionVariables = {
     # === Editor and Pager ===
-    EDITOR = "code";
-    VISUAL = "nvim";
-    PAGER = "less";
-    MANPAGER = "less -R";
-    SYSTEMD_PAGER = "less";
+    # These use defaults from modules/defaults.nix and can be overridden by user-config.nix
+    EDITOR = lib.mkDefault config.dotfiles.defaults.editor.gui;
+    VISUAL = lib.mkDefault config.dotfiles.defaults.editor.visual;
+    PAGER = lib.mkDefault config.dotfiles.defaults.pager.default;
+    MANPAGER = lib.mkDefault "${config.dotfiles.defaults.pager.default} -R";
+    SYSTEMD_PAGER = lib.mkDefault config.dotfiles.defaults.pager.default;
 
     # === Terminal ===
-    TERMINAL = "alacritty";
-    TERM = "xterm-256color";
-    COLORTERM = "truecolor";
+    TERMINAL = config.dotfiles.defaults.terminal.emulator;
+    TERM = config.dotfiles.defaults.terminal.term;
+    COLORTERM = config.dotfiles.defaults.terminal.colorterm;
 
     # === Browser ===
     BROWSER =
       if (builtins.pathExists /proc/sys/fs/binfmt_misc/WSLInterop)
-      then "wslview"
-      else "firefox";
+      then config.dotfiles.defaults.browser.wsl
+      else config.dotfiles.defaults.browser.gui;
 
     # === XDG Base Directory Specification ===
     XDG_CONFIG_HOME = xdgConfig;
@@ -82,7 +84,7 @@ in
     HISTTIMEFORMAT = "%F %T ";
 
     # === Less configuration ===
-    LESS = "-FRXi";
+    LESS = config.dotfiles.defaults.pager.options;
     LESSHISTFILE = "${xdgCache}/less/history";
     LESSKEY = "${xdgConfig}/less/lesskey";
     LESSCHARSET = "utf-8";

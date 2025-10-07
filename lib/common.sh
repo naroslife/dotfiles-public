@@ -12,10 +12,12 @@ set -euo pipefail
 
 # Constants
 if [[ -z "${SCRIPT_DIR:-}" ]]; then
-    readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    readonly SCRIPT_DIR
 fi
 if [[ -z "${ROOT_DIR:-}" ]]; then
-    readonly ROOT_DIR="$(dirname "$SCRIPT_DIR")"
+    ROOT_DIR="$(dirname "$SCRIPT_DIR")"
+    readonly ROOT_DIR
 fi
 readonly LOG_LEVEL_ERROR=1
 readonly LOG_LEVEL_WARN=2
@@ -30,7 +32,6 @@ readonly COLOR_RED='\033[0;31m'
 readonly COLOR_GREEN='\033[0;32m'
 readonly COLOR_YELLOW='\033[1;33m'
 readonly COLOR_BLUE='\033[0;34m'
-readonly COLOR_PURPLE='\033[0;35m'
 readonly COLOR_CYAN='\033[0;36m'
 readonly COLOR_NC='\033[0m' # No Color
 
@@ -43,26 +44,26 @@ log() {
 
     if [[ $level -le $LOG_LEVEL ]]; then
         case $level in
-            $LOG_LEVEL_ERROR)
+            "$LOG_LEVEL_ERROR")
                 echo -e "${COLOR_RED}[ERROR]${COLOR_NC} [$timestamp] $message" >&2
                 ;;
-            $LOG_LEVEL_WARN)
+            "$LOG_LEVEL_WARN")
                 echo -e "${COLOR_YELLOW}[WARN]${COLOR_NC} [$timestamp] $message" >&2
                 ;;
-            $LOG_LEVEL_INFO)
+            "$LOG_LEVEL_INFO")
                 echo -e "${COLOR_GREEN}[INFO]${COLOR_NC} [$timestamp] $message"
                 ;;
-            $LOG_LEVEL_DEBUG)
+            "$LOG_LEVEL_DEBUG")
                 echo -e "${COLOR_BLUE}[DEBUG]${COLOR_NC} [$timestamp] $message"
                 ;;
         esac
     fi
 }
 
-log_error() { log $LOG_LEVEL_ERROR "$1"; }
-log_warn() { log $LOG_LEVEL_WARN "$1"; }
-log_info() { log $LOG_LEVEL_INFO "$1"; }
-log_debug() { log $LOG_LEVEL_DEBUG "$1"; }
+log_error() { log "$LOG_LEVEL_ERROR" "$1"; }
+log_warn() { log "$LOG_LEVEL_WARN" "$1"; }
+log_info() { log "$LOG_LEVEL_INFO" "$1"; }
+log_debug() { log "$LOG_LEVEL_DEBUG" "$1"; }
 
 # Enhanced error handling
 die() {
@@ -100,7 +101,7 @@ fetch_url() {
     if [[ -n "$expected_checksum" ]]; then
         log_debug "Verifying checksum using $checksum_algorithm"
         local actual_checksum
-        actual_checksum=$(${checksum_algorithm}sum "$output_file" | cut -d' ' -f1)
+        actual_checksum=$("${checksum_algorithm}sum" "$output_file" | cut -d' ' -f1)
 
         if [[ "$actual_checksum" != "$expected_checksum" ]]; then
             rm -f "$output_file"

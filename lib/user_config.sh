@@ -25,6 +25,8 @@ USER_CONFIG_DIR="${USER_CONFIG_DIR:-$(dirname "$USER_CONFIG_FILE")}"
 TEMP_CONFIG_FILE="${TEMP_CONFIG_FILE:-$(mktemp)}"
 
 # Default values
+# Note: These are intentionally empty. Actual defaults are defined in modules/defaults.nix
+# This shell script only collects user preferences, Nix provides the defaults
 DEFAULT_GIT_NAME=""
 DEFAULT_GIT_EMAIL=""
 DEFAULT_CORP_TEST_IPS=""
@@ -62,6 +64,8 @@ VALIDATION_PATTERNS[timezone]="^[A-Z][A-Za-z_/]+$"
 VALIDATION_PATTERNS[timezone_error]="Please enter a valid timezone (e.g., America/New_York, Europe/London)"
 
 # Initialize configuration with defaults
+# Note: Most defaults are now managed in modules/defaults.nix
+# This just initializes the array with empty/detected values
 init_user_config() {
     # Ensure array is declared
     if [[ -z "${USER_CONFIG+x}" ]]; then
@@ -72,9 +76,10 @@ init_user_config() {
     USER_CONFIG[git_name]="$DEFAULT_GIT_NAME"
     USER_CONFIG[git_email]="$DEFAULT_GIT_EMAIL"
     USER_CONFIG[corp_test_ips]="$DEFAULT_CORP_TEST_IPS"
-    USER_CONFIG[shell]="bash"
-    USER_CONFIG[editor]="vim"
-    USER_CONFIG[timezone]="UTC"
+    # Shell, editor, timezone: empty here, defaults come from modules/defaults.nix
+    USER_CONFIG[shell]=""
+    USER_CONFIG[editor]=""
+    USER_CONFIG[timezone]=""
 }
 
 # Load existing configuration if available with version checking
@@ -223,7 +228,6 @@ save_user_config() {
     # Success - remove backup (keep last 3 backups)
     if [[ -n "$backup_file" ]]; then
         # Keep only the 3 most recent backups
-        local backup_pattern="${USER_CONFIG_FILE}.backup_*"
         local backup_count
         backup_count=$(find "$USER_CONFIG_DIR" -name "$(basename "$USER_CONFIG_FILE").backup_*" 2>/dev/null | wc -l)
 
@@ -450,6 +454,7 @@ show_config_summary() {
 }
 
 # Generate Nix configuration from user data
+# shellcheck disable=SC2120
 generate_nix_config() {
     local output_file="${1:-$HOME/.config/dotfiles/user.nix}"
 
@@ -493,14 +498,16 @@ generate_nix_config() {
     $git_signing
   };
 
-  shell = {
-    default = "${USER_CONFIG[shell]}";
-    editor = "${USER_CONFIG[editor]}";
+  shell = {${USER_CONFIG[shell]:+
+    default = \"${USER_CONFIG[shell]}\";
+}${USER_CONFIG[editor]:+
+    editor = \"${USER_CONFIG[editor]}\";
+}
   };
 
-  environment = {
-    timezone = "${USER_CONFIG[timezone]}";
-    $corp_ips
+  environment = {${USER_CONFIG[timezone]:+
+    timezone = \"${USER_CONFIG[timezone]}\";
+}    $corp_ips
     $http_proxy
     $https_proxy
     $no_proxy
@@ -570,6 +577,7 @@ run_interactive_config() {
         if save_user_config; then
             echo
             # Try to generate Nix config but don't fail if it errors
+            # shellcheck disable=SC2119
             if generate_nix_config; then
                 echo
                 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
