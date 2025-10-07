@@ -17,6 +17,9 @@ source "$_NIX_MODULE_DIR/../common.sh"
 
 # Configuration
 readonly NIX_INSTALL_URL="https://nixos.org/nix/install"
+# Checksum for Nix installer script (verified 2025-10-07)
+# This is the official multi-user installer from nixos.org/nix/install
+# To verify: curl -L https://nixos.org/nix/install | sha256sum
 readonly NIX_INSTALL_CHECKSUM="8e886d56d170aaac416cf2727d14e25e39bff92b7e0a2f6d12eee058f30717a9"
 
 # Nix installation with enhanced security

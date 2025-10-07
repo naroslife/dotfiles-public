@@ -486,6 +486,20 @@ generate_nix_config() {
         no_proxy="noProxy = \"${USER_CONFIG[no_proxy]}\";"
     fi
 
+    # Validate required fields
+    if [[ -z "${USER_CONFIG[username]:-}" ]]; then
+        log_error "Cannot generate Nix config: username is required"
+        return 1
+    fi
+    if [[ -z "${USER_CONFIG[git_name]:-}" ]]; then
+        log_error "Cannot generate Nix config: git_name is required"
+        return 1
+    fi
+    if [[ -z "${USER_CONFIG[git_email]:-}" ]]; then
+        log_error "Cannot generate Nix config: git_email is required"
+        return 1
+    fi
+
     cat > "$output_file" << EOF
 # User-specific Nix configuration
 # Generated from interactive setup on $(date)

@@ -61,17 +61,21 @@
         description = "Default visual editor (for VISUAL)";
       };
 
+      # NOTE: This option is currently unused but reserved for future GUI-specific
+      # contexts (e.g., file managers, desktop environment integrations).
+      # It is defined here to establish the option and allow users to set it
+      # in their user.nix for when GUI features are implemented.
       gui = mkOption {
         type = types.enum [ "code" "nvim" "emacs" "hx" ];
         default = "code";
-        description = "Default GUI editor (for desktop contexts)";
+        description = "Default GUI editor (for desktop contexts) - Reserved for future use";
       };
 
       # The actual editor to use - defaults to terminal editor
       # This is what gets set in the EDITOR environment variable
       actual = mkOption {
         type = types.str;
-        default = config.dotfiles.defaults.editor.terminal;
+        default = "hx";
         description = "The actual editor to set in EDITOR variable (defaults to terminal editor)";
       };
     };

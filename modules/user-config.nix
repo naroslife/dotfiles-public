@@ -53,8 +53,10 @@ in
 
     # Shell configuration
     home.sessionVariables = lib.optionalAttrs (userConfig.shell ? editor) {
-      # Only set EDITOR if user explicitly configured it (overrides defaults)
-      EDITOR = userConfig.shell.editor;
+      # Only set EDITOR if user explicitly configured it
+      # Use mkOverride 900 to place between mkDefault (1000) and normal (100)
+      # This allows flake.nix to override but still overrides environment.nix defaults
+      EDITOR = lib.mkOverride 900 userConfig.shell.editor;
     } // {
       # Timezone uses mkDefault so it can be overridden
       TZ = lib.mkDefault userConfig.environment.timezone;
