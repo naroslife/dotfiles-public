@@ -7,7 +7,7 @@
 
 keys:
   # Age public keys for each machine/user
-  - &user_naroslife age1xx32wg6juew8df7a4v33fwfxz760y4wnuwrvx86xv5v2tzlptclqupz8jp
+  - &user_naroslife age1rkfcxh293gf0fx7tfsz9xftcunkjz0aryav9dc24f7hevl5e5gaqxv7zf8
 
 creation_rules:
   # Rule for any YAML files in secrets directory

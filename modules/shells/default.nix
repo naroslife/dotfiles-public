@@ -1,4 +1,11 @@
 { config, pkgs, lib, ... }:
+let
+  # Import shell integration helpers
+  shellHelpers = import ../../lib/shell-helpers.nix { inherit lib; };
+
+  # Default shells to integrate with
+  defaultShells = [ "bash" "zsh" ];
+in
 {
   imports = [
     ./bash.nix
@@ -22,10 +29,7 @@
     mcfly # Smart command history
   ];
 
-  programs.starship = {
-    enable = true;
-    enableBashIntegration = true;
-    enableZshIntegration = true;
+  programs.starship = shellHelpers.withShells defaultShells {
     settings = {
       # Performance optimizations
       command_timeout = 500; # Reduced from 2000ms
@@ -91,16 +95,9 @@
     };
   };
 
-  programs.zoxide = {
-    enable = true;
-    enableBashIntegration = true;
-    enableZshIntegration = true;
-  };
+  programs.zoxide = shellHelpers.enableWithShells defaultShells;
 
-  programs.atuin = {
-    enable = true;
-    enableBashIntegration = true;
-    enableZshIntegration = true;
+  programs.atuin = shellHelpers.withShells defaultShells {
     settings = {
       # General settings
       auto_sync = false; # Disable auto-sync for faster startup
@@ -146,23 +143,11 @@
     };
   };
 
-  programs.fzf = {
-    enable = true;
-    enableBashIntegration = true;
-    enableZshIntegration = true;
-  };
+  programs.fzf = shellHelpers.enableWithShells defaultShells;
 
-  programs.direnv = {
-    enable = true;
-    enableBashIntegration = true;
-    enableZshIntegration = true;
-  };
+  programs.direnv = shellHelpers.enableWithShells defaultShells;
 
-  programs.broot = {
-    enable = true;
-    enableBashIntegration = true;
-    enableZshIntegration = true;
-  };
+  programs.broot = shellHelpers.enableWithShells defaultShells;
 
   programs.mcfly = {
     enable = false; # Disabled by default in favor of atuin

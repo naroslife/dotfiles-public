@@ -1,4 +1,12 @@
 { config, pkgs, lib, ... }:
+let
+  # Path aliases for improved readability and maintainability
+  homeDir = config.home.homeDirectory;
+  xdgConfig = "${homeDir}/.config";
+  xdgData = "${homeDir}/.local/share";
+  xdgState = "${homeDir}/.local/state";
+  xdgCache = "${homeDir}/.cache";
+in
 {
   # Session environment variables
   home.sessionVariables = {
@@ -21,26 +29,26 @@
       else "firefox";
 
     # === XDG Base Directory Specification ===
-    XDG_CONFIG_HOME = "${config.home.homeDirectory}/.config";
-    XDG_DATA_HOME = "${config.home.homeDirectory}/.local/share";
-    XDG_STATE_HOME = "${config.home.homeDirectory}/.local/state";
-    XDG_CACHE_HOME = "${config.home.homeDirectory}/.cache";
+    XDG_CONFIG_HOME = xdgConfig;
+    XDG_DATA_HOME = xdgData;
+    XDG_STATE_HOME = xdgState;
+    XDG_CACHE_HOME = xdgCache;
     XDG_RUNTIME_DIR = "/run/user/$(id -u)";
 
     # === Development Paths ===
-    PROJECTS = "${config.home.homeDirectory}/projects";
-    REPOS = "${config.home.homeDirectory}/repos";
-    DOTFILES = "${config.home.homeDirectory}/dotfiles";
+    PROJECTS = "${homeDir}/projects";
+    REPOS = "${homeDir}/repos";
+    DOTFILES = "${homeDir}/dotfiles";
 
     # === Language-specific ===
     # Go
-    GOPATH = "${config.home.homeDirectory}/go";
-    GOBIN = "${config.home.homeDirectory}/go/bin";
+    GOPATH = "${homeDir}/go";
+    GOBIN = "${homeDir}/go/bin";
     GO111MODULE = "on";
 
     # Rust
-    CARGO_HOME = "${config.home.homeDirectory}/.cargo";
-    RUSTUP_HOME = "${config.home.homeDirectory}/.rustup";
+    CARGO_HOME = "${homeDir}/.cargo";
+    RUSTUP_HOME = "${homeDir}/.rustup";
     RUST_BACKTRACE = "1";
 
     # Python
@@ -51,12 +59,12 @@
     VIRTUAL_ENV_DISABLE_PROMPT = "1";
 
     # Node.js
-    NPM_CONFIG_PREFIX = "${config.home.homeDirectory}/.npm-global";
+    NPM_CONFIG_PREFIX = "${homeDir}/.npm-global";
     NODE_ENV = "development";
 
     # Ruby
-    GEM_HOME = "${config.home.homeDirectory}/.gem";
-    BUNDLE_USER_HOME = "${config.home.homeDirectory}/.bundle";
+    GEM_HOME = "${homeDir}/.gem";
+    BUNDLE_USER_HOME = "${homeDir}/.bundle";
 
     # Java
     JAVA_HOME = "${pkgs.jdk17}/lib/openjdk";
@@ -75,8 +83,8 @@
 
     # === Less configuration ===
     LESS = "-FRXi";
-    LESSHISTFILE = "${config.home.homeDirectory}/.cache/less/history";
-    LESSKEY = "${config.home.homeDirectory}/.config/less/lesskey";
+    LESSHISTFILE = "${xdgCache}/less/history";
+    LESSKEY = "${xdgConfig}/less/lesskey";
     LESSCHARSET = "utf-8";
 
     # Color in less for man pages
@@ -118,7 +126,7 @@
     FZF_ALT_C_OPTS = "--preview 'tree -C {} | head -200'";
 
     # === Ripgrep configuration ===
-    RIPGREP_CONFIG_PATH = "${config.home.homeDirectory}/.config/ripgrep/config";
+    RIPGREP_CONFIG_PATH = "${xdgConfig}/ripgrep/config";
 
     # === Docker ===
     DOCKER_BUILDKIT = "1";
@@ -138,8 +146,8 @@
     MAKEFLAGS = "-j$(nproc)";
 
     # === Security ===
-    GNUPGHOME = "${config.home.homeDirectory}/.gnupg";
-    PASSWORD_STORE_DIR = "${config.home.homeDirectory}/.password-store";
+    GNUPGHOME = "${homeDir}/.gnupg";
+    PASSWORD_STORE_DIR = "${homeDir}/.password-store";
 
     # === Application-specific ===
     BAT_THEME = "Monokai Extended";
@@ -149,13 +157,13 @@
     EZA_COLORS = "uu=33:gu=33:sn=32:sb=32:da=34:ur=33:uw=31:ux=32:ue=32:gr=33:gw=31:gx=32:tr=33:tw=31:tx=32";
 
     # Zoxide
-    _ZO_DATA_DIR = "${config.home.homeDirectory}/.local/share/zoxide";
+    _ZO_DATA_DIR = "${xdgData}/zoxide";
     _ZO_ECHO = "1";
     _ZO_RESOLVE_SYMLINKS = "1";
 
     # Starship
-    STARSHIP_CONFIG = "${config.home.homeDirectory}/.config/starship.toml";
-    STARSHIP_CACHE = "${config.home.homeDirectory}/.cache/starship";
+    STARSHIP_CONFIG = "${xdgConfig}/starship.toml";
+    STARSHIP_CACHE = "${xdgCache}/starship";
 
     # Man pages
     MANWIDTH = "120";
@@ -169,26 +177,26 @@
   # Session path
   # Note: Home Manager automatically appends system PATH after these entries
   home.sessionPath = [
-    "${config.home.homeDirectory}/bin"
-    "${config.home.homeDirectory}/.local/bin"
-    "${config.home.homeDirectory}/go/bin"
-    "${config.home.homeDirectory}/.cargo/bin"
-    "${config.home.homeDirectory}/.npm-global/bin"
-    "${config.home.homeDirectory}/.gem/bin"
-    "${config.home.homeDirectory}/.dotnet/tools"
+    "${homeDir}/bin"
+    "${homeDir}/.local/bin"
+    "${homeDir}/go/bin"
+    "${homeDir}/.cargo/bin"
+    "${homeDir}/.npm-global/bin"
+    "${homeDir}/.gem/bin"
+    "${homeDir}/.dotnet/tools"
     "${pkgs.poetry}/bin"
   ];
 
   # Create necessary directories
   home.activation.createEnvDirs = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    mkdir -p ${config.home.homeDirectory}/.cache/less
-    mkdir -p ${config.home.homeDirectory}/.config/ripgrep
-    mkdir -p ${config.home.homeDirectory}/.local/share/zoxide
-    mkdir -p ${config.home.homeDirectory}/.cache/starship
-    mkdir -p ${config.home.homeDirectory}/projects
-    mkdir -p ${config.home.homeDirectory}/repos
-    mkdir -p ${config.home.homeDirectory}/go/bin
-    mkdir -p ${config.home.homeDirectory}/.npm-global
+    mkdir -p ${xdgCache}/less
+    mkdir -p ${xdgConfig}/ripgrep
+    mkdir -p ${xdgData}/zoxide
+    mkdir -p ${xdgCache}/starship
+    mkdir -p ${homeDir}/projects
+    mkdir -p ${homeDir}/repos
+    mkdir -p ${homeDir}/go/bin
+    mkdir -p ${homeDir}/.npm-global
   '';
 
   # Ripgrep config file

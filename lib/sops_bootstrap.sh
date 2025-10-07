@@ -110,20 +110,24 @@ setup_ssh_key() {
 }
 
 # Extract age public key from SSH key
+# Usage: get_age_public_key output_var_name
+# Returns: 0 on success, 1 on failure
+# Sets the output variable to the extracted age public key
 get_age_public_key() {
+    local -n _out_age_key=$1
+
     if [[ ! -f "$SSH_KEY_PATH.pub" ]]; then
         die "SSH public key not found: $SSH_KEY_PATH.pub"
     fi
 
     log_debug "Extracting age public key from SSH key..."
-    local age_key
-    age_key=$(ssh-to-age -i "$SSH_KEY_PATH.pub" 2>/dev/null)
+    _out_age_key=$(ssh-to-age -i "$SSH_KEY_PATH.pub" 2>/dev/null)
 
-    if [[ -z "$age_key" ]]; then
+    if [[ -z "$_out_age_key" ]]; then
         die "Failed to extract age public key from SSH key"
     fi
 
-    echo "$age_key"
+    return 0
 }
 
 # Update .sops.yaml with age public key
@@ -191,16 +195,27 @@ EOF
 
     # Get age key for encryption
     local age_key
-    age_key=$(get_age_public_key)
+    get_age_public_key age_key
+    log_debug "Age key extracted successfully"
 
     # Encrypt and create secrets file
     log_info "Encrypting secrets file..."
-    if SOPS_AGE_RECIPIENTS="$age_key" sops -e "$temp_secrets" > "$SECRETS_FILE" 2>/dev/null; then
+    log_debug "Using age key: ${age_key:0:20}...${age_key: -20}"
+    log_debug "Encrypting with: SOPS_AGE_RECIPIENTS=\"$age_key\" sops -e -i $SECRETS_FILE"
+    log_debug "Contents of unencrypted secrets:"
+    log_debug "$(cat "$temp_secrets")"
+
+    # Copy template to target location first (SOPS needs the file to exist in secrets/ for creation rules)
+    cp "$temp_secrets" "$SECRETS_FILE"
+
+    # Encrypt in-place
+    if SOPS_AGE_RECIPIENTS="$age_key" sops -e -i "$SECRETS_FILE" 2>/dev/null; then
         log_info "✓ Created encrypted secrets file: $SECRETS_FILE"
         log_info "  Edit with: sops $SECRETS_FILE"
         return 0
     else
         log_error "Failed to create encrypted secrets file"
+        rm -f "$SECRETS_FILE"  # Clean up failed attempt
         return 1
     fi
 }
@@ -257,9 +272,13 @@ EOF
 
     # Encrypt and replace
     local age_key
-    age_key=$(get_age_public_key)
+    get_age_public_key age_key
 
-    if SOPS_AGE_RECIPIENTS="$age_key" sops -e "$temp_secrets" > "$SECRETS_FILE" 2>/dev/null; then
+    # Copy temp file to target location first (SOPS needs the file in secrets/ for creation rules)
+    cp "$temp_secrets" "$SECRETS_FILE"
+
+    # Encrypt in-place
+    if SOPS_AGE_RECIPIENTS="$age_key" sops -e -i "$SECRETS_FILE" 2>/dev/null; then
         log_info "✓ Secrets configured successfully"
     else
         log_error "Failed to update secrets file"
@@ -296,7 +315,7 @@ bootstrap_sops() {
     # Step 2: Age Key
     log_info "Step 2/4: Age Key Extraction"
     local age_key
-    age_key=$(get_age_public_key)
+    get_age_public_key age_key
     log_info "✓ Age public key: ${age_key:0:20}...${age_key: -20}"
     echo
 
