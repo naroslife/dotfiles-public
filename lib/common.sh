@@ -180,7 +180,7 @@ backup_file() {
     if [[ -f "$file" ]]; then
         local backup_file="${file}${backup_suffix}_${timestamp}"
         cp "$file" "$backup_file"
-        log_info "Backed up $file to $backup_file"
+        log_info "Backed up $file to $backup_file" >&2
         echo "$backup_file"
     fi
 }

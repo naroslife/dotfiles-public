@@ -34,7 +34,8 @@ let
     then import userConfigFile
     else defaultConfig;
 
-in {
+in
+{
   # Apply user configuration
   config = {
     # Git configuration

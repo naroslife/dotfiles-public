@@ -7,7 +7,7 @@
     defaultSopsFile = ../secrets/secrets.yaml;
 
     # Validate sops files at build time
-    validateSopsFiles = true;  # Set to true once you've created secrets.yaml
+    validateSopsFiles = true; # Set to true once you've created secrets.yaml
 
     # Age key configuration
     age = {
@@ -47,7 +47,7 @@
   # Install sops package for manual secret editing
   home.packages = with pkgs; [
     sops
-    age  # For key management
-    ssh-to-age  # Convert SSH keys to age format
+    age # For key management
+    ssh-to-age # Convert SSH keys to age format
   ];
 }
