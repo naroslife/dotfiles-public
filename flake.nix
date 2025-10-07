@@ -82,6 +82,7 @@
 
           modules = [
             ./home.nix
+            sops-nix.homeManagerModules.sops
             {
               # User-specific configuration
               home = {

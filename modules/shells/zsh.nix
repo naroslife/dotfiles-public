@@ -67,9 +67,6 @@
         bindkey "^[[1;5C" forward-word
         bindkey "^[[1;5D" backward-word
 
-        # PATH additions
-        export PATH=$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$HOME/.cargo/bin:$HOME/.npm-global/bin:./node_modules/.bin:$PATH
-
         # KUBECONFIG
         export KUBECONFIG=~/.kube/config
 

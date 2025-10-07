@@ -4,6 +4,8 @@
     ./core.nix
     ./environment.nix
     ./user-config.nix
+    ./secrets.nix
+    ./validation.nix
     ./shells
     ./dev
     ./cli

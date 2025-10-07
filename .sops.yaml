@@ -1,0 +1,19 @@
+# sops configuration file
+# This file defines which keys can decrypt which secrets
+
+# You need to add your age public key here after generating it
+# Run: age-keygen -y ~/.ssh/id_ed25519 (or your SSH key path)
+# Then add the output to the keys list below
+
+keys:
+  # Age public keys for each machine/user
+  - &user_naroslife age1rkfcxh293gf0fx7tfsz9xftcunkjz0aryav9dc24f7hevl5e5gaqxv7zf8
+
+creation_rules:
+  # Rule for any YAML files in secrets directory
+  - path_regex: ^secrets/.*\.ya?ml$
+    key_groups:
+      - age:
+          - *user_naroslife
+        # Add more keys here as needed for additional machines:
+        # - *another_machine

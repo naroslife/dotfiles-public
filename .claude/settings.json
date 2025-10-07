@@ -16,13 +16,14 @@
       "/lib64"
     ]
   },
-  "model": "opus",
   "statusLine": {
     "type": "command",
     "command": "bash /home/$(whoami)/.claude/statusline-starship.sh"
   },
   "env": {
     "USE_BUILTIN_RIPGREP": "1",
-    "CLAUDE": "true"
+    "CLAUDE": "true",
+    "MCP_TIMEOUT": "300000",
+    "MCP_TOOL_TIMEOUT": "300000"
   }
 }
