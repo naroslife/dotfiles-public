@@ -103,13 +103,11 @@
         default = "-FRXi";
         description = "Default pager options";
       };
-    };
 
-    fileManager = {
-      terminal = mkOption {
-        type = types.enum [ "ranger" "nnn" "lf" "mc" "nvim" ];
+      manpager = mkOption {
+        type = types.str;
         default = "nvim";
-        description = "Default terminal file manager";
+        description = "Default man page viewer (MANPAGER)";
       };
     };
 

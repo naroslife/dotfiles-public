@@ -16,7 +16,7 @@ in
     EDITOR = lib.mkDefault config.dotfiles.defaults.editor.actual;
     VISUAL = lib.mkDefault config.dotfiles.defaults.editor.visual;
     PAGER = lib.mkDefault config.dotfiles.defaults.pager.default;
-    MANPAGER = lib.mkDefault "${config.dotfiles.defaults.pager.default} -R";
+    MANPAGER = lib.mkDefault config.dotfiles.defaults.pager.manpager;
     SYSTEMD_PAGER = lib.mkDefault config.dotfiles.defaults.pager.default;
 
     # === Terminal ===
