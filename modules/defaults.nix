@@ -51,7 +51,7 @@
     editor = {
       terminal = mkOption {
         type = types.enum [ "vim" "nvim" "nano" "emacs" "hx" ];
-        default = "vim";
+        default = "hx";
         description = "Default terminal editor (for EDITOR in terminal contexts)";
       };
 
@@ -102,6 +102,14 @@
         type = types.str;
         default = "-FRXi";
         description = "Default pager options";
+      };
+    };
+
+    fileManager = {
+      terminal = mkOption {
+        type = types.enum [ "ranger" "nnn" "lf" "mc" "nvim" ];
+        default = "nvim";
+        description = "Default terminal file manager";
       };
     };
 
