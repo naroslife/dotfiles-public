@@ -17,7 +17,7 @@ source "$_NIX_MODULE_DIR/../common.sh"
 
 # Configuration
 readonly NIX_INSTALL_URL="https://nixos.org/nix/install"
-readonly NIX_INSTALL_CHECKSUM="751c3bb0b72d2b1c79975e8b45325ce80ee17f5c64ae59e11e1d2fce01aeccad"
+readonly NIX_INSTALL_CHECKSUM="8e886d56d170aaac416cf2727d14e25e39bff92b7e0a2f6d12eee058f30717a9"
 
 # Nix installation with enhanced security
 install_nix() {

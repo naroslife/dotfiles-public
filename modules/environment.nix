@@ -20,9 +20,9 @@ in
     SYSTEMD_PAGER = lib.mkDefault config.dotfiles.defaults.pager.default;
 
     # === Terminal ===
-    TERMINAL = config.dotfiles.defaults.terminal.emulator;
-    TERM = config.dotfiles.defaults.terminal.term;
-    COLORTERM = config.dotfiles.defaults.terminal.colorterm;
+    TERMINAL = lib.mkDefault config.dotfiles.defaults.terminal.emulator;
+    TERM = lib.mkDefault config.dotfiles.defaults.terminal.term;
+    COLORTERM = lib.mkDefault config.dotfiles.defaults.terminal.colorterm;
 
     # === Browser ===
     BROWSER =
