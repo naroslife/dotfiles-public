@@ -51,7 +51,7 @@
     editor = {
       terminal = mkOption {
         type = types.enum [ "vim" "nvim" "nano" "emacs" "hx" ];
-        default = "hx";
+        default = "vim";
         description = "Default terminal editor (for EDITOR in terminal contexts)";
       };
 
@@ -68,10 +68,11 @@
       };
 
       # The actual editor to use - defaults to terminal editor
+      # This is what gets set in the EDITOR environment variable
       actual = mkOption {
         type = types.str;
         default = config.dotfiles.defaults.editor.terminal;
-        description = "The actual editor to set in EDITOR variable";
+        description = "The actual editor to set in EDITOR variable (defaults to terminal editor)";
       };
     };
 
@@ -141,50 +142,6 @@
         type = types.str;
         default = "truecolor";
         description = "COLORTERM environment variable value";
-      };
-    };
-  };
-
-  config = {
-    # Set the default values
-    dotfiles.defaults = {
-      git = {
-        userName = lib.mkDefault "Your Name";
-        userEmail = lib.mkDefault "you@example.com";
-        signingEnabled = lib.mkDefault false;
-      };
-
-      shell = {
-        default = lib.mkDefault "zsh";
-        available = lib.mkDefault [ "bash" "zsh" "elvish" ];
-      };
-
-      editor = {
-        terminal = lib.mkDefault "vim";
-        visual = lib.mkDefault "code";
-        gui = lib.mkDefault "code";
-      };
-
-      environment = {
-        timezone = lib.mkDefault "Europe/Budapest";
-        locale = lib.mkDefault "en_US.UTF-8";
-      };
-
-      pager = {
-        default = lib.mkDefault "less";
-        options = lib.mkDefault "-FRXi";
-      };
-
-      browser = {
-        terminal = lib.mkDefault "lynx";
-        gui = lib.mkDefault "firefox";
-        wsl = lib.mkDefault "wslview";
-      };
-
-      terminal = {
-        emulator = lib.mkDefault "alacritty";
-        term = lib.mkDefault "xterm-256color";
-        colorterm = lib.mkDefault "truecolor";
       };
     };
   };

@@ -13,7 +13,7 @@ in
   home.sessionVariables = {
     # === Editor and Pager ===
     # These use defaults from modules/defaults.nix and can be overridden by user-config.nix
-    EDITOR = lib.mkDefault config.dotfiles.defaults.editor.gui;
+    EDITOR = lib.mkDefault config.dotfiles.defaults.editor.actual;
     VISUAL = lib.mkDefault config.dotfiles.defaults.editor.visual;
     PAGER = lib.mkDefault config.dotfiles.defaults.pager.default;
     MANPAGER = lib.mkDefault "${config.dotfiles.defaults.pager.default} -R";
