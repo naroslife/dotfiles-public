@@ -11,9 +11,9 @@ fi
 readonly GITHUB_SETUP_LOADED=1
 
 # Source common utilities
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+_GH_MODULE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=lib/common.sh
-source "$SCRIPT_DIR/../common.sh"
+source "$_GH_MODULE_DIR/../common.sh"
 
 # GitHub CLI setup
 setup_github_cli() {

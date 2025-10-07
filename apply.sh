@@ -37,10 +37,8 @@ source "$SCRIPT_DIR/lib/setup/platform/wsl.sh"
 # shellcheck source=lib/setup/platform/nvidia.sh
 source "$SCRIPT_DIR/lib/setup/platform/nvidia.sh"
 
-# Configuration
-readonly NIX_INSTALL_URL="https://nixos.org/nix/install"
-readonly NIX_INSTALL_CHECKSUM="751c3bb0b72d2b1c79975e8b45325ce80ee17f5c64ae59e11e1d2fce01aeccad"
-readonly CONFIG_DIR="$HOME/.config"
+# Configuration (exported for use by sourced modules)
+export CONFIG_DIR="$HOME/.config"
 
 # Script state
 ASSUME_YES=false
@@ -175,7 +173,7 @@ main() {
 
     # Optional GitHub CLI setup
     if ! $ASSUME_YES && ask_yes_no "Would you like to set up GitHub CLI authentication?"; then
-        SETUP_GITHUB_CLI=true
+        export SETUP_GITHUB_CLI=true
         setup_github_cli
     fi
 

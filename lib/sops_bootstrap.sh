@@ -46,6 +46,7 @@ needs_bootstrap() {
 }
 
 # Ensure tools are available via nix-shell
+# shellcheck disable=SC2120
 ensure_sops_tools() {
     if command -v ssh-to-age >/dev/null 2>&1 && \
        command -v age >/dev/null 2>&1 && \
@@ -133,7 +134,6 @@ get_age_public_key() {
 # Update .sops.yaml with age public key
 update_sops_config() {
     local age_key="$1"
-    local username="${2:-$(whoami)}"
 
     log_info "📝 Updating .sops.yaml with your age public key..."
 
@@ -303,6 +303,7 @@ bootstrap_sops() {
     fi
 
     # Ensure tools are available
+    # shellcheck disable=SC2119
     ensure_sops_tools
 
     # Step 1: SSH Key
