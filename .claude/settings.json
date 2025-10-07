@@ -16,7 +16,6 @@
       "/lib64"
     ]
   },
-  "model": "default",
   "statusLine": {
     "type": "command",
     "command": "bash /home/$(whoami)/.claude/statusline-starship.sh"
