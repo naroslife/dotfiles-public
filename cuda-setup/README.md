@@ -5,7 +5,7 @@ This directory contains scripts and tools to install, configure, and test CUDA 1
 ## Overview
 
 These scripts automate the process of:
-- Installing CUDA 12.6 toolkit
+- Installing CUDA 12.9 toolkit
 - Configuring environment variables
 - Fixing nvidia-smi segfault issues on WSL2
 - Testing CUDA functionality
@@ -48,7 +48,7 @@ This script will:
 2. Verify Windows NVIDIA drivers are installed
 3. Fix nvidia-smi if it's segfaulting
 4. Install CUDA repository
-5. Install CUDA 12.6 toolkit (~3GB download, ~6.5GB installed)
+5. Install CUDA 12.9 toolkit (~3GB download, ~6.5GB installed)
 6. Configure environment variables in your shell RC file
 
 **After installation, restart your shell or run:**
@@ -108,7 +108,7 @@ sudo apt update
 ### 2. Install CUDA Toolkit
 
 ```bash
-sudo apt install -y cuda-toolkit-12-6 cuda-libraries-12-6 cuda-libraries-dev-12-6
+sudo apt install -y cuda-toolkit-12-9 cuda-libraries-12-9 cuda-libraries-dev-12-9
 ```
 
 ### 3. Configure Environment
@@ -209,7 +209,7 @@ echo $LD_LIBRARY_PATH | grep wsl
 **Solution:**
 ```bash
 # Reinstall CUDA toolkit
-sudo apt install --reinstall cuda-toolkit-12-6
+sudo apt install --reinstall cuda-toolkit-12-9
 
 # Verify installation
 ls -la /usr/local/cuda
@@ -275,7 +275,7 @@ Hello from GPU thread 4!
 
 ## CUDA Toolkit Contents
 
-After installation, CUDA 12.6 includes:
+After installation, CUDA 12.9 includes:
 
 - **Compiler:** nvcc (CUDA C/C++ compiler)
 - **Libraries:** cuBLAS, cuFFT, cuRAND, cuSolver, cuSPARSE, NPP, nvJPEG
@@ -292,7 +292,7 @@ After installation, CUDA 12.6 includes:
 
 ## Version Information
 
-- **CUDA Version:** 12.6
+- **CUDA Version:** 12.9
 - **Supported Ubuntu:** 20.04, 22.04
 - **Minimum Driver:** 450.80.02
 - **Recommended Driver:** 525.60 or newer

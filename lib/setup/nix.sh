@@ -15,26 +15,14 @@ _NIX_MODULE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=lib/common.sh
 source "$_NIX_MODULE_DIR/../common.sh"
 
-# Configuration
-readonly NIX_INSTALL_URL="https://nixos.org/nix/install"
-# Checksum for Nix installer script (verified 2025-10-07)
-# This is the official multi-user installer from nixos.org/nix/install
-# To verify: curl -L https://nixos.org/nix/install | sha256sum
-readonly NIX_INSTALL_CHECKSUM="8e886d56d170aaac416cf2727d14e25e39bff92b7e0a2f6d12eee058f30717a9"
 
 # Nix installation with enhanced security
 install_nix() {
     log_info "Installing Nix package manager"
+    # Use Determinate Systems installer for enhanced reliability
+    log_debug "Using Determinate Systems Nix installer"
 
-    local temp_installer
-    temp_installer=$(mktemp)
-    TEMP_FILES="${TEMP_FILES:-} $temp_installer"
-
-    # Download with checksum verification
-    fetch_url "$NIX_INSTALL_URL" "$temp_installer" "$NIX_INSTALL_CHECKSUM"
-
-    # Install Nix
-    if ! sh "$temp_installer" --daemon; then
+    if ! curl -fsSL https://install.determinate.systems/nix | sh -s -- install --determinate; then
         die "Nix installation failed"
     fi
 

@@ -59,6 +59,51 @@
       alias use-mcfly='switch_history mcfly'
       alias history-status='switch_history status'
       set +u
+
+      # === Package Manager Helper Functions ===
+
+      # Clean npm global packages
+      npm-clean() {
+        echo "Cleaning npm global packages..."
+        rm -rf ~/.npm-global
+        mkdir -p ~/.npm-global
+        echo "✓ npm global packages cleaned"
+      }
+
+      # Clean pip user packages
+      pip-clean() {
+        echo "Cleaning pip user packages..."
+        rm -rf ~/.local/lib/python*/site-packages/*
+        rm -rf ~/.local/bin
+        mkdir -p ~/.local/bin
+        echo "✓ pip user packages cleaned"
+      }
+
+      # Clean cargo packages
+      cargo-clean() {
+        echo "Cleaning cargo packages..."
+        rm -rf ~/.cargo/bin
+        mkdir -p ~/.cargo/bin
+        echo "✓ cargo packages cleaned"
+      }
+
+      # Python virtual environment helpers
+      venv() {
+        if [ -d ".venv" ]; then
+          echo "Virtual environment already exists in .venv"
+          source .venv/bin/activate
+        else
+          echo "Creating virtual environment in .venv..."
+          python -m venv .venv
+          source .venv/bin/activate
+          echo "✓ Virtual environment created and activated"
+        fi
+      }
+
+      # Source mutable local configuration for ad-hoc changes
+      if [ -f ~/.bashrc.local ]; then
+        source ~/.bashrc.local
+      fi
     '';
   };
 }

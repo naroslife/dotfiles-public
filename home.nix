@@ -36,6 +36,27 @@
     # Git and VS Code configurations are managed in:
     # - modules/dev/git.nix
     # - modules/dev/vscode.nix
+
+    # Package manager configurations
+    # NPM configuration - user-level global packages
+    ".npmrc".text = ''
+      prefix=~/.npm-global
+      # Disable automatic updates
+      update-notifier=false
+    '';
+
+    # Python pip configuration
+    ".config/pip/pip.conf".text = ''
+      [install]
+      user = true
+
+      [list]
+      format = columns
+    '';
+
+    # Create directory markers for package managers
+    ".npm-global/.keep".text = "";
+    ".gem/.keep".text = "";
   };
 
   # XDG configuration

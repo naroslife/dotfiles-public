@@ -8,26 +8,19 @@
         "visualstudioexptteam.intellicode-api-usage-examples", // IntelliCode API examples
         "visualstudioexptteam.vscodeintellicode" // IntelliCode,
 
-        // Cloud
-        "amazonwebservices.aws-toolkit-vscode", // AWS Toolkit
-        "github.codespaces" // GitHub Codespaces,
-
         // Containers
         "docker.docker", // Docker official extension
         "ms-azuretools.vscode-containers", // Containers extension
-        "ms-azuretools.vscode-docker", // Docker support
-        "ms-kubernetes-tools.vscode-kubernetes-tools" // Kubernetes tools,
+        "ms-azuretools.vscode-docker" // Docker support,
 
         // Formatter
         "cheshirekow.cmake-format", // CMake formatter
-        "dbaeumer.vscode-eslint", // ESLint
         "esbenp.prettier-vscode", // Prettier formatting
         "foxundermoon.shell-format", // Shell script formatter
         "kamadorueda.alejandra", // Alejandra Nix formatter
         "ms-python.autopep8", // Autopep8 formatter
         "ms-python.black-formatter", // Black Python formatter
         "notskm.clang-tidy", // Clang-tidy
-        "sonarsource.sonarlint-vscode", // SonarLint
         "xaver.clang-format" // Clang-Format support,
 
         // Git
@@ -40,20 +33,15 @@
         "mhutchie.git-graph" // Git graph visualization,
 
         // Language
-        "1yib.rust-bundle", // Rust bundle (alternative)
-        "afractal.node-essentials", // Node essentials
         "akiramiyakoda.cppincludeguard", // C++ include guard
         "arrterian.nix-env-selector", // Nix environment selector
         "bierner.markdown-mermaid", // Markdown Mermaid diagrams
-        "christian-kohler.npm-intellisense", // NPM IntelliSense
         "dotjoshjohnson.xml", // XML tools
         "elves.elvish", // Alternative Elvish extension
         "golang.go", // Go language support
-        "hashicorp.terraform", // Terraform support
         "jeff-hykin.better-cpp-syntax", // Better C++ syntax
         "jnoortheen.nix-ide", // Nix IDE support
         "kevinrose.vsc-python-indent", // Python indent support
-        "llvm-vs-code-extensions.vscode-clangd", // clangd language server
         "mads-hartmann.bash-ide-vscode", // Bash IDE extensions
         "mattn.vscode-elvish", // Elvish shell extension
         "ms-python.debugpy", // Python debugger
@@ -64,17 +52,12 @@
         "ms-vscode.cpptools", // C++ tools
         "ms-vscode.cpptools-extension-pack", // C++ development
         "ms-vscode.powershell", // PowerShell
-        "ms-vscode.vscode-typescript-next", // TypeScript nightly
         "njpwerner.autodocstring", // Python autodocstring
         "pinage404.nix-extension-pack", // Nix extension pack
-        "redhat.ansible", // Ansible
-        "redhat.java", // Java language support
         "redhat.vscode-yaml", // YAML language support
         "rogalmic.bash-debug", // Bash debugger
-        "rust-lang.rust-analyzer", // Rust analyzer
         "timonwong.shellcheck", // ShellCheck linter
         "vadimcn.vscode-lldb", // LLDB debugger
-        "vscjava.vscode-java-pack", // Java extension pack
         "webfreak.debug", // Native debug
         "wholroyd.jinja", // Jinja template support
         "yzhang.markdown-all-in-one", // Markdown all-in-one
@@ -97,21 +80,17 @@
         "k--kato.intellij-idea-keybindings", // IntelliJ IDEA keybindings
         "mechatroner.rainbow-csv", // Rainbow CSV
         "mikestead.dotenv", // .env file support
-        "mkhl.direnv", // direnv support
         "ms-vscode.makefile-tools", // Makefile tools
         "ms-vsliveshare.vsliveshare", // Live Share for collaboration
         "naumovs.color-highlight", // Color highlight
         "necatiarslan.environment-variable-vscode-extension", // Environment variables
-        "pnp.polacode", // Code snapshots
         "rioj7.command-variable", // Command variable support
         "slevesque.vscode-multiclip", // Multiple clipboards
         "spencerwmiles.vscode-task-buttons", // Task buttons
-        "streetsidesoftware.code-spell-checker", // Code spell checker
         "tabeyti.jenkins-jack", // Jenkins integration
         "usernamehw.errorlens", // Error lens
         "vscodevim.vim", // Vim keybindings
         "wayou.vscode-todo-highlight", // TODO highlight
-        "wix.vscode-import-cost", // Import cost
         "xyz.local-history", // Local history tracking
         "zardoy.outline-utils" // Outline utilities,
 
@@ -126,9 +105,7 @@
         // Testing
         "brobeson.ctest-lab", // CTest integration
         "krosf.vscode-valgrind", // Valgrind integration
-        "matepek.vscode-catch2-test-adapter", // Catch2 test adapter
-        "orta.vscode-jest", // Jest testing
-        "wallabyjs.quokka-vscode" // Quokka.js,
+        "matepek.vscode-catch2-test-adapter" // Catch2 test adapter,
 
         // Themes
         "be5invis.vscode-icontheme-nomo-dark", // Nomo Dark icon theme

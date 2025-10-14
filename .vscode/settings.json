@@ -172,5 +172,25 @@
     "**/.git/subtree-cache/**": true,
     "**/node_modules/**": true,
     "**/.hg/store/**": true
-  }
+  },
+  "workbench.colorCustomizations": {
+    "activityBar.activeBackground": "#70371c",
+    "activityBar.background": "#70371c",
+    "activityBar.foreground": "#e7e7e7",
+    "activityBar.inactiveForeground": "#e7e7e799",
+    "activityBarBadge.background": "#000000",
+    "activityBarBadge.foreground": "#e7e7e7",
+    "commandCenter.border": "#e7e7e799",
+    "sash.hoverBorder": "#70371c",
+    "statusBar.background": "#472312",
+    "statusBar.foreground": "#e7e7e7",
+    "statusBarItem.hoverBackground": "#70371c",
+    "statusBarItem.remoteBackground": "#472312",
+    "statusBarItem.remoteForeground": "#e7e7e7",
+    "titleBar.activeBackground": "#472312",
+    "titleBar.activeForeground": "#e7e7e7",
+    "titleBar.inactiveBackground": "#47231299",
+    "titleBar.inactiveForeground": "#e7e7e799"
+  },
+  "peacock.remoteColor": "#472312"
 }

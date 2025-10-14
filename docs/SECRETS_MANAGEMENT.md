@@ -11,6 +11,7 @@ This repository uses [sops-nix](https://github.com/Mic92/sops-nix) to securely m
 ```
 
 The script will:
+
 1. ✨ Detect if sops-nix configuration exists
 2. 🔑 Generate Ed25519 SSH key if needed
 3. 🔐 Extract age public key automatically

@@ -31,11 +31,39 @@ log_error() {
 
 # Check if running on WSL2
 check_wsl2() {
-    if [[ ! -f /proc/sys/fs/binfmt_misc/WSLInterop ]]; then
-        log_error "This script is designed for WSL2. Not running on WSL2."
-        exit 1
+    local is_wsl2=false
+    local detection_method=""
+
+    # Method 1: Check WSL_DISTRO_NAME environment variable (most reliable)
+    if [[ -n "${WSL_DISTRO_NAME:-}" ]]; then
+        is_wsl2=true
+        detection_method="WSL_DISTRO_NAME environment variable"
+    # Method 2: Check for WSLInterop (standard WSL2)
+    elif [[ -f /proc/sys/fs/binfmt_misc/WSLInterop ]]; then
+        is_wsl2=true
+        detection_method="WSLInterop file"
+    # Method 3: Check for WSLInterop-late (systemd-enabled WSL2)
+    elif [[ -f /proc/sys/fs/binfmt_misc/WSLInterop-late ]]; then
+        is_wsl2=true
+        detection_method="WSLInterop-late file (systemd enabled)"
+    # Method 4: Check kernel version for WSL2 signature
+    elif grep -qEi "(microsoft.*wsl2|wsl2)" /proc/version 2>/dev/null; then
+        is_wsl2=true
+        detection_method="kernel version"
+    # Method 5: Check WSL_INTEROP environment variable
+    elif [[ -n "${WSL_INTEROP:-}" ]]; then
+        is_wsl2=true
+        detection_method="WSL_INTEROP environment variable"
     fi
-    log_success "Running on WSL2"
+
+    if [[ "$is_wsl2" == true ]]; then
+        log_success "Running on WSL2 (detected via $detection_method)"
+        return 0
+    fi
+
+    log_error "This script is designed for WSL2. Not running on WSL2."
+    log_error "Checked: WSL_DISTRO_NAME, WSLInterop files, kernel version, WSL_INTEROP"
+    exit 1
 }
 
 # Check Windows NVIDIA driver
@@ -134,13 +162,13 @@ install_cuda_repo() {
 
 # Install CUDA toolkit
 install_cuda_toolkit() {
-    log_info "Installing CUDA 12.6 toolkit..."
+    log_info "Installing CUDA 12.9 toolkit..."
     log_info "This will download ~3GB of packages and may take several minutes..."
 
     sudo apt-get install -y \
-        cuda-toolkit-12-6 \
-        cuda-libraries-12-6 \
-        cuda-libraries-dev-12-6
+        cuda-toolkit-12-9 \
+        cuda-libraries-12-9 \
+        cuda-libraries-dev-12-9
 
     log_success "CUDA toolkit installed"
 }
@@ -228,7 +256,7 @@ print_summary() {
     echo "3. Compile test program: ./compile-test.sh"
     echo
     echo "Installed versions:"
-    echo "  - CUDA Toolkit: 12.6"
+    echo "  - CUDA Toolkit: 12.9"
     echo "  - Location: /usr/local/cuda"
     echo
     echo "Environment variables set:"
@@ -249,7 +277,7 @@ main() {
     check_windows_driver
 
     echo
-    log_info "Ready to install CUDA 12.6 toolkit"
+    log_info "Ready to install CUDA 12.9 toolkit"
     log_warning "This will install ~6.5GB of packages"
     read -p "Continue? (y/N) " -n 1 -r
     echo

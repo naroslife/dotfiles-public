@@ -58,6 +58,8 @@ in
     PYTHONUNBUFFERED = "1";
     PIP_DISABLE_PIP_VERSION_CHECK = "1";
     PIP_NO_CACHE_DIR = "1";
+    PIP_USER = "1";
+    PYTHONUSERBASE = "${homeDir}/.local";
     VIRTUAL_ENV_DISABLE_PROMPT = "1";
 
     # Node.js
@@ -66,6 +68,7 @@ in
 
     # Ruby
     GEM_HOME = "${homeDir}/.gem";
+    GEM_PATH = "${homeDir}/.gem";
     BUNDLE_USER_HOME = "${homeDir}/.bundle";
 
     # Java
@@ -199,6 +202,9 @@ in
     mkdir -p ${homeDir}/repos
     mkdir -p ${homeDir}/go/bin
     mkdir -p ${homeDir}/.npm-global
+    mkdir -p ${homeDir}/.gem
+    mkdir -p ${homeDir}/.local/bin
+    mkdir -p ${homeDir}/.cargo/bin
   '';
 
   # Ripgrep config file
