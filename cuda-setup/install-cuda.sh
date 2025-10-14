@@ -66,25 +66,60 @@ check_wsl2() {
     exit 1
 }
 
+# CUDA 12.9 minimum driver requirements
+readonly CUDA_VERSION="12.9"
+readonly MIN_WINDOWS_DRIVER="528.33"
+
+# Compare version numbers (returns 0 if ver1 >= ver2)
+version_ge() {
+    local ver1="$1"
+    local ver2="$2"
+    printf '%s\n%s\n' "$ver2" "$ver1" | sort -V -C 2>/dev/null
+}
+
 # Check Windows NVIDIA driver
 check_windows_driver() {
-    log_info "Checking Windows NVIDIA driver..."
+    log_info "Checking Windows NVIDIA driver compatibility with CUDA $CUDA_VERSION..."
 
-    if [[ -f /mnt/c/Windows/System32/nvidia-smi.exe ]]; then
-        local driver_output
-        driver_output=$(/mnt/c/Windows/System32/nvidia-smi.exe 2>&1 || true)
-
-        if echo "$driver_output" | grep -q "Driver Version:"; then
-            local driver_version=$(echo "$driver_output" | grep -oP 'Driver Version: \K[0-9.]+' | head -1)
-            local cuda_version=$(echo "$driver_output" | grep -oP 'CUDA Version: \K[0-9.]+' | head -1)
-            log_success "Windows NVIDIA driver installed: $driver_version (CUDA $cuda_version)"
-            return 0
-        fi
+    if [[ ! -f /mnt/c/Windows/System32/nvidia-smi.exe ]]; then
+        log_error "Windows NVIDIA driver not found"
+        log_error "Please install NVIDIA drivers on Windows host first"
+        log_error "Download from: https://www.nvidia.com/Download/index.aspx"
+        exit 1
     fi
 
-    log_error "Windows NVIDIA driver not found or not working"
-    log_error "Please install NVIDIA drivers on Windows host first"
-    exit 1
+    local driver_output
+    driver_output=$(/mnt/c/Windows/System32/nvidia-smi.exe 2>&1 || true)
+
+    if ! echo "$driver_output" | grep -q "Driver Version:"; then
+        log_error "Windows NVIDIA driver not working properly"
+        log_error "Please reinstall NVIDIA drivers on Windows"
+        exit 1
+    fi
+
+    local driver_version=$(echo "$driver_output" | grep -oP 'Driver Version: \K[0-9.]+' | head -1)
+    local cuda_version=$(echo "$driver_output" | grep -oP 'CUDA Version: \K[0-9.]+' | head -1)
+
+    log_success "Windows NVIDIA driver installed: $driver_version"
+    log_info "Driver supports CUDA: $cuda_version"
+
+    # Check if driver meets minimum requirements for CUDA 12.9
+    if ! version_ge "$driver_version" "$MIN_WINDOWS_DRIVER"; then
+        echo
+        log_error "Driver version $driver_version does NOT support CUDA $CUDA_VERSION"
+        log_error "Minimum required driver: $MIN_WINDOWS_DRIVER"
+        echo
+        log_warning "Please update your Windows NVIDIA driver:"
+        log_info "  1. Visit: https://www.nvidia.com/Download/index.aspx"
+        log_info "  2. Or use GeForce Experience on Windows"
+        log_info "  3. After updating, restart WSL: wsl --shutdown"
+        echo
+        log_info "Run './check-driver.sh' for detailed update instructions"
+        exit 1
+    fi
+
+    log_success "Driver supports CUDA $CUDA_VERSION (minimum: $MIN_WINDOWS_DRIVER)"
+    return 0
 }
 
 # Check Ubuntu version
