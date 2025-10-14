@@ -121,7 +121,7 @@
 
   "[nix]": {
     "editor.tabSize": 2,
-    "editor.defaultFormatter": "kamadorueda.alejandra"
+    "editor.defaultFormatter": "jnoortheen.nix-ide"
   },
 
   "[rust]": {
