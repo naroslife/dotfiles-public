@@ -1,17 +1,16 @@
 {
     "recommendations": [
-
         // Ai
         "anthropic.claude-code", // Claude Code assistant
         "github.copilot", // GitHub Copilot AI
         "github.copilot-chat", // GitHub Copilot Chat
         "visualstudioexptteam.intellicode-api-usage-examples", // IntelliCode API examples
-        "visualstudioexptteam.vscodeintellicode" // IntelliCode,
+        "visualstudioexptteam.vscodeintellicode", // IntelliCode
 
         // Containers
         "docker.docker", // Docker official extension
         "ms-azuretools.vscode-containers", // Containers extension
-        "ms-azuretools.vscode-docker" // Docker support,
+        "ms-azuretools.vscode-docker", // Docker support
 
         // Formatter
         "cheshirekow.cmake-format", // CMake formatter
@@ -21,7 +20,7 @@
         "ms-python.autopep8", // Autopep8 formatter
         "ms-python.black-formatter", // Black Python formatter
         "notskm.clang-tidy", // Clang-tidy
-        "xaver.clang-format" // Clang-Format support,
+        "xaver.clang-format", // Clang-Format support
 
         // Git
         "codezombiech.gitignore", // .gitignore support
@@ -29,8 +28,7 @@
         "eamodio.gitlens", // GitLens for Git integration
         "github.vscode-pull-request-github", // GitHub PR extensions
         "gitkraken.gitkraken-authentication", // GitKraken extension
-        "gitlab.gitlab-workflow", // GitLab workflow
-        "mhutchie.git-graph" // Git graph visualization,
+        "mhutchie.git-graph", // Git graph visualization
 
         // Language
         "akiramiyakoda.cppincludeguard", // C++ include guard
@@ -61,7 +59,7 @@
         "webfreak.debug", // Native debug
         "wholroyd.jinja", // Jinja template support
         "yzhang.markdown-all-in-one", // Markdown all-in-one
-        "zainchen.json" // JSON tools,
+        "zainchen.json", // JSON tools
 
         // Productivity
         "actboy168.tasks", // Tasks extension
@@ -87,12 +85,10 @@
         "rioj7.command-variable", // Command variable support
         "slevesque.vscode-multiclip", // Multiple clipboards
         "spencerwmiles.vscode-task-buttons", // Task buttons
-        "tabeyti.jenkins-jack", // Jenkins integration
         "usernamehw.errorlens", // Error lens
-        "vscodevim.vim", // Vim keybindings
         "wayou.vscode-todo-highlight", // TODO highlight
         "xyz.local-history", // Local history tracking
-        "zardoy.outline-utils" // Outline utilities,
+        "zardoy.outline-utils", // Outline utilities
 
         // Remote
         "ms-vscode-remote.remote-containers", // Development in containers
@@ -100,21 +96,18 @@
         "ms-vscode-remote.remote-ssh-edit", // Remote SSH editing
         "ms-vscode-remote.remote-ssh-explorer", // Remote SSH explorer
         "ms-vscode-remote.remote-wsl", // WSL support
-        "ms-vscode.remote-explorer" // Remote explorer,
+        "ms-vscode.remote-explorer", // Remote explorer
 
         // Testing
         "brobeson.ctest-lab", // CTest integration
         "krosf.vscode-valgrind", // Valgrind integration
-        "matepek.vscode-catch2-test-adapter" // Catch2 test adapter,
+        "matepek.vscode-catch2-test-adapter", // Catch2 test adapter
 
         // Themes
         "be5invis.vscode-icontheme-nomo-dark", // Nomo Dark icon theme
         "dracula-theme.theme-dracula", // Dracula theme
         "johnpapa.vscode-peacock", // Peacock for color customization
         "ms-vscode.cpptools-themes", // C++ tools themes
-        "pkief.material-icon-theme" // Material icon theme,
-
-        // Unknown
-        "recommendations"
+        "pkief.material-icon-theme" // Material icon theme
     ]
 }
