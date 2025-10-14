@@ -311,6 +311,11 @@ class ExtensionSelector(App):
                 if len(parts) >= 2:
                     ext_id = parts[1]
 
+                    # Skip JSON structure keys (lines with colons after the quoted string)
+                    # Only process actual extension IDs in the array
+                    if len(parts) > 2 and parts[2].lstrip().startswith(':'):
+                        continue
+
                     if is_commented:
                         commented_ids.add(ext_id)
                     else:
@@ -448,22 +453,46 @@ class ExtensionSelector(App):
         # Generate JSON content
         lines = ["{", '    "recommendations": [']
 
-        first_category = True
+        # Collect all extension entries with their metadata
+        extension_entries = []
         for category in sorted(selected_by_category.keys()):
             extensions = selected_by_category[category]
 
-            if not first_category:
-                lines[-1] += ","
-            lines.extend(["", f"        // {category.title()}"])
+            # Add category comment
+            extension_entries.append({
+                "type": "category_header",
+                "text": f"        // {category.title()}"
+            })
 
-            for i, extension in enumerate(extensions):
-                comma = "," if i < len(extensions) - 1 else ""
-                if extension.description and extension.description != "(not in database)":
-                    lines.append(f'        "{extension.id}"{comma} // {extension.description}')
+            # Add extensions
+            for extension in extensions:
+                extension_entries.append({
+                    "type": "extension",
+                    "id": extension.id,
+                    "description": extension.description
+                })
+
+        # Add proper commas: all extensions get commas except the last one
+        for i, entry in enumerate(extension_entries):
+            if entry["type"] == "category_header":
+                # Add blank line before category (except for the first one)
+                if i > 0:
+                    lines.append("")
+                lines.append(entry["text"])
+            elif entry["type"] == "extension":
+                # Check if this is the last extension entry
+                is_last_extension = True
+                for j in range(i + 1, len(extension_entries)):
+                    if extension_entries[j]["type"] == "extension":
+                        is_last_extension = False
+                        break
+
+                # Build the line with comma in the correct position (before comment)
+                comma = "" if is_last_extension else ","
+                if entry["description"] and entry["description"] != "(not in database)":
+                    lines.append(f'        "{entry["id"]}"{comma} // {entry["description"]}')
                 else:
-                    lines.append(f'        "{extension.id}"{comma}')
-
-            first_category = False
+                    lines.append(f'        "{entry["id"]}"{comma}')
 
         # Add commented extensions that weren't selected
         active_ids, commented_ids = self.parse_extensions_json()
