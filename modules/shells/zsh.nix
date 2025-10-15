@@ -103,6 +103,62 @@
         # Enable continuous completion trigger
         zstyle ':fzf-tab:*' continuous-trigger '/'
 
+        # === AI Agent Detection and Smart Aliases ===
+        # Source the agent detection library for context-aware command selection
+        if [ -f "$HOME/dotfiles-public/lib/agent-detection.sh" ]; then
+          source "$HOME/dotfiles-public/lib/agent-detection.sh"
+
+          # Create smart aliases that use POSIX tools for AI agents, modern tools for humans
+          # These functions check context at runtime, not at alias definition time
+
+          # Smart cat - bat for humans, cat for agents
+          function cat() {
+            _smart_alias "bat" "cat" "$@"
+          }
+
+          # Smart ls - eza for humans, ls for agents
+          function ls() {
+            _smart_alias "eza" "ls" "$@"
+          }
+
+          # Smart ll - eza -l for humans, ls -l for agents
+          function ll() {
+            if is_agent_context; then
+              command ls -l "$@"
+            else
+              if command -v eza >/dev/null 2>&1; then
+                eza -l "$@"
+              else
+                command ls -l "$@"
+              fi
+            fi
+          }
+
+          # Smart la - eza -la for humans, ls -la for agents
+          function la() {
+            if is_agent_context; then
+              command ls -la "$@"
+            else
+              if command -v eza >/dev/null 2>&1; then
+                eza -la "$@"
+              else
+                command ls -la "$@"
+              fi
+            fi
+          }
+
+          # Smart grep - ripgrep for humans, grep for agents
+          function grep() {
+            _smart_alias "rg" "grep" "$@"
+          }
+
+          # Smart find - fd for humans, find for agents
+          function find() {
+            _smart_alias "fd" "find" "$@"
+          }
+        fi
+        # === End AI Agent Detection ===
+
         # Initialize carapace completion for zsh
         if command -v carapace >/dev/null 2>&1; then
           source <(carapace _carapace zsh)
