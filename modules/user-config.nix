@@ -38,6 +38,20 @@ let
 
 in
 {
+  # Define profile configuration option
+  options.dotfiles.profile = lib.mkOption {
+    type = lib.types.enum [ "auto" "fast" "balanced" "full" "agent" ];
+    default = "auto";
+    description = ''
+      Shell profile to use:
+      - auto: Detects context automatically (recommended)
+      - fast: Minimal features for maximum speed
+      - balanced: Optimized features (current default)
+      - full: All features enabled, AI-aware
+      - agent: POSIX-only tools for AI agents/automation
+    '';
+  };
+
   # Apply user configuration
   config = {
     # Git configuration
