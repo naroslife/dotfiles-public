@@ -16,6 +16,85 @@ use github.com/muesli/elvish-libs/git
 use github.com/naroslife/elvish-modules/log
 use github.com/naroslife/elvish-modules/you-should-use
 
+# === AI Agent Detection System ===
+# Detects when running in AI agent/automation context vs human interactive shell
+# AI agents expect POSIX tools (cat, ls, grep, find) but humans prefer modern alternatives (bat, eza, rg, fd)
+fn is-agent-context {
+  # Check explicit agent mode flag
+  if (and (has-env DOTFILES_AGENT_MODE) (eq $E:DOTFILES_AGENT_MODE "1")) {
+    put $true
+    return
+  }
+
+  # Check for dumb terminal (common in AI agents and automation)
+  if (has-env TERM) {
+    if (or (eq $E:TERM "dumb") (eq $E:TERM "")) {
+      put $true
+      return
+    }
+  } else {
+    # TERM not set - likely automation
+    put $true
+    return
+  }
+
+  # Check for CI/automation environment variables
+  if (or (has-env CI) (has-env GITHUB_ACTIONS) (has-env GITLAB_CI) (has-env JENKINS_HOME) (has-env BUILDKITE)) {
+    put $true
+    return
+  }
+
+  # Check parent process name for common AI agent patterns
+  try {
+    if (has-external ps) {
+      var parent-cmd = (ps -p $pid -o comm= 2>/dev/null | xargs)
+      if (or (str:contains $parent-cmd "claude") (str:contains $parent-cmd "cursor") (str:contains $parent-cmd "copilot") (str:contains $parent-cmd "aider")) {
+        put $true
+        return
+      }
+    }
+  } catch {
+    # ps failed or not available, continue with other checks
+  }
+
+  # Default: assume human interactive context
+  put $false
+}
+
+# Smart alias system - uses POSIX commands in agent context, modern tools for humans
+# Each alias is a runtime function that checks context before executing
+fn cat {|@args|
+  if (is-agent-context) {
+    e:cat $@args
+  } else {
+    external bat $@args
+  }
+}
+
+fn ll {|@args|
+  if (is-agent-context) {
+    e:ls -l $@args
+  } else {
+    external eza -l $@args
+  }
+}
+
+fn la {|@args|
+  if (is-agent-context) {
+    e:ls -la $@args
+  } else {
+    external eza -la $@args
+  }
+}
+
+fn l {|@args|
+  if (is-agent-context) {
+    e:ls $@args
+  } else {
+    external eza $@args
+  }
+}
+
 set paths = [~/.npm-global/bin ~/.nvm/versions/node/v22.14.0/bin ~/.sdkman/candidates/gradle/current/bin ~/.local/usr/bin ~/.local/bin ~/.cargo/bin ~/.atuin/bin ~/.cargo/env ~/go/bin ~/.gem/ruby/(ruby -e 'print RUBY_VERSION')/bin $@paths]
 set-env XDG_CONFIG_HOME ~/.config
 set-env FZF_DEFAULT_COMMAND 'fd --type f --hidden --follow'
@@ -40,13 +119,26 @@ eval (zoxide init --cmd cd elvish | slurp)
 # eval (carapace _carapace|slurp)
 
 # Set aliases for common tools
-alias:new &save ll eza -l
-alias:new &save la tree
-alias:new &save l eza -l --icons --git -a
-alias:new &save lt eza --tree --level=2 --long --icons --git
-alias:new &save ltree eza --tree --level=2 --icons --git
+# Critical aliases (cat, ll, la, l, lt, ltree) are defined above as smart functions
 
-alias:new &save cat bat
+# Tree aliases - use smart functions with fallback
+fn lt {|@args|
+  if (is-agent-context) {
+    e:find . -maxdepth 2 -print $@args | e:sort
+  } else {
+    external eza --tree --level=2 --long --icons --git $@args
+  }
+}
+
+fn ltree {|@args|
+  if (is-agent-context) {
+    e:find . -maxdepth 2 -print $@args | e:sort
+  } else {
+    external eza --tree --level=2 --icons --git $@args
+  }
+}
+
+# Regular aliases - these are safe for both agent and human contexts
 alias:new &save gcc e:gcc -fdiagnostics-color
 set-env GCC_COLORS "error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quote=01"
 alias:new &save grep e:grep --color
