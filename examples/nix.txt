@@ -1,0 +1,423 @@
+# Nix Examples
+
+## Package Management
+
+### Search for packages
+nix search nixpkgs firefox
+
+### Install package (legacy)
+nix-env -iA nixpkgs.firefox
+
+### Install package (flakes)
+nix profile install nixpkgs#firefox
+
+### List installed packages
+nix-env -q
+
+### List installed packages (flakes)
+nix profile list
+
+### Remove package
+nix-env -e firefox
+
+### Remove package (flakes)
+nix profile remove firefox
+
+### Update all packages
+nix-env -u
+
+### Update specific package
+nix-env -u firefox
+
+## Nix Shell
+
+### Open shell with packages
+nix-shell -p python3 nodejs git
+
+### Open shell from shell.nix
+nix-shell
+
+### Run command in nix-shell
+nix-shell -p python3 --run "python --version"
+
+### Pure shell (no environment inheritance)
+nix-shell --pure -p python3
+
+### Open shell with specific nixpkgs
+nix-shell -I nixpkgs=https://github.com/NixOS/nixpkgs/archive/nixos-23.11.tar.gz -p python3
+
+## Development Shells (Flakes)
+
+### Enter development shell
+nix develop
+
+### Enter development shell with specific flake
+nix develop github:owner/repo
+
+### Run command in dev shell
+nix develop -c python --version
+
+### Create basic flake template
+nix flake init
+
+### Create flake from template
+nix flake init -t templates#python
+
+## Flakes
+
+### Create new flake
+nix flake new my-project
+
+### Update flake inputs
+nix flake update
+
+### Update specific input
+nix flake lock --update-input nixpkgs
+
+### Show flake info
+nix flake show
+
+### Show flake metadata
+nix flake metadata
+
+### Check flake
+nix flake check
+
+### Build flake output
+nix build
+
+### Build specific output
+nix build .#package-name
+
+### Run flake app
+nix run
+
+### Run specific app
+nix run nixpkgs#hello
+
+### Run GitHub flake
+nix run github:owner/repo
+
+## Building
+
+### Build package
+nix-build
+
+### Build specific attribute
+nix-build -A package-name
+
+### Build and create result symlink
+nix-build -o result
+
+### Build without creating symlink
+nix-build --no-out-link
+
+### Build from expression
+nix-build -E 'with import <nixpkgs> {}; callPackage ./default.nix {}'
+
+## Garbage Collection
+
+### Run garbage collection
+nix-collect-garbage
+
+### Delete old generations
+nix-collect-garbage -d
+
+### Delete generations older than 30 days
+nix-collect-garbage --delete-older-than 30d
+
+### Optimize nix store
+nix-store --optimise
+
+### Show garbage collection stats
+nix-store --gc --print-dead
+
+## Store Management
+
+### Show store path info
+nix-store -q /nix/store/path
+
+### Show runtime dependencies
+nix-store -q --references /nix/store/path
+
+### Show all dependencies (closure)
+nix-store -qR /nix/store/path
+
+### Show reverse dependencies
+nix-store -q --referrers /nix/store/path
+
+### Verify store paths
+nix-store --verify --check-contents
+
+### Repair store paths
+nix-store --repair --verify
+
+### Show store disk usage
+nix path-info -rsSh /nix/store/path
+
+## Channels (Legacy)
+
+### List channels
+nix-channel --list
+
+### Add channel
+nix-channel --add https://nixos.org/channels/nixos-23.11 nixos
+
+### Update channels
+nix-channel --update
+
+### Remove channel
+nix-channel --remove nixos
+
+## Home Manager
+
+### Install Home Manager
+nix-channel --add https://github.com/nix-community/home-manager/archive/master.tar.gz home-manager
+nix-channel --update
+nix-shell '<home-manager>' -A install
+
+### Apply Home Manager configuration
+home-manager switch
+
+### Apply with flakes
+home-manager switch --flake .#user
+
+### Build without activating
+home-manager build
+
+### List generations
+home-manager generations
+
+### Remove old generations
+home-manager expire-generations "-30 days"
+
+## NixOS (if on NixOS)
+
+### Rebuild system
+sudo nixos-rebuild switch
+
+### Test configuration
+sudo nixos-rebuild test
+
+### Build configuration
+sudo nixos-rebuild build
+
+### Rebuild with flakes
+sudo nixos-rebuild switch --flake .#hostname
+
+### List generations
+sudo nix-env --list-generations --profile /nix/var/nix/profiles/system
+
+### Rollback to previous generation
+sudo nixos-rebuild switch --rollback
+
+### Boot into specific generation
+sudo nixos-rebuild switch --switch-generation 42
+
+## Development
+
+### Create shell.nix for Python
+{ pkgs ? import <nixpkgs> {} }:
+
+pkgs.mkShell {
+  buildInputs = with pkgs; [
+    python3
+    python3Packages.pip
+    python3Packages.virtualenv
+  ];
+}
+
+### Create shell.nix for Node.js
+{ pkgs ? import <nixpkgs> {} }:
+
+pkgs.mkShell {
+  buildInputs = with pkgs; [
+    nodejs_20
+    yarn
+  ];
+}
+
+### Create flake.nix for development
+{
+  description = "Development environment";
+
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.11";
+  };
+
+  outputs = { self, nixpkgs }: {
+    devShells.x86_64-linux.default = let
+      pkgs = nixpkgs.legacyPackages.x86_64-linux;
+    in pkgs.mkShell {
+      buildInputs = with pkgs; [
+        python3
+        nodejs_20
+      ];
+    };
+  };
+}
+
+## Debugging
+
+### Show package description
+nix-env -qa --description firefox
+
+### Show package metadata
+nix-env -qa --json firefox
+
+### Evaluate Nix expression
+nix-instantiate --eval -E '1 + 2'
+
+### Pretty print evaluation
+nix-instantiate --eval --strict --json -E '{ x = 1; y = 2; }'
+
+### Show build log
+nix-store --read-log /nix/store/path
+
+### Show why path is in store
+nix-store -q --roots /nix/store/path
+
+### Trace evaluation
+nix-instantiate --show-trace
+
+## Remote Building
+
+### Build on remote machine
+nix-build --builders 'ssh://user@remote x86_64-linux'
+
+### Copy closure to remote
+nix-copy-closure --to user@remote /nix/store/path
+
+### Copy closure from remote
+nix-copy-closure --from user@remote /nix/store/path
+
+## Repl
+
+### Start Nix REPL
+nix repl
+
+### Load nixpkgs in REPL
+nix repl '<nixpkgs>'
+
+### Load flake in REPL
+nix repl .
+
+### REPL commands
+:l <nixpkgs>  # Load
+:r            # Reload
+:t expr       # Show type
+:?            # Help
+
+## Binary Caches
+
+### Add binary cache
+nix-env --option substituters "https://cache.nixos.org https://custom.cache.org"
+
+### Add trusted public keys
+nix-env --option trusted-public-keys "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
+
+## Formatting
+
+### Format Nix files with nixpkgs-fmt
+nix-shell -p nixpkgs-fmt --run "nixpkgs-fmt ."
+
+### Format with alejandra
+nix-shell -p alejandra --run "alejandra ."
+
+### Format with nixfmt
+nix-shell -p nixfmt --run "nixfmt ."
+
+## Testing
+
+### Build and test package
+nix-build -A package-name && ./result/bin/program
+
+### Run package tests
+nix-build -A package-name.tests
+
+### Test Nix expression
+nix-instantiate --eval test.nix
+
+## Package Development
+
+### Create derivation template
+{ stdenv, fetchFromGitHub }:
+
+stdenv.mkDerivation rec {
+  pname = "my-package";
+  version = "1.0.0";
+
+  src = fetchFromGitHub {
+    owner = "owner";
+    repo = "repo";
+    rev = "v${version}";
+    sha256 = "...";
+  };
+
+  buildInputs = [ ];
+
+  installPhase = ''
+    mkdir -p $out/bin
+    cp program $out/bin/
+  '';
+}
+
+### Pin nixpkgs version
+nix-shell -I nixpkgs=https://github.com/NixOS/nixpkgs/archive/release-23.11.tar.gz
+
+### Get package source
+nix-build '<nixpkgs>' -A package-name.src
+
+## Overlays
+
+### Create overlay
+self: super: {
+  package-name = super.package-name.overrideAttrs (old: {
+    version = "custom";
+  });
+}
+
+### Use overlay
+nix-shell -p '(import <nixpkgs> { overlays = [ (import ./overlay.nix) ]; }).package-name'
+
+## Advanced
+
+### Build with specific system
+nix-build --system x86_64-linux
+
+### Allow unfree packages
+NIXPKGS_ALLOW_UNFREE=1 nix-shell -p vscode
+
+### Allow broken packages
+NIXPKGS_ALLOW_BROKEN=1 nix-build
+
+### Show all package options
+nix-env -qaP '*' | grep package-name
+
+### Export binary cache
+nix-store --export $(nix-store -qR /nix/store/path) > closure.nar
+
+### Import binary cache
+nix-store --import < closure.nar
+
+### Create shell with specific package version
+nix-shell -p 'python3.withPackages (ps: with ps; [ requests flask ])'
+
+## Nix Darwin (macOS)
+
+### Rebuild Darwin configuration
+darwin-rebuild switch
+
+### Rebuild with flakes
+darwin-rebuild switch --flake .#hostname
+
+## Useful Environment Variables
+
+### Enable flakes and nix command
+export NIX_CONFIG="experimental-features = nix-command flakes"
+
+### Set build cores
+export NIX_BUILD_CORES=4
+
+### Show build output
+export NIX_BUILD_SHELL=/bin/bash

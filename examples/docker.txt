@@ -1,0 +1,361 @@
+# Docker Examples
+
+## Container Management
+
+### Run container interactively
+docker run -it ubuntu:latest bash
+
+### Run container in background
+docker run -d --name my-app nginx:latest
+
+### Run with port mapping
+docker run -d -p 8080:80 nginx:latest
+
+### Run with volume mount
+docker run -d -v /host/path:/container/path nginx:latest
+
+### Run with environment variables
+docker run -d -e "ENV_VAR=value" -e "API_KEY=secret" my-app
+
+### Run with resource limits
+docker run -d --memory="512m" --cpus="1.0" my-app
+
+## Container Operations
+
+### List running containers
+docker ps
+
+### List all containers (including stopped)
+docker ps -a
+
+### Stop container
+docker stop my-app
+
+### Start stopped container
+docker start my-app
+
+### Restart container
+docker restart my-app
+
+### Remove container
+docker rm my-app
+
+### Remove all stopped containers
+docker container prune
+
+### Force remove running container
+docker rm -f my-app
+
+## Container Inspection
+
+### View container logs
+docker logs my-app
+
+### Follow container logs
+docker logs -f my-app
+
+### View last 100 lines of logs
+docker logs --tail 100 my-app
+
+### Execute command in running container
+docker exec -it my-app bash
+
+### Inspect container details
+docker inspect my-app
+
+### View container stats
+docker stats
+
+### View container processes
+docker top my-app
+
+### Copy files from container
+docker cp my-app:/path/to/file /local/path
+
+### Copy files to container
+docker cp /local/path my-app:/path/to/file
+
+## Image Management
+
+### Build image from Dockerfile
+docker build -t my-app:latest .
+
+### Build with build args
+docker build --build-arg VERSION=1.0.0 -t my-app:latest .
+
+### Build with custom Dockerfile
+docker build -f Dockerfile.prod -t my-app:prod .
+
+### List images
+docker images
+
+### Remove image
+docker rmi my-app:latest
+
+### Remove unused images
+docker image prune
+
+### Remove all unused images
+docker image prune -a
+
+### Pull image from registry
+docker pull nginx:latest
+
+### Push image to registry
+docker push username/my-app:latest
+
+### Tag image
+docker tag my-app:latest username/my-app:v1.0.0
+
+### Save image to tar file
+docker save -o my-app.tar my-app:latest
+
+### Load image from tar file
+docker load -i my-app.tar
+
+## Docker Compose
+
+### Start services
+docker-compose up
+
+### Start services in background
+docker-compose up -d
+
+### Stop services
+docker-compose down
+
+### View service logs
+docker-compose logs
+
+### Follow service logs
+docker-compose logs -f service-name
+
+### Build services
+docker-compose build
+
+### Build without cache
+docker-compose build --no-cache
+
+### Restart service
+docker-compose restart service-name
+
+### Scale service
+docker-compose up -d --scale web=3
+
+### Execute command in service
+docker-compose exec web bash
+
+### List running services
+docker-compose ps
+
+### View service configuration
+docker-compose config
+
+### Remove volumes with services
+docker-compose down -v
+
+## Networking
+
+### List networks
+docker network ls
+
+### Create network
+docker network create my-network
+
+### Connect container to network
+docker network connect my-network my-app
+
+### Disconnect container from network
+docker network disconnect my-network my-app
+
+### Inspect network
+docker network inspect my-network
+
+### Remove network
+docker network rm my-network
+
+### Remove unused networks
+docker network prune
+
+### Run container on specific network
+docker run -d --network=my-network nginx:latest
+
+## Volumes
+
+### List volumes
+docker volume ls
+
+### Create volume
+docker volume create my-volume
+
+### Remove volume
+docker volume rm my-volume
+
+### Remove unused volumes
+docker volume prune
+
+### Inspect volume
+docker volume inspect my-volume
+
+### Run with named volume
+docker run -d -v my-volume:/data nginx:latest
+
+### Backup volume
+docker run --rm -v my-volume:/data -v $(pwd):/backup ubuntu tar czf /backup/backup.tar.gz /data
+
+### Restore volume
+docker run --rm -v my-volume:/data -v $(pwd):/backup ubuntu tar xzf /backup/backup.tar.gz -C /
+
+## Registry Operations
+
+### Login to registry
+docker login
+
+### Login to custom registry
+docker login registry.example.com
+
+### Logout from registry
+docker logout
+
+### Search for images
+docker search nginx
+
+## System Management
+
+### Show Docker disk usage
+docker system df
+
+### Remove unused data
+docker system prune
+
+### Remove all unused data including volumes
+docker system prune -a --volumes
+
+### Show Docker info
+docker info
+
+### Show Docker version
+docker version
+
+## Dockerfile Best Practices
+
+### Multi-stage build example
+FROM node:16 AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
+
+FROM nginx:alpine
+COPY --from=builder /app/dist /usr/share/nginx/html
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
+
+### Minimize layers
+FROM ubuntu:20.04
+RUN apt-get update && apt-get install -y \
+    curl \
+    git \
+    vim \
+    && rm -rf /var/lib/apt/lists/*
+
+### Use .dockerignore
+node_modules
+.git
+.env
+*.log
+
+## Debugging
+
+### View container filesystem changes
+docker diff my-app
+
+### Create image from container
+docker commit my-app my-app:debug
+
+### Run with interactive debugging
+docker run -it --entrypoint bash my-app
+
+### View container resource usage
+docker stats my-app
+
+### Export container filesystem
+docker export my-app > my-app.tar
+
+### View image history
+docker history my-app:latest
+
+## Health Checks
+
+### Add health check in Dockerfile
+HEALTHCHECK --interval=30s --timeout=3s \
+  CMD curl -f http://localhost/ || exit 1
+
+### Check container health status
+docker inspect --format='{{.State.Health.Status}}' my-app
+
+## Security
+
+### Run as non-root user
+docker run --user 1000:1000 my-app
+
+### Run with read-only filesystem
+docker run --read-only my-app
+
+### Scan image for vulnerabilities
+docker scan my-app:latest
+
+### Run with security options
+docker run --security-opt=no-new-privileges my-app
+
+## Advanced Operations
+
+### Run with custom DNS
+docker run --dns 8.8.8.8 my-app
+
+### Run with host network
+docker run --network host my-app
+
+### Run with privileged mode (use with caution)
+docker run --privileged my-app
+
+### Set container hostname
+docker run --hostname my-hostname my-app
+
+### Add host entry
+docker run --add-host myhost:10.0.0.1 my-app
+
+### Mount tmpfs
+docker run --tmpfs /tmp:rw,size=64m my-app
+
+## Docker Context
+
+### List contexts
+docker context ls
+
+### Create context
+docker context create remote --docker "host=ssh://user@remote"
+
+### Use context
+docker context use remote
+
+### Switch back to default
+docker context use default
+
+## Cleanup Commands
+
+### Remove all stopped containers
+docker container prune -f
+
+### Remove all dangling images
+docker image prune -f
+
+### Remove all unused volumes
+docker volume prune -f
+
+### Remove all unused networks
+docker network prune -f
+
+### Complete cleanup
+docker system prune -a --volumes -f

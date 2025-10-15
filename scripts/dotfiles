@@ -35,6 +35,7 @@ COMMANDS:
     functions         List all available functions
     keybindings       Show shell keybindings reference
     tools             List installed development tools
+    examples          Show curated command examples for tools
     test-context      Test AI agent context detection
     update            Check for dotfiles updates
     apply             Apply dotfiles configuration
@@ -46,6 +47,8 @@ COMMANDS:
 EXAMPLES:
     dotfiles doctor              # Check environment health
     dotfiles aliases             # List all aliases
+    dotfiles examples git        # Show git command examples
+    dotfiles examples docker     # Show docker examples
     dotfiles test-context        # Test agent detection
     dotfiles profile full        # Set full-featured profile
     dotfiles git                 # Interactive git operations
@@ -290,6 +293,14 @@ main() {
             ;;
         tools)
             list_tools
+            ;;
+        examples)
+            if [[ -x "$SCRIPT_DIR/dotfiles-examples.sh" ]]; then
+                "$SCRIPT_DIR/dotfiles-examples.sh" "$@"
+            else
+                echo "Error: dotfiles-examples.sh not found"
+                exit 1
+            fi
             ;;
         test-context)
             if [[ -x "$SCRIPT_DIR/dotfiles-test-context.sh" ]]; then

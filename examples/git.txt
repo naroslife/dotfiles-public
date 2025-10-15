@@ -1,0 +1,242 @@
+# Git Examples
+
+## Common Workflows
+
+### Commit changes
+git add .
+git commit -m "feat: Add new feature"
+git push origin HEAD
+
+### Create and switch to new branch
+git checkout -b feature/new-feature
+
+### View commit history with graph
+git log --graph --oneline --all
+
+### Stash current changes
+git stash save "WIP: working on feature"
+git stash pop
+
+### Amend last commit
+git commit --amend --no-edit
+
+### Update last commit message
+git commit --amend -m "Better commit message"
+
+### View changes before committing
+git diff
+git diff --staged
+
+## Branch Management
+
+### List all branches
+git branch -a
+
+### Delete local branch
+git branch -d feature/old-feature
+
+### Delete remote branch
+git push origin --delete feature/old-feature
+
+### Rename current branch
+git branch -m new-branch-name
+
+### Switch to previous branch
+git checkout -
+
+### Merge branch into current
+git merge feature/branch-name
+
+## Remote Operations
+
+### Add remote repository
+git remote add upstream https://github.com/user/repo.git
+
+### List remotes
+git remote -v
+
+### Fetch from remote
+git fetch origin
+
+### Pull with rebase
+git pull --rebase origin main
+
+### Push to remote branch
+git push origin feature/my-branch
+
+### Force push (use with caution)
+git push --force-with-lease origin HEAD
+
+## History and Inspection
+
+### Show commit details
+git show <commit-hash>
+
+### View file history
+git log --follow <file>
+
+### Find who changed a line
+git blame <file>
+
+### Search commits by message
+git log --grep="search term"
+
+### Search commits by content
+git log -S "code snippet"
+
+### View changes in a commit
+git show <commit-hash>
+
+## Advanced Operations
+
+### Interactive rebase last 5 commits
+git rebase -i HEAD~5
+
+### Cherry-pick specific commit
+git cherry-pick <commit-hash>
+
+### Cherry-pick range of commits
+git cherry-pick <start-hash>..<end-hash>
+
+### Reset to specific commit (keep changes)
+git reset --soft HEAD~1
+
+### Reset to specific commit (discard changes)
+git reset --hard HEAD~1
+
+### Clean untracked files
+git clean -fd
+
+### Remove file from staging
+git restore --staged <file>
+
+### Discard local changes
+git restore <file>
+
+## Stash Operations
+
+### Stash with message
+git stash save "WIP: feature in progress"
+
+### List stashes
+git stash list
+
+### Apply specific stash
+git stash apply stash@{0}
+
+### Pop latest stash
+git stash pop
+
+### Drop specific stash
+git stash drop stash@{0}
+
+### Create branch from stash
+git stash branch new-branch stash@{0}
+
+## Tagging
+
+### Create annotated tag
+git tag -a v1.0.0 -m "Version 1.0.0"
+
+### Create lightweight tag
+git tag v1.0.0
+
+### List tags
+git tag -l
+
+### Push tags to remote
+git push origin --tags
+
+### Delete local tag
+git tag -d v1.0.0
+
+### Delete remote tag
+git push origin --delete v1.0.0
+
+## Configuration
+
+### Set user name globally
+git config --global user.name "Your Name"
+
+### Set user email globally
+git config --global user.email "your.email@example.com"
+
+### Set default branch name
+git config --global init.defaultBranch main
+
+### Enable color output
+git config --global color.ui auto
+
+### List all config
+git config --list
+
+### Set editor
+git config --global core.editor "vim"
+
+## Worktrees
+
+### Create new worktree
+git worktree add -b feature/new ../repo-feature
+
+### List worktrees
+git worktree list
+
+### Remove worktree
+git worktree remove ../repo-feature
+
+### Prune stale worktrees
+git worktree prune
+
+## Submodules
+
+### Add submodule
+git submodule add https://github.com/user/repo.git path/to/submodule
+
+### Initialize submodules
+git submodule update --init --recursive
+
+### Update submodules
+git submodule update --remote
+
+### Remove submodule
+git submodule deinit path/to/submodule
+git rm path/to/submodule
+
+## Maintenance
+
+### Garbage collection
+git gc --aggressive --prune=now
+
+### Verify repository integrity
+git fsck
+
+### Show repository size
+git count-objects -vH
+
+### Prune unreachable objects
+git prune
+
+## Debugging
+
+### Find commit that introduced bug
+git bisect start
+git bisect bad
+git bisect good <commit-hash>
+
+### Show reflog
+git reflog
+
+### Recover deleted branch
+git reflog
+git checkout -b recovered-branch <commit-hash>
+
+## Aliases (add to ~/.gitconfig)
+
+### Common shortcuts
+git config --global alias.st status
+git config --global alias.co checkout
+git config --global alias.br branch
+git config --global alias.ci commit
+git config --global alias.unstage 'reset HEAD --'
+git config --global alias.last 'log -1 HEAD'
+git config --global alias.visual 'log --graph --oneline --all'
