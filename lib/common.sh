@@ -65,10 +65,49 @@ log_warn() { log "$LOG_LEVEL_WARN" "$1"; }
 log_info() { log "$LOG_LEVEL_INFO" "$1"; }
 log_debug() { log "$LOG_LEVEL_DEBUG" "$1"; }
 
-# Enhanced error handling
+# Enhanced error handling with recovery suggestions
 die() {
-    log_error "$1"
-    exit "${2:-1}"
+    local error_msg="$1"
+    local exit_code="${2:-1}"
+    local suggestion="${3:-}"
+
+    log_error "$error_msg"
+
+    # Show suggestion if provided
+    if [[ -n "$suggestion" ]]; then
+        echo -e "${COLOR_CYAN}💡 Suggestion: ${suggestion}${COLOR_NC}" >&2
+    fi
+
+    exit "$exit_code"
+}
+
+# Suggest common fixes for known error patterns
+suggest_fix() {
+    local error_context="$1"
+
+    case "$error_context" in
+        "nix_not_found")
+            echo "Install Nix: curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install"
+            ;;
+        "git_not_found")
+            echo "Install git: sudo apt install git (Ubuntu/Debian) or brew install git (macOS)"
+            ;;
+        "home_manager_fail")
+            echo "Try: 1) nix flake update  2) Check ~/.config/nix/nix.conf has 'experimental-features = nix-command flakes'"
+            ;;
+        "permission_denied")
+            echo "Check file permissions or run with appropriate user privileges"
+            ;;
+        "network_error")
+            echo "Check internet connection and proxy settings. Try: curl -I https://cache.nixos.org"
+            ;;
+        "disk_space")
+            echo "Free up disk space: nix-collect-garbage -d or df -h to check available space"
+            ;;
+        *)
+            echo "Check logs above for details, or run with LOG_LEVEL=4 for debug output"
+            ;;
+    esac
 }
 
 # Command existence check with better error messages
@@ -277,7 +316,7 @@ trap cleanup_on_exit EXIT INT TERM
 
 # Export functions that should be available to sourcing scripts
 export -f log log_error log_warn log_info log_debug
-export -f die require_command fetch_url
+export -f die suggest_fix require_command fetch_url
 export -f detect_platform is_wsl is_linux is_macos
 export -f ask_yes_no backup_file validate_config_file
 export -f show_progress

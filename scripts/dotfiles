@@ -1,0 +1,324 @@
+#!/usr/bin/env bash
+# Dotfiles CLI - Central command interface for dotfiles management
+# Usage: dotfiles <command> [args]
+
+set -euo pipefail
+
+# Script directory and root
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(dirname "$SCRIPT_DIR")"
+
+# Source common utilities
+if [[ -f "$ROOT_DIR/lib/common.sh" ]]; then
+    source "$ROOT_DIR/lib/common.sh"
+else
+    echo "Error: Could not find lib/common.sh" >&2
+    exit 1
+fi
+
+# Version
+VERSION="1.0.0"
+
+# Show usage information
+show_usage() {
+    cat << EOF
+Dotfiles CLI v${VERSION}
+
+USAGE:
+    dotfiles <command> [options]
+
+COMMANDS:
+    help              Show this help message
+    version           Show version information
+    doctor            Run health checks on dotfiles environment
+    aliases           List all available aliases with descriptions
+    functions         List all available functions
+    keybindings       Show shell keybindings reference
+    tools             List installed development tools
+    test-context      Test AI agent context detection
+    update            Check for dotfiles updates
+    apply             Apply dotfiles configuration
+    profile           Show/set active profile (auto, fast, balanced, full, agent)
+
+EXAMPLES:
+    dotfiles doctor              # Check environment health
+    dotfiles aliases             # List all aliases
+    dotfiles test-context        # Test agent detection
+    dotfiles profile full        # Set full-featured profile
+
+For more information, see: docs/AI_AGENT_MODE.md
+
+EOF
+}
+
+# Show version
+show_version() {
+    echo "Dotfiles CLI v${VERSION}"
+    echo "Location: $ROOT_DIR"
+    echo "Platform: $(detect_platform)"
+}
+
+# List aliases
+list_aliases() {
+    cat << EOF
+=== Dotfiles Aliases ===
+
+File Navigation:
+  ll        - List files in long format (eza -l / ls -l)
+  la        - List all files including hidden (eza -la / ls -la)
+  l         - List files with icons (eza / ls)
+  lt        - Tree view 2 levels deep
+  ltree     - Tree view with icons
+  ..        - cd ..
+  ...       - cd ../..
+  ....      - cd ../../..
+
+Modern CLI Tools (AI-aware):
+  cat       - Better cat with syntax highlighting (bat / cat)
+  grep      - Fast search (rg / grep)
+  find      - Fast file finder (fd / find)
+
+Git Shortcuts:
+  gst       - git status
+  gc        - git commit -m
+  gca       - git commit -a -m
+  gp        - git push origin HEAD
+  gpu       - git pull origin
+  glog      - Pretty git log with graph
+  gdiff     - git diff
+  gco       - git checkout
+  gb        - git branch
+  gadd      - git add
+
+Docker:
+  dco       - docker compose
+  dps       - docker ps
+  dpa       - docker ps -a
+  dx        - docker exec -it
+
+Package Managers:
+  npm-clean   - Clean npm global packages
+  pip-clean   - Clean pip user packages
+  cargo-clean - Clean cargo packages
+  venv        - Create/activate Python virtual environment
+
+NOTE: Modern CLI tools automatically fallback to POSIX equivalents
+      in AI agent contexts (Claude Code, VSCode Agent Mode, CI/CD)
+
+EOF
+}
+
+# List functions
+list_functions() {
+    cat << EOF
+=== Dotfiles Functions ===
+
+Shell Utility Functions:
+  is-agent-context     - Detect if running in AI agent context
+  get-dotfiles-profile - Get current dotfiles profile
+
+Package Manager Helpers:
+  npm-clean     - Remove all npm global packages
+  pip-clean     - Remove all pip user packages
+  cargo-clean   - Remove all cargo packages
+  venv          - Create/activate Python venv in .venv
+
+Docker Helpers:
+  docker-perms  - Add current user to docker group
+
+Git Helpers:
+  All git aliases (see: dotfiles aliases)
+
+See individual shell configs for more details:
+  - Bash: modules/shells/bash.nix
+  - Zsh: modules/shells/zsh.nix
+  - Elvish: elvish/rc.elv
+
+EOF
+}
+
+# Show keybindings
+show_keybindings() {
+    cat << EOF
+=== Shell Keybindings ===
+
+Bash/Zsh Common:
+  Ctrl-R        - Command history search (Atuin)
+  Ctrl-L        - Directory history (if configured)
+  Ctrl-A        - Move to beginning of line
+  Ctrl-E        - Move to end of line
+  Ctrl-U        - Delete from cursor to beginning
+  Ctrl-K        - Delete from cursor to end
+  Alt-B         - Move backward one word
+  Alt-F         - Move forward one word
+
+Elvish-Specific:
+  Ctrl-R        - Command history
+  Alt-,         - Last command
+  Ctrl-L        - Directory history
+  Ctrl-N        - Navigation mode
+  Alt-I         - History chooser
+  Ctrl-Alt-Arrow - Multiple cursors
+
+Tmux (Prefix: Ctrl-B):
+  Ctrl-B D      - Detach session
+  Ctrl-B C      - Create new window
+  Ctrl-B N      - Next window
+  Ctrl-B %      - Split vertically
+  Ctrl-B "      - Split horizontally
+  Ctrl-B Arrow  - Move between panes
+  Ctrl-B Z      - Zoom/unzoom pane
+  Ctrl-B X      - Close pane
+  Ctrl-B ?      - Show all keybindings
+
+FZF (in compatible tools):
+  Ctrl-T        - File finder
+  Ctrl-R        - Command history
+  Alt-C         - Directory finder
+
+EOF
+}
+
+# List installed tools
+list_tools() {
+    echo "=== Installed Development Tools ==="
+    echo ""
+
+    local tools=(
+        "git:Version Control"
+        "nix:Package Manager"
+        "home-manager:Dotfiles Manager"
+        "bat:Modern cat"
+        "eza:Modern ls"
+        "rg:Modern grep"
+        "fd:Modern find"
+        "fzf:Fuzzy Finder"
+        "zoxide:Smart cd"
+        "starship:Prompt"
+        "atuin:History"
+        "tmux:Terminal Multiplexer"
+        "docker:Containers"
+        "kubectl:Kubernetes"
+        "gh:GitHub CLI"
+    )
+
+    for tool_desc in "${tools[@]}"; do
+        IFS=: read -r tool desc <<< "$tool_desc"
+        if command -v "$tool" >/dev/null 2>&1; then
+            local version=$(${tool} --version 2>/dev/null | head -1 | awk '{print $NF}' || echo "installed")
+            printf "  %-15s ✓  %s\n" "$tool" "$desc"
+        else
+            printf "  %-15s ✗  %s (not found)\n" "$tool" "$desc"
+        fi
+    done
+}
+
+# Show/set profile
+manage_profile() {
+    local new_profile="${1:-}"
+
+    if [[ -z "$new_profile" ]]; then
+        # Show current profile
+        if [[ -f "$ROOT_DIR/lib/agent-detection.sh" ]]; then
+            source "$ROOT_DIR/lib/agent-detection.sh"
+            local current_profile=$(get_dotfiles_profile)
+            echo "Current profile: $current_profile"
+            echo ""
+            echo "Available profiles:"
+            echo "  auto     - Automatic detection (recommended)"
+            echo "  fast     - Minimal features for speed"
+            echo "  balanced - Optimized features (default)"
+            echo "  full     - All features, AI-aware"
+            echo "  agent    - POSIX-only for AI agents"
+            echo ""
+            echo "Set profile: export DOTFILES_PROFILE=<profile>"
+            echo "Or use: dotfiles profile <profile>"
+        else
+            echo "Agent detection library not found"
+        fi
+    else
+        # Validate and set profile
+        case "$new_profile" in
+            auto|fast|balanced|full|agent)
+                echo "export DOTFILES_PROFILE=$new_profile" >> ~/.bashrc.local
+                echo "Profile set to: $new_profile"
+                echo "Restart your shell or run: source ~/.bashrc"
+                ;;
+            *)
+                echo "Invalid profile: $new_profile"
+                echo "Valid options: auto, fast, balanced, full, agent"
+                return 1
+                ;;
+        esac
+    fi
+}
+
+# Main command dispatcher
+main() {
+    local command="${1:-help}"
+    shift || true
+
+    case "$command" in
+        help|--help|-h)
+            show_usage
+            ;;
+        version|--version|-v)
+            show_version
+            ;;
+        doctor)
+            if [[ -x "$SCRIPT_DIR/dotfiles-doctor.sh" ]]; then
+                "$SCRIPT_DIR/dotfiles-doctor.sh" "$@"
+            else
+                echo "dotfiles doctor not yet implemented"
+                echo "Coming soon: comprehensive environment health checks"
+            fi
+            ;;
+        aliases)
+            list_aliases
+            ;;
+        functions)
+            list_functions
+            ;;
+        keybindings|keys)
+            show_keybindings
+            ;;
+        tools)
+            list_tools
+            ;;
+        test-context)
+            if [[ -x "$SCRIPT_DIR/dotfiles-test-context.sh" ]]; then
+                "$SCRIPT_DIR/dotfiles-test-context.sh" "$@"
+            else
+                echo "Error: dotfiles-test-context.sh not found"
+                exit 1
+            fi
+            ;;
+        update)
+            if [[ -x "$SCRIPT_DIR/dotfiles-update-checker.sh" ]]; then
+                "$SCRIPT_DIR/dotfiles-update-checker.sh" "$@"
+            else
+                echo "dotfiles update checker not yet implemented"
+                echo "Coming soon: check for dotfiles repository updates"
+            fi
+            ;;
+        apply)
+            if [[ -x "$ROOT_DIR/apply.sh" ]]; then
+                "$ROOT_DIR/apply.sh" "$@"
+            else
+                echo "Error: apply.sh not found"
+                exit 1
+            fi
+            ;;
+        profile)
+            manage_profile "$@"
+            ;;
+        *)
+            echo "Unknown command: $command"
+            echo "Run 'dotfiles help' for usage information"
+            exit 1
+            ;;
+    esac
+}
+
+# Run main
+main "$@"
