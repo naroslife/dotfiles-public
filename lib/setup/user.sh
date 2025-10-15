@@ -11,9 +11,9 @@ fi
 readonly USER_SETUP_LOADED=1
 
 # Source common utilities
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+_USER_MODULE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=lib/common.sh
-source "$SCRIPT_DIR/../common.sh"
+source "$_USER_MODULE_DIR/../common.sh"
 
 # Git submodule management
 setup_git_submodules() {
@@ -94,7 +94,7 @@ select_user() {
 run_user_configuration() {
     # Source the user config module
     # shellcheck source=lib/user_config.sh
-    source "$SCRIPT_DIR/../user_config.sh"
+    source "$_USER_MODULE_DIR/../user_config.sh"
 
     if $INTERACTIVE_CONFIG || (! $ASSUME_YES && ask_yes_no "Would you like to configure user-specific settings?" n); then
         log_info "Starting interactive user configuration"

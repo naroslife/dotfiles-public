@@ -31,32 +31,95 @@ log_error() {
 
 # Check if running on WSL2
 check_wsl2() {
-    if [[ ! -f /proc/sys/fs/binfmt_misc/WSLInterop ]]; then
-        log_error "This script is designed for WSL2. Not running on WSL2."
-        exit 1
+    local is_wsl2=false
+    local detection_method=""
+
+    # Method 1: Check WSL_DISTRO_NAME environment variable (most reliable)
+    if [[ -n "${WSL_DISTRO_NAME:-}" ]]; then
+        is_wsl2=true
+        detection_method="WSL_DISTRO_NAME environment variable"
+    # Method 2: Check for WSLInterop (standard WSL2)
+    elif [[ -f /proc/sys/fs/binfmt_misc/WSLInterop ]]; then
+        is_wsl2=true
+        detection_method="WSLInterop file"
+    # Method 3: Check for WSLInterop-late (systemd-enabled WSL2)
+    elif [[ -f /proc/sys/fs/binfmt_misc/WSLInterop-late ]]; then
+        is_wsl2=true
+        detection_method="WSLInterop-late file (systemd enabled)"
+    # Method 4: Check kernel version for WSL2 signature
+    elif grep -qEi "(microsoft.*wsl2|wsl2)" /proc/version 2>/dev/null; then
+        is_wsl2=true
+        detection_method="kernel version"
+    # Method 5: Check WSL_INTEROP environment variable
+    elif [[ -n "${WSL_INTEROP:-}" ]]; then
+        is_wsl2=true
+        detection_method="WSL_INTEROP environment variable"
     fi
-    log_success "Running on WSL2"
+
+    if [[ "$is_wsl2" == true ]]; then
+        log_success "Running on WSL2 (detected via $detection_method)"
+        return 0
+    fi
+
+    log_error "This script is designed for WSL2. Not running on WSL2."
+    log_error "Checked: WSL_DISTRO_NAME, WSLInterop files, kernel version, WSL_INTEROP"
+    exit 1
+}
+
+# CUDA 12.9 minimum driver requirements
+readonly CUDA_VERSION="12.9"
+readonly MIN_WINDOWS_DRIVER="528.33"
+
+# Compare version numbers (returns 0 if ver1 >= ver2)
+version_ge() {
+    local ver1="$1"
+    local ver2="$2"
+    printf '%s\n%s\n' "$ver2" "$ver1" | sort -V -C 2>/dev/null
 }
 
 # Check Windows NVIDIA driver
 check_windows_driver() {
-    log_info "Checking Windows NVIDIA driver..."
+    log_info "Checking Windows NVIDIA driver compatibility with CUDA $CUDA_VERSION..."
 
-    if [[ -f /mnt/c/Windows/System32/nvidia-smi.exe ]]; then
-        local driver_output
-        driver_output=$(/mnt/c/Windows/System32/nvidia-smi.exe 2>&1 || true)
-
-        if echo "$driver_output" | grep -q "Driver Version:"; then
-            local driver_version=$(echo "$driver_output" | grep -oP 'Driver Version: \K[0-9.]+' | head -1)
-            local cuda_version=$(echo "$driver_output" | grep -oP 'CUDA Version: \K[0-9.]+' | head -1)
-            log_success "Windows NVIDIA driver installed: $driver_version (CUDA $cuda_version)"
-            return 0
-        fi
+    if [[ ! -f /mnt/c/Windows/System32/nvidia-smi.exe ]]; then
+        log_error "Windows NVIDIA driver not found"
+        log_error "Please install NVIDIA drivers on Windows host first"
+        log_error "Download from: https://www.nvidia.com/Download/index.aspx"
+        exit 1
     fi
 
-    log_error "Windows NVIDIA driver not found or not working"
-    log_error "Please install NVIDIA drivers on Windows host first"
-    exit 1
+    local driver_output
+    driver_output=$(/mnt/c/Windows/System32/nvidia-smi.exe 2>&1 || true)
+
+    if ! echo "$driver_output" | grep -q "Driver Version:"; then
+        log_error "Windows NVIDIA driver not working properly"
+        log_error "Please reinstall NVIDIA drivers on Windows"
+        exit 1
+    fi
+
+    local driver_version=$(echo "$driver_output" | grep -oP 'Driver Version: \K[0-9.]+' | head -1)
+    local cuda_version=$(echo "$driver_output" | grep -oP 'CUDA Version: \K[0-9.]+' | head -1)
+
+    log_success "Windows NVIDIA driver installed: $driver_version"
+    log_info "Driver supports CUDA: $cuda_version"
+
+    # Check if driver meets minimum requirements for CUDA 12.9
+    if ! version_ge "$driver_version" "$MIN_WINDOWS_DRIVER"; then
+        echo
+        log_error "Driver version $driver_version does NOT support CUDA $CUDA_VERSION"
+        log_error "Minimum required driver: $MIN_WINDOWS_DRIVER"
+        echo
+        log_warning "Please update your Windows NVIDIA driver:"
+        log_info "  1. Visit: https://www.nvidia.com/Download/index.aspx"
+        log_info "  2. Or use GeForce Experience on Windows"
+        log_info "  3. After updating, restart WSL: wsl --shutdown"
+        echo
+        log_info "Run './check-driver.sh' for detailed update instructions"
+        exit 1
+    fi
+
+    log_success "Driver supports CUDA $CUDA_VERSION (minimum: $MIN_WINDOWS_DRIVER)"
+    return 0
 }
 
 # Check Ubuntu version
@@ -134,13 +197,13 @@ install_cuda_repo() {
 
 # Install CUDA toolkit
 install_cuda_toolkit() {
-    log_info "Installing CUDA 12.6 toolkit..."
+    log_info "Installing CUDA 12.9 toolkit..."
     log_info "This will download ~3GB of packages and may take several minutes..."
 
     sudo apt-get install -y \
-        cuda-toolkit-12-6 \
-        cuda-libraries-12-6 \
-        cuda-libraries-dev-12-6
+        cuda-toolkit-12-9 \
+        cuda-libraries-12-9 \
+        cuda-libraries-dev-12-9
 
     log_success "CUDA toolkit installed"
 }
@@ -228,7 +291,7 @@ print_summary() {
     echo "3. Compile test program: ./compile-test.sh"
     echo
     echo "Installed versions:"
-    echo "  - CUDA Toolkit: 12.6"
+    echo "  - CUDA Toolkit: 12.9"
     echo "  - Location: /usr/local/cuda"
     echo
     echo "Environment variables set:"
@@ -249,7 +312,7 @@ main() {
     check_windows_driver
 
     echo
-    log_info "Ready to install CUDA 12.6 toolkit"
+    log_info "Ready to install CUDA 12.9 toolkit"
     log_warning "This will install ~6.5GB of packages"
     read -p "Continue? (y/N) " -n 1 -r
     echo

@@ -11,9 +11,9 @@ fi
 readonly NVIDIA_SETUP_LOADED=1
 
 # Source common utilities
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+_NVIDIA_MODULE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=lib/common.sh
-source "$SCRIPT_DIR/../../common.sh"
+source "$_NVIDIA_MODULE_DIR/../../common.sh"
 
 # Detect NVIDIA GPU
 has_nvidia_gpu() {

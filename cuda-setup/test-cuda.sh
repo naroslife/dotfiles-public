@@ -171,8 +171,9 @@ else
     echo
     echo "Common fixes:"
     echo "  1. Run: source ~/.bashrc (or restart your shell)"
-    echo "  2. Ensure CUDA toolkit is installed: sudo apt install cuda-toolkit-12-6"
-    echo "  3. Check Windows NVIDIA drivers are installed"
+    echo "  2. Ensure CUDA toolkit is installed: sudo apt install cuda-toolkit-12-9"
+    echo "  3. Check driver compatibility: ./check-driver.sh"
+    echo "  4. Verify Windows NVIDIA drivers support CUDA 12.9 (minimum: 528.33)"
     echo
     exit 1
 fi
