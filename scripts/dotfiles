@@ -39,12 +39,18 @@ COMMANDS:
     update            Check for dotfiles updates
     apply             Apply dotfiles configuration
     profile           Show/set active profile (auto, fast, balanced, full, agent)
+    git               Interactive git workflow helper (fzf)
+    docker            Interactive docker operations helper (fzf)
+    nix               Interactive nix operations helper (fzf)
 
 EXAMPLES:
     dotfiles doctor              # Check environment health
     dotfiles aliases             # List all aliases
     dotfiles test-context        # Test agent detection
     dotfiles profile full        # Set full-featured profile
+    dotfiles git                 # Interactive git operations
+    dotfiles docker              # Interactive docker commands
+    dotfiles nix                 # Interactive nix operations
 
 For more information, see: docs/AI_AGENT_MODE.md
 
@@ -311,6 +317,30 @@ main() {
             ;;
         profile)
             manage_profile "$@"
+            ;;
+        git)
+            if [[ -x "$SCRIPT_DIR/dotfiles-git-helper.sh" ]]; then
+                "$SCRIPT_DIR/dotfiles-git-helper.sh" "$@"
+            else
+                echo "Error: dotfiles-git-helper.sh not found or not executable"
+                exit 1
+            fi
+            ;;
+        docker)
+            if [[ -x "$SCRIPT_DIR/dotfiles-docker-helper.sh" ]]; then
+                "$SCRIPT_DIR/dotfiles-docker-helper.sh" "$@"
+            else
+                echo "Error: dotfiles-docker-helper.sh not found or not executable"
+                exit 1
+            fi
+            ;;
+        nix)
+            if [[ -x "$SCRIPT_DIR/dotfiles-nix-helper.sh" ]]; then
+                "$SCRIPT_DIR/dotfiles-nix-helper.sh" "$@"
+            else
+                echo "Error: dotfiles-nix-helper.sh not found or not executable"
+                exit 1
+            fi
             ;;
         *)
             echo "Unknown command: $command"
