@@ -1,0 +1,564 @@
+# Bash Examples
+
+## Variables
+
+### Define variable
+name="John"
+age=30
+
+### Use variable
+echo "Name: $name"
+echo "Name: ${name}"
+
+### Command substitution
+current_date=$(date)
+files=$(ls)
+
+### Read user input
+read -p "Enter your name: " username
+
+### Read password (hidden)
+read -sp "Enter password: " password
+
+### Default value
+echo "${var:-default_value}"
+
+### Export variable
+export PATH="/usr/local/bin:$PATH"
+
+## Arrays
+
+### Define array
+fruits=("apple" "banana" "orange")
+
+### Access element
+echo "${fruits[0]}"
+
+### All elements
+echo "${fruits[@]}"
+
+### Array length
+echo "${#fruits[@]}"
+
+### Add element
+fruits+=("grape")
+
+### Loop through array
+for fruit in "${fruits[@]}"; do
+  echo "$fruit"
+done
+
+### Associative array (Bash 4+)
+declare -A colors
+colors[red]="#FF0000"
+colors[green]="#00FF00"
+echo "${colors[red]}"
+
+## Conditionals
+
+### If statement
+if [ "$age" -gt 18 ]; then
+  echo "Adult"
+fi
+
+### If-else
+if [ "$age" -gt 18 ]; then
+  echo "Adult"
+else
+  echo "Minor"
+fi
+
+### If-elif-else
+if [ "$age" -lt 13 ]; then
+  echo "Child"
+elif [ "$age" -lt 18 ]; then
+  echo "Teenager"
+else
+  echo "Adult"
+fi
+
+### Test multiple conditions
+if [ "$age" -gt 18 ] && [ "$name" = "John" ]; then
+  echo "Adult named John"
+fi
+
+### Test file exists
+if [ -f "/path/to/file" ]; then
+  echo "File exists"
+fi
+
+### Test directory exists
+if [ -d "/path/to/dir" ]; then
+  echo "Directory exists"
+fi
+
+### Test string is empty
+if [ -z "$var" ]; then
+  echo "Variable is empty"
+fi
+
+### Test string is not empty
+if [ -n "$var" ]; then
+  echo "Variable is not empty"
+fi
+
+### Modern test syntax
+if [[ "$name" == "John" && "$age" -gt 18 ]]; then
+  echo "Match"
+fi
+
+## Loops
+
+### For loop
+for i in {1..5}; do
+  echo "Number: $i"
+done
+
+### For loop with array
+for file in *.txt; do
+  echo "Processing: $file"
+done
+
+### C-style for loop
+for ((i=0; i<10; i++)); do
+  echo "Count: $i"
+done
+
+### While loop
+counter=0
+while [ $counter -lt 5 ]; do
+  echo "Counter: $counter"
+  ((counter++))
+done
+
+### Until loop
+counter=0
+until [ $counter -eq 5 ]; do
+  echo "Counter: $counter"
+  ((counter++))
+done
+
+### Read file line by line
+while IFS= read -r line; do
+  echo "Line: $line"
+done < file.txt
+
+### Infinite loop
+while true; do
+  echo "Running..."
+  sleep 1
+done
+
+### Break and continue
+for i in {1..10}; do
+  if [ $i -eq 5 ]; then
+    continue
+  fi
+  if [ $i -eq 8 ]; then
+    break
+  fi
+  echo $i
+done
+
+## Functions
+
+### Define function
+greet() {
+  echo "Hello, $1!"
+}
+
+### Call function
+greet "John"
+
+### Function with return value
+add() {
+  local result=$(($1 + $2))
+  echo $result
+}
+
+sum=$(add 5 3)
+
+### Function with local variables
+calculate() {
+  local x=$1
+  local y=$2
+  echo $((x * y))
+}
+
+### Function with multiple return values
+get_info() {
+  echo "John"
+  echo "30"
+}
+
+read name age < <(get_info)
+
+## String Operations
+
+### String length
+text="hello"
+echo "${#text}"
+
+### Substring
+text="hello world"
+echo "${text:0:5}"  # "hello"
+
+### Replace first occurrence
+echo "${text/world/universe}"
+
+### Replace all occurrences
+echo "${text//o/0}"
+
+### Remove from beginning
+filename="path/to/file.txt"
+echo "${filename#*/}"  # "to/file.txt"
+
+### Remove from end
+echo "${filename%.*}"  # "path/to/file"
+
+### Convert to uppercase
+echo "${text^^}"
+
+### Convert to lowercase
+echo "${text,,}"
+
+### Check if string contains substring
+if [[ "$text" == *"world"* ]]; then
+  echo "Contains 'world'"
+fi
+
+## File Operations
+
+### Check if file exists
+if [ -f "file.txt" ]; then
+  echo "File exists"
+fi
+
+### Check if directory exists
+if [ -d "dir" ]; then
+  echo "Directory exists"
+fi
+
+### Create file
+touch newfile.txt
+
+### Create directory
+mkdir -p path/to/dir
+
+### Remove file
+rm file.txt
+
+### Remove directory
+rm -rf directory
+
+### Copy file
+cp source.txt destination.txt
+
+### Move/rename file
+mv old.txt new.txt
+
+### Read file content
+content=$(<file.txt)
+
+### Write to file (overwrite)
+echo "text" > file.txt
+
+### Append to file
+echo "text" >> file.txt
+
+### Count lines in file
+wc -l < file.txt
+
+## Process Management
+
+### Run in background
+long_command &
+
+### Get PID of last background job
+echo $!
+
+### Wait for background job
+wait
+
+### Check if process is running
+if pgrep -x "process_name" > /dev/null; then
+  echo "Process is running"
+fi
+
+### Kill process by name
+pkill process_name
+
+### Get exit status
+command
+if [ $? -eq 0 ]; then
+  echo "Success"
+fi
+
+## Command Execution
+
+### Execute command and capture output
+output=$(command)
+
+### Execute command and capture exit code
+command
+exit_code=$?
+
+### Execute command with timeout
+timeout 10s long_running_command
+
+### Run command if previous succeeded
+command1 && command2
+
+### Run command if previous failed
+command1 || command2
+
+### Chain commands
+command1; command2; command3
+
+### Pipe commands
+cat file.txt | grep "pattern" | sort
+
+## Error Handling
+
+### Exit on error
+set -e
+
+### Exit on undefined variable
+set -u
+
+### Print commands before execution
+set -x
+
+### Trap errors
+trap 'echo "Error on line $LINENO"' ERR
+
+### Cleanup on exit
+cleanup() {
+  echo "Cleaning up..."
+  rm -f temp_file
+}
+trap cleanup EXIT
+
+## Script Arguments
+
+### Access arguments
+echo "First argument: $1"
+echo "Second argument: $2"
+
+### All arguments as array
+echo "All arguments: $@"
+
+### Number of arguments
+echo "Argument count: $#"
+
+### Script name
+echo "Script name: $0"
+
+### Check if argument exists
+if [ -z "$1" ]; then
+  echo "Usage: $0 <argument>"
+  exit 1
+fi
+
+### Parse options
+while getopts "a:b:c" opt; do
+  case $opt in
+    a) arg_a="$OPTARG" ;;
+    b) arg_b="$OPTARG" ;;
+    c) flag_c=true ;;
+    *) echo "Invalid option"; exit 1 ;;
+  esac
+done
+
+## Text Processing
+
+### grep - search pattern
+grep "pattern" file.txt
+
+### grep - case insensitive
+grep -i "pattern" file.txt
+
+### grep - recursive search
+grep -r "pattern" directory/
+
+### grep - show line numbers
+grep -n "pattern" file.txt
+
+### sed - replace text
+sed 's/old/new/' file.txt
+
+### sed - replace all occurrences
+sed 's/old/new/g' file.txt
+
+### sed - edit in place
+sed -i 's/old/new/g' file.txt
+
+### awk - print column
+awk '{print $1}' file.txt
+
+### awk - filter by condition
+awk '$3 > 100' file.txt
+
+### cut - extract fields
+cut -d',' -f1,3 file.csv
+
+### sort - sort lines
+sort file.txt
+
+### sort - numeric sort
+sort -n file.txt
+
+### uniq - remove duplicates
+sort file.txt | uniq
+
+### tr - translate characters
+echo "hello" | tr 'a-z' 'A-Z'
+
+## Arithmetic
+
+### Basic arithmetic
+result=$((5 + 3))
+result=$((10 - 2))
+result=$((4 * 3))
+result=$((10 / 2))
+result=$((10 % 3))
+
+### Increment
+((counter++))
+
+### Decrement
+((counter--))
+
+### Compound operations
+((result += 5))
+((result *= 2))
+
+### Floating point (using bc)
+result=$(echo "scale=2; 10 / 3" | bc)
+
+## Date and Time
+
+### Current date
+date
+
+### Formatted date
+date "+%Y-%m-%d"
+
+### Unix timestamp
+date +%s
+
+### Date arithmetic
+date -d "+7 days"
+date -d "yesterday"
+
+### Sleep
+sleep 1      # 1 second
+sleep 0.5    # 0.5 seconds
+sleep 1m     # 1 minute
+
+## Networking
+
+### Download file
+wget https://example.com/file.txt
+curl -O https://example.com/file.txt
+
+### Download with custom name
+curl -o output.txt https://example.com/file.txt
+
+### POST request
+curl -X POST -d "data=value" https://api.example.com
+
+### Check if URL is reachable
+curl -Is https://example.com | head -n 1
+
+### Get public IP
+curl ifconfig.me
+
+## Debugging
+
+### Print debug info
+echo "DEBUG: variable value is $var"
+
+### Print to stderr
+echo "Error message" >&2
+
+### Enable debug mode
+bash -x script.sh
+
+### Check syntax without executing
+bash -n script.sh
+
+## Best Practices
+
+### Shebang
+#!/usr/bin/env bash
+
+### Strict mode
+set -euo pipefail
+
+### Use meaningful variable names
+user_name="John"  # Good
+un="John"         # Bad
+
+### Quote variables
+rm "$file"        # Good
+rm $file          # Bad (word splitting)
+
+### Check command exists
+if command -v docker &> /dev/null; then
+  echo "Docker is installed"
+fi
+
+### Use functions for reusable code
+validate_input() {
+  if [ -z "$1" ]; then
+    echo "Input required" >&2
+    return 1
+  fi
+}
+
+### Document your script
+# Description: This script processes log files
+# Usage: ./script.sh <log_file>
+# Author: Your Name
+
+## Common Patterns
+
+### Menu system
+echo "1. Option 1"
+echo "2. Option 2"
+read -p "Choose: " choice
+
+case $choice in
+  1) echo "Option 1 selected" ;;
+  2) echo "Option 2 selected" ;;
+  *) echo "Invalid option" ;;
+esac
+
+### Progress indicator
+for i in {1..100}; do
+  echo -ne "\rProgress: $i%"
+  sleep 0.1
+done
+echo
+
+### Color output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NC='\033[0m'  # No Color
+
+echo -e "${RED}Error${NC}"
+echo -e "${GREEN}Success${NC}"
+
+### Logging function
+log() {
+  echo "[$(date +'%Y-%m-%d %H:%M:%S')] $*"
+}
+
+log "Script started"
+
+### Backup file before modification
+backup() {
+  local file="$1"
+  cp "$file" "$file.bak.$(date +%s)"
+}
