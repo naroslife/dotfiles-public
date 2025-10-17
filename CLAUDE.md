@@ -6,104 +6,116 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a personal dotfiles-public repository managed with Nix Home Manager, providing a reproducible development environment across multiple machines. The configuration supports both flake-based (recommended) and regular Home Manager installations.
 
-## Build and Setup Commands
+**Tech Stack**: Nix + Home Manager + Flakes | Primary Shell: Elvish | Multi-user support via dynamic configuration
 
-### Initial Setup
+## Quick Reference
+
+### Essential Commands
+
 ```bash
-# Apply configuration (interactive mode with prompts)
+# Apply configuration (interactive mode)
 ./apply.sh
 
-# Apply configuration with specific username (flake mode)
+# Apply with specific username (flake mode)
 nix run home-manager/master -- switch --impure --flake ".#enterpriseuser"
+# Available usernames: naroslife, enterpriseuser
 
-# Available usernames configured in flake.nix: naroslife, enterpriseuser
-```
-
-### Update Configuration
-```bash
-# Update flake inputs
+# Update and apply
 nix flake update
-
-# Update git submodules (if using)
-git submodule update --init --recursive
-
-# Apply updated configuration
 ./apply.sh
+
+# Run tests
+./tests/run_tests.sh
+
+# Validate configuration
+nix flake check
 ```
 
-### WSL-Specific Setup
-```bash
-# The apply.sh script auto-detects WSL and applies optimizations
-# WSL utilities are automatically configured via wsl-init.sh
-```
+### Key Files
+
+- **flake.nix**: User configurations, input dependencies
+- **home.nix**: Main Home Manager entry point (delegates to modules/)
+- **modules/**: Modular Nix configs (core, environment, shells, dev, cli, wsl)
+- **apply.sh**: Interactive setup script
+- **lib/common.sh**: Shared utilities (logging, platform detection, error handling)
+- **tests/**: Test suite for shell scripts
 
 ## Architecture
 
-### Multi-User Support
-The flake configuration (`flake.nix`) supports multiple users through dynamic home configuration generation. Each user gets their own:
-- Username and home directory
-- Git configuration (user.name, user.email)
-- Environment-specific settings
+**Structure**: Modular Nix configuration with domain separation (shells/, dev/, cli/)
+**Multi-User**: Dynamic configuration generation per user in flake.nix
+**Platform-Aware**: Auto-detects WSL and applies optimizations
+**Reproducible**: Nix ensures identical environments across machines
 
-Users are defined in the `users` list in `flake.nix` and configurations are generated dynamically using `mkHomeConfig`.
+## Memory Navigation
 
-### Configuration Structure
-- **home.nix**: Central Home Manager configuration defining all packages, programs, and dotfile management
-- **flake.nix**: Defines inputs (nixpkgs, home-manager, NUR, sops-nix) and generates per-user configurations
-- **apply.sh**: Interactive setup script that handles both Nix installation and Home Manager configuration
+For detailed information, Claude should read Serena memories on-demand:
 
-### Key Components
+- **project_overview**: Comprehensive tech stack, structure, features
+- **suggested_commands**: Full command reference (setup, update, maintenance, DX CLI)
+- **code_style_conventions**: EditorConfig, Bash/Nix/Python conventions, patterns
+- **task_completion_checklist**: Pre-commit checks, commit process, quality gates
+- **testing_guide**: Test suite, coverage, writing tests
+- **architecture_analysis**: Deep technical analysis, refactoring recommendations
+- **project_patterns**: Shell/Nix patterns, naming conventions, best practices
 
-#### Shell Environment
-- Primary shell: **Elvish** with custom modules in `elvish/`
-- Secondary shells: Zsh, Bash with shared configurations
-- Prompt: Starship with custom configuration
-- History: Atuin for cross-shell history synchronization
-- Completions: Carapace framework for advanced completions
+**Reading Order**:
+1. Start here (Project CLAUDE.md) for quick context
+2. Check MCP Memory for user-specific preferences
+3. Read relevant Serena memories based on task (don't load all upfront)
 
-#### Development Tools
-The configuration includes extensive development tooling:
-- Modern CLI replacements (bat, eza, fd, ripgrep, zoxide)
-- Container tools (Docker, kubectl, k9s, lazydocker)
-- Language environments (Python 3.12, Java 11, Ruby 3.3, Go, Rust, Node.js)
-- Version management via asdf (configured in `.tool-versions`)
+## MCP Memory Configuration
 
-#### Git Submodules (Optional)
-- **base**: Shell framework for consistent functions across shells
-- **stdlib.sh**: Bash standard library for robust scripting
-- **util-linux**: Custom util-linux build
+This repository includes a portable MCP Memory configuration:
 
-### WSL Integration
-When running on WSL, additional features are activated:
-- Clipboard integration (pbcopy/pbpaste aliases)
-- Windows path integration
-- WSL utilities (wslview, wslpath, wslvar)
-- Daily APT network configuration checks (Enterprise-specific)
-- Performance optimizations and proper umask settings
+- **.mcp/memory.json**: Global knowledge graph with user preferences, workflow patterns, and best practices
+- **.mcp.json**: MCP server configuration (configures Memory server to use `.mcp/memory.json`)
+
+**Key Features**:
+
+- **Portable**: Uses `${HOME}` variable to work across different usernames (uif58593, naroslife, enterpriseuser)
+- **Version-Controlled**: Memory travels with dotfiles across machines
+- **Generic Identities**: Uses "User Preferences" entity instead of username-specific entities
+
+**After Setup**: Restart Claude Code to apply the new memory configuration. The memory server will then use the version-controlled memory file instead of the default location.
+
+See `.mcp/README.md` for detailed documentation.
 
 ## Important Notes
 
 ### Nix Flake Usage
-- The configuration uses `--impure` flag to allow accessing environment variables
-- Username must match one defined in the `users` list in `flake.nix`
-- Git configuration is embedded in the flake for each user
 
-### Shell Integration
-All shells source common configurations:
-- Base shell framework (if submodules initialized)
-- Stdlib.sh utilities (if submodules initialized)
-- Shared aliases and functions from `home.nix`
+- Requires `--impure` flag to access environment variables
+- Username must match one in `flake.nix` users list
+- Configuration is purely functional and reproducible
 
-### Configuration Deployment
-The `apply.sh` script provides an interactive experience:
-1. Checks for required dependencies (git, nix)
-2. Installs Nix if not present
-3. Prompts for git submodule usage
-4. Asks for Home Manager type (flake vs regular)
-5. Prompts for username (in flake mode)
-6. Applies configuration and optionally configures GitHub CLI
+### WSL Integration
 
-### File Management
-- Dotfiles are managed through Home Manager's `home.file` declarations
-- Symlinks are created from Nix store to home directory
-- Configuration files maintain their structure from the repository
+- Auto-detected by apply.sh
+- Clipboard integration (pbcopy/pbpaste)
+- WSL utilities (wslview, wslpath, wslvar)
+- Network configuration helpers
+
+### Development Workflow
+
+1. Make changes to Nix modules or shell scripts
+2. Validate: `nix flake check`
+3. Test: `./tests/run_tests.sh` (if modified shell scripts)
+4. Apply: `./apply.sh`
+5. Commit with conventional commits format
+6. See `task_completion_checklist` memory for full checklist
+
+## Claude Code Integration
+
+This repository includes version-controlled Claude Code configuration in `.claude/`:
+
+- **CLAUDE.md**: Global instructions for Claude (plugin marketplace, orchestration rules)
+- **settings.json**: Permissions, statusline (ccline), environment variables
+- **ccline/**: Statusline configuration and themes
+- **setup-plugins.sh**: Automated plugin installation script
+
+**Setup**: Run `./apply.sh` to symlink Claude Code configuration to `~/.claude/`. The script will prompt to install plugins.
+
+**Manual Plugin Setup**: Run `~/.claude/setup-plugins.sh` after applying dotfiles.
+
+See `.claude/README.md` for complete documentation.

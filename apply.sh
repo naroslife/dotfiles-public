@@ -32,6 +32,8 @@ source "$SCRIPT_DIR/lib/setup/user.sh"
 source "$SCRIPT_DIR/lib/setup/homemanager.sh"
 # shellcheck source=lib/setup/github.sh
 source "$SCRIPT_DIR/lib/setup/github.sh"
+# shellcheck source=lib/setup/claude.sh
+source "$SCRIPT_DIR/lib/setup/claude.sh"
 # shellcheck source=lib/setup/platform/wsl.sh
 source "$SCRIPT_DIR/lib/setup/platform/wsl.sh"
 # shellcheck source=lib/setup/platform/nvidia.sh
@@ -170,6 +172,9 @@ main() {
     select_user
     apply_home_manager
     apply_wsl_optimizations
+
+    # Optional Claude Code setup
+    setup_claude
 
     # Optional GitHub CLI setup
     if ! $ASSUME_YES && ask_yes_no "Would you like to set up GitHub CLI authentication?"; then

@@ -192,5 +192,11 @@
     "titleBar.inactiveBackground": "#47231299",
     "titleBar.inactiveForeground": "#e7e7e799"
   },
-  "peacock.remoteColor": "#472312"
+  "peacock.remoteColor": "#472312",
+  "cSpell.words": [
+    "ccline",
+    "markitdown",
+    "modelcontextprotocol",
+    "sequentialthinking"
+  ]
 }

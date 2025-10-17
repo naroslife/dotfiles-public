@@ -14,6 +14,7 @@ Modular dotfiles managed with [Home Manager](https://github.com/nix-community/ho
 - 🎯 **Developer Experience** - Comprehensive DX improvements (CLI, diagnostics, examples, pickers)
 - 📚 **Command Examples** - 2,000+ lines of curated examples for git, docker, nix, bash, tmux
 - 🔍 **Health Monitoring** - Built-in diagnostics and performance profiling
+- 🤖 **Claude Code Integration** - Version-controlled configuration, automated plugin setup
 
 ## Quick Start
 
@@ -162,6 +163,26 @@ dotfiles-public/
 - [yq](https://github.com/mikefarah/yq) - YAML processor
 
 ## Configuration
+
+### Claude Code Setup
+
+Claude Code configuration is version-controlled in `.claude/`:
+
+```bash
+# Automatic setup (recommended)
+./apply.sh  # Symlinks config and prompts for plugin installation
+
+# Manual plugin installation
+~/.claude/setup-plugins.sh  # Installs 24 recommended plugins
+```
+
+**Included**:
+- **CLAUDE.md**: Global instructions (plugin marketplace, orchestration)
+- **settings.json**: Permissions, statusline (ccline), environment
+- **ccline/**: Statusline configuration with 9 themes
+- **setup-plugins.sh**: Automated plugin installer
+
+See [.claude/README.md](.claude/README.md) for complete documentation.
 
 ### User Management
 
