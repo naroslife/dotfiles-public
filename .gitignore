@@ -27,3 +27,9 @@ Thumbs.db
 # Nix build outputs
 .direnv/
 *Zone.Identifier
+
+# Serena configuration
+# Keep the config template and project settings, but ignore dynamic files
+.serena/
+!.serena/serena_config.yml
+!.serena/project.yml

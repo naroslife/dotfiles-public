@@ -12,63 +12,72 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Check if claude is available
-if ! command -v claude &> /dev/null; then
-  echo "Error: 'claude' command not found. Please install Claude Code first."
-  echo "Visit: https://docs.claude.com/en/docs/claude-code/installation"
-  exit 1
+if ! command -v claude &>/dev/null; then
+	echo "Error: 'claude' command not found. Please install Claude Code first."
+	echo "Visit: https://docs.claude.com/en/docs/claude-code/installation"
+	exit 1
 fi
 
 echo "🔌 Setting up Claude Code plugins..."
 echo ""
 
+# Ensure wshobson/agents marketplace is added
+echo "📦 Adding wshobson/agents marketplace..."
+if claude plugin marketplace add wshobson/agents 2>&1 | /usr/bin/grep -qE "already added|Already added"; then
+	echo "  ⏭️  Marketplace already added"
+else
+	echo "  ✅ Marketplace added successfully"
+fi
+echo ""
+
 # List of plugins to install
 # Format: plugin-name@marketplace
 plugins=(
-  # Development
-  "code-documentation@claude-code-workflows"
-  "debugging-toolkit@claude-code-workflows"
-  "backend-development@claude-code-workflows"
+	# Development
+	"code-documentation@claude-code-workflows"
+	"debugging-toolkit@claude-code-workflows"
+	"backend-development@claude-code-workflows"
 
-  # Workflows
-  "git-pr-workflows@claude-code-workflows"
-  "full-stack-orchestration@claude-code-workflows"
-  "tdd-workflows@claude-code-workflows"
+	# Workflows
+	"git-pr-workflows@claude-code-workflows"
+	"full-stack-orchestration@claude-code-workflows"
+	"tdd-workflows@claude-code-workflows"
 
-  # Testing
-  "unit-testing@claude-code-workflows"
+	# Testing
+	"unit-testing@claude-code-workflows"
 
-  # Quality
-  "code-review-ai@claude-code-workflows"
-  "comprehensive-review@claude-code-workflows"
-  "performance-testing-review@claude-code-workflows"
+	# Quality
+	"code-review-ai@claude-code-workflows"
+	"comprehensive-review@claude-code-workflows"
+	"performance-testing-review@claude-code-workflows"
 
-  # Utilities
-  "code-refactoring@claude-code-workflows"
-  "dependency-management@claude-code-workflows"
-  "error-debugging@claude-code-workflows"
-  "error-diagnostics@claude-code-workflows"
+	# Utilities
+	"code-refactoring@claude-code-workflows"
+	"dependency-management@claude-code-workflows"
+	"error-debugging@claude-code-workflows"
+	"error-diagnostics@claude-code-workflows"
 
-  # AI & Context
-  "agent-orchestration@claude-code-workflows"
-  "context-management@claude-code-workflows"
+	# AI & Context
+	"agent-orchestration@claude-code-workflows"
+	"context-management@claude-code-workflows"
 
-  # Operations
-  "observability-monitoring@claude-code-workflows"
-  "application-performance@claude-code-workflows"
+	# Operations
+	"observability-monitoring@claude-code-workflows"
+	"application-performance@claude-code-workflows"
 
-  # Modernization
-  "framework-migration@claude-code-workflows"
-  "codebase-cleanup@claude-code-workflows"
+	# Modernization
+	"framework-migration@claude-code-workflows"
+	"codebase-cleanup@claude-code-workflows"
 
-  # Documentation
-  "documentation-generation@claude-code-workflows"
+	# Documentation
+	"documentation-generation@claude-code-workflows"
 
-  # Multi-platform
-  "multi-platform-apps@claude-code-workflows"
+	# Multi-platform
+	"multi-platform-apps@claude-code-workflows"
 
-  # Languages
-  "python-development@claude-code-workflows"
-  "systems-programming@claude-code-workflows"
+	# Languages
+	"python-development@claude-code-workflows"
+	"systems-programming@claude-code-workflows"
 )
 
 # Track installation results
@@ -78,20 +87,28 @@ failed=0
 
 # Install each plugin
 for plugin in "${plugins[@]}"; do
-  plugin_name="${plugin%%@*}"
-  echo "Installing $plugin_name..."
+	plugin_name="${plugin%%@*}"
+	echo "Installing $plugin_name..."
 
-  if claude plugin install "$plugin" --yes 2>&1 | grep -q "already installed"; then
-    echo "  ⏭️  Already installed, skipping"
-    ((skipped++))
-  elif claude plugin install "$plugin" --yes; then
-    echo "  ✅ Installed successfully"
-    ((installed++))
-  else
-    echo "  ❌ Failed to install"
-    ((failed++))
-  fi
-  echo ""
+	# Capture output and exit code
+	output=$(claude plugin install "$plugin" 2>&1) || install_failed=true
+
+	if echo "$output" | /usr/bin/grep -qE "already installed|Already installed"; then
+		echo "  ⏭️  Already installed, skipping"
+		skipped=$((skipped + 1))
+	elif [ "${install_failed:-false}" = "true" ]; then
+		echo "  ❌ Failed to install"
+		# Indent error output
+		while IFS= read -r line; do
+			echo "     $line"
+		done <<<"$output"
+		failed=$((failed + 1))
+		install_failed=false
+	else
+		echo "  ✅ Installed successfully"
+		installed=$((installed + 1))
+	fi
+	echo ""
 done
 
 # Summary
@@ -105,9 +122,9 @@ echo "  📦 Total:     ${#plugins[@]}"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 if [ "$failed" -gt 0 ]; then
-  echo ""
-  echo "⚠️  Some plugins failed to install. Check the output above for details."
-  exit 1
+	echo ""
+	echo "⚠️  Some plugins failed to install. Check the output above for details."
+	exit 1
 fi
 
 echo ""

@@ -120,7 +120,7 @@ in
       # Groups command history by Git repository root
       workspaces = true;
 # Shows N lines above/below the selected command in preview
-      scroll_context_lines = 1;
+      scroll_context_lines = 2;
 
       # History settings
       history_filter = [
