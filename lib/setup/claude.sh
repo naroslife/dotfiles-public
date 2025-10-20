@@ -4,6 +4,11 @@
 # This module handles the setup of Claude Code configuration files.
 # It symlinks configuration from the dotfiles repo to ~/.claude/
 
+# Source common utilities
+_GH_MODULE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=lib/common.sh
+source "$_GH_MODULE_DIR/../common.sh"
+
 # Setup Claude Code configuration
 setup_claude_config() {
   local dotfiles_claude="$SCRIPT_DIR/.claude"
@@ -99,7 +104,7 @@ setup_claude_plugins() {
 
   # Check if claude CLI is available
   if ! command -v claude &> /dev/null; then
-    log_warning "Claude Code CLI not found - skipping plugin installation"
+    log_warn "Claude Code CLI not found - skipping plugin installation"
     log_info "   Install Claude Code from: https://docs.claude.com/en/docs/claude-code/installation"
     return 0
   fi
@@ -117,7 +122,7 @@ setup_claude_plugins() {
         log_info "   You can manually run: $plugin_script"
       fi
     else
-      log_warning "Plugin setup script not found or not executable"
+      log_warn "Plugin setup script not found or not executable"
       log_info "   Expected location: $plugin_script"
     fi
   else
