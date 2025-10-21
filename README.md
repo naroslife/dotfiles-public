@@ -219,6 +219,31 @@ The configuration automatically detects WSL and:
 - Optimizes performance settings
 - Provides Windows interop commands
 - Shows helpful reminders once per day (not on every shell)
+- **Automatically configures `/etc/wsl.conf` with optimal settings**
+
+**Automatic Configuration:** The `apply.sh` script will automatically configure your `/etc/wsl.conf` file and notify you if a WSL restart is needed.
+
+**Manual Configuration (if needed):**
+
+If you prefer to configure manually, create or edit `/etc/wsl.conf`:
+
+```ini
+[boot]
+systemd = true
+
+[interop]
+enabled = true
+appendWindowsPath = true
+
+[automount]
+enabled = true
+options = "metadata,umask=22,fmask=11"
+mountFsTab = false
+```
+
+Then restart WSL: `wsl --shutdown` (from Windows PowerShell)
+
+For troubleshooting and advanced configuration, see [docs/WSL_SETUP.md](docs/WSL_SETUP.md).
 
 ## Maintenance
 
@@ -271,8 +296,11 @@ home-manager expire-generations "-30 days"
    - If you need `en_US.UTF-8`, install locale package and update `modules/environment.nix`
 
 4. **WSL-specific issues**
+   - Ensure `/etc/wsl.conf` is properly configured (see [WSL Setup Guide](docs/WSL_SETUP.md))
+   - Run `dotfiles doctor` to check WSL configuration
    - Run `./scripts/apt-network-switch.sh` to fix APT repositories
    - Ensure WSL2 is being used (not WSL1)
+   - Restart WSL after config changes: `wsl --shutdown` (from Windows)
 
 5. **Permission denied**
    - Home Manager doesn't require sudo

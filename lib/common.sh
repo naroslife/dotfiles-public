@@ -65,6 +65,14 @@ log_warn() { log "$LOG_LEVEL_WARN" "$1"; }
 log_info() { log "$LOG_LEVEL_INFO" "$1"; }
 log_debug() { log "$LOG_LEVEL_DEBUG" "$1"; }
 
+# Success logging (commonly used across scripts)
+log_success() {
+    local message="$1"
+    local timestamp
+    timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    echo -e "${COLOR_GREEN}[SUCCESS]${COLOR_NC} [$timestamp] $message"
+}
+
 # Enhanced error handling with recovery suggestions
 die() {
     local error_msg="$1"
@@ -158,7 +166,12 @@ detect_platform() {
 
     case "$(uname -s)" in
         Linux*)
-            if [[ -f /proc/sys/fs/binfmt_misc/WSLInterop ]]; then
+            # Check multiple WSL detection methods for robustness
+            # Method 1: WSLInterop file (most reliable for WSL2)
+            # Method 2: /proc/version contains "Microsoft" or "WSL"
+            if [[ -f /proc/sys/fs/binfmt_misc/WSLInterop ]] || \
+               [[ -f /proc/sys/fs/binfmt_misc/WSLInterop-late ]] || \
+               grep -qEi "(Microsoft|WSL)" /proc/version 2>/dev/null; then
                 platform="wsl"
             else
                 platform="linux"
@@ -177,6 +190,31 @@ detect_platform() {
 
 is_wsl() {
     [[ "$(detect_platform)" == "wsl" ]]
+}
+
+# Detect if running on WSL2 specifically (vs WSL1)
+# WSL2 is identified by WSLInterop files and specific kernel version
+is_wsl2() {
+    if ! is_wsl; then
+        return 1
+    fi
+
+    # WSL2-specific checks
+    # Method 1: WSL_DISTRO_NAME environment variable (most reliable)
+    [[ -n "${WSL_DISTRO_NAME:-}" ]] && return 0
+
+    # Method 2: WSLInterop files (standard WSL2 or systemd-enabled)
+    [[ -f /proc/sys/fs/binfmt_misc/WSLInterop ]] && return 0
+    [[ -f /proc/sys/fs/binfmt_misc/WSLInterop-late ]] && return 0
+
+    # Method 3: WSL_INTEROP environment variable
+    [[ -n "${WSL_INTEROP:-}" ]] && return 0
+
+    # Method 4: Check kernel version for WSL2 signature
+    grep -qi "WSL2" /proc/version 2>/dev/null && return 0
+
+    # If we can't confirm WSL2, assume WSL1
+    return 1
 }
 
 is_linux() {
@@ -317,6 +355,6 @@ trap cleanup_on_exit EXIT INT TERM
 # Export functions that should be available to sourcing scripts
 export -f log log_error log_warn log_info log_debug
 export -f die suggest_fix require_command fetch_url
-export -f detect_platform is_wsl is_linux is_macos
+export -f detect_platform is_wsl is_wsl2 is_linux is_macos log_success
 export -f ask_yes_no backup_file validate_config_file
 export -f show_progress
