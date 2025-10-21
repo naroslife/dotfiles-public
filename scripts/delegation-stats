@@ -1,0 +1,187 @@
+#!/usr/bin/env bash
+# Delegation Statistics and Monitoring Tool
+# Shows recent Skill/Command/Agent invocations from Claude Code
+
+set -euo pipefail
+
+DELEGATION_LOG="${HOME}/.claude/delegation-log.txt"
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;34m'
+MAGENTA='\033[0;35m'
+CYAN='\033[0;36m'
+NC='\033[0m' # No Color
+
+usage() {
+    cat <<EOF
+Delegation Statistics and Monitoring Tool
+
+Usage: delegation-stats [COMMAND]
+
+Commands:
+    recent [N]    Show last N delegations (default: 20)
+    watch         Watch delegations in real-time (tail -f)
+    stats         Show delegation statistics
+    today         Show delegations from today
+    clear         Clear the delegation log
+    help          Show this help message
+
+Examples:
+    delegation-stats recent 10
+    delegation-stats watch
+    delegation-stats stats
+    delegation-stats today
+
+Log file: ${DELEGATION_LOG}
+EOF
+}
+
+# Check if log file exists
+check_log() {
+    if [[ ! -f "$DELEGATION_LOG" ]]; then
+        echo -e "${YELLOW}No delegation log found at: ${DELEGATION_LOG}${NC}"
+        echo "Delegations will be logged after restarting Claude Code with the updated hooks."
+        exit 0
+    fi
+}
+
+# Show recent delegations
+show_recent() {
+    local n="${1:-20}"
+    check_log
+
+    echo -e "${CYAN}=== Recent ${n} Delegations ===${NC}\n"
+
+    tail -"$n" "$DELEGATION_LOG" | while IFS= read -r line; do
+        if [[ $line =~ SKILL ]]; then
+            echo -e "${GREEN}${line}${NC}"
+        elif [[ $line =~ COMMAND ]]; then
+            echo -e "${BLUE}${line}${NC}"
+        elif [[ $line =~ AGENT ]]; then
+            echo -e "${MAGENTA}${line}${NC}"
+        else
+            echo "$line"
+        fi
+    done
+}
+
+# Watch delegations in real-time
+watch_delegations() {
+    check_log
+
+    echo -e "${CYAN}=== Watching Delegations (Ctrl+C to exit) ===${NC}\n"
+
+    tail -f "$DELEGATION_LOG" | while IFS= read -r line; do
+        timestamp=$(echo "$line" | grep -oP '\[\K[^\]]+')
+        if [[ $line =~ SKILL ]]; then
+            echo -e "${GREEN}${line}${NC}"
+        elif [[ $line =~ COMMAND ]]; then
+            echo -e "${BLUE}${line}${NC}"
+        elif [[ $line =~ AGENT ]]; then
+            echo -e "${MAGENTA}${line}${NC}"
+        else
+            echo "$line"
+        fi
+    done
+}
+
+# Show statistics
+show_stats() {
+    check_log
+
+    local total=$(wc -l < "$DELEGATION_LOG")
+    local skills=$(grep -c "SKILL" "$DELEGATION_LOG" || echo 0)
+    local commands=$(grep -c "COMMAND" "$DELEGATION_LOG" || echo 0)
+    local agents=$(grep -c "AGENT" "$DELEGATION_LOG" || echo 0)
+
+    local skill_pct=$(awk "BEGIN {printf \"%.1f\", ($skills/$total)*100}")
+    local command_pct=$(awk "BEGIN {printf \"%.1f\", ($commands/$total)*100}")
+    local agent_pct=$(awk "BEGIN {printf \"%.1f\", ($agents/$total)*100}")
+
+    echo -e "${CYAN}=== Delegation Statistics ===${NC}\n"
+    echo -e "Total Delegations: ${total}"
+    echo -e "${GREEN}Skills:            ${skills} (${skill_pct}%)${NC}"
+    echo -e "${BLUE}Commands:          ${commands} (${command_pct}%)${NC}"
+    echo -e "${MAGENTA}Agents:            ${agents} (${agent_pct}%)${NC}"
+
+    echo -e "\n${CYAN}=== Most Invoked Skills ===${NC}"
+    grep "SKILL" "$DELEGATION_LOG" | awk -F'|' '{print $2}' | sort | uniq -c | sort -rn | head -5 | \
+        awk '{printf "  %3d × %s\n", $1, $2}'
+
+    echo -e "\n${CYAN}=== Most Invoked Commands ===${NC}"
+    grep "COMMAND" "$DELEGATION_LOG" | awk -F'|' '{print $2}' | sort | uniq -c | sort -rn | head -5 | \
+        awk '{printf "  %3d × %s\n", $1, $2}'
+
+    echo -e "\n${CYAN}=== Most Invoked Agents ===${NC}"
+    grep "AGENT" "$DELEGATION_LOG" | awk -F'|' '{print $2}' | sort | uniq -c | sort -rn | head -5 | \
+        awk '{printf "  %3d × %s\n", $1, $2}'
+}
+
+# Show today's delegations
+show_today() {
+    check_log
+
+    local today=$(date +%Y-%m-%d)
+    echo -e "${CYAN}=== Delegations Today (${today}) ===${NC}\n"
+
+    grep "^\\[${today}" "$DELEGATION_LOG" | while IFS= read -r line; do
+        if [[ $line =~ SKILL ]]; then
+            echo -e "${GREEN}${line}${NC}"
+        elif [[ $line =~ COMMAND ]]; then
+            echo -e "${BLUE}${line}${NC}"
+        elif [[ $line =~ AGENT ]]; then
+            echo -e "${MAGENTA}${line}${NC}"
+        else
+            echo "$line"
+        fi
+    done
+
+    local today_count=$(grep -c "^\\[${today}" "$DELEGATION_LOG" || echo 0)
+    echo -e "\n${CYAN}Total today: ${today_count}${NC}"
+}
+
+# Clear the log
+clear_log() {
+    if [[ -f "$DELEGATION_LOG" ]]; then
+        read -p "Are you sure you want to clear the delegation log? [y/N] " -n 1 -r
+        echo
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            > "$DELEGATION_LOG"
+            echo -e "${GREEN}Delegation log cleared.${NC}"
+        else
+            echo "Cancelled."
+        fi
+    else
+        echo -e "${YELLOW}No log file to clear.${NC}"
+    fi
+}
+
+# Main
+case "${1:-recent}" in
+    recent)
+        show_recent "${2:-20}"
+        ;;
+    watch)
+        watch_delegations
+        ;;
+    stats)
+        show_stats
+        ;;
+    today)
+        show_today
+        ;;
+    clear)
+        clear_log
+        ;;
+    help|--help|-h)
+        usage
+        ;;
+    *)
+        echo -e "${RED}Unknown command: $1${NC}\n"
+        usage
+        exit 1
+        ;;
+esac

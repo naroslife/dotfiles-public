@@ -82,6 +82,52 @@ Each plugin provides three types of capabilities:
 - Deep domain expertise needed (security audit, performance optimization)
 - Task is well-scoped but implementation is complex
 
+## Delegation Enforcement Checklist
+
+**CRITICAL PRINCIPLE: When in doubt, delegate.**
+
+The plugin marketplace exists to be used actively. Lower your delegation threshold - most tasks benefit from specialist input.
+
+### Mandatory Delegation Triggers
+
+Check these triggers BEFORE starting any task:
+
+**📁 File Count Trigger**
+- Touching 2+ files → MUST consider delegating to domain agent
+- Touching 3+ files → Delegation MANDATORY (unless trivial like renaming)
+
+**🔤 Language Detection Trigger**
+- Working with language-specific files (.sh, .py, .nix, .rs, .go, .ts, .js, etc.)
+- → MUST invoke relevant skill or agent FIRST
+- Examples: `Skill("shell-scripting:bash-defensive-patterns")`, `Task(subagent_type="python-pro")`
+
+**🔄 Workflow Keyword Trigger**
+- User mentions: TDD, refactor, code review, feature, scaffold, debug, test, migrate
+- → Match to appropriate slash command
+- Examples: `/tdd-workflows:tdd-cycle`, `/code-refactoring:refactor-clean`
+
+**✅ Proactive Quality Gates (ALWAYS)**
+- After ANY significant code changes → `Task(subagent_type="code-reviewer")`
+- Security-sensitive code (auth, payments, API keys) → `Task(subagent_type="security-auditor")`
+- Architecture decisions → `Task(subagent_type="architect-review")` or `backend-architect`
+- New features → `Task(subagent_type="test-automator")`
+
+### Pre-Task Checklist
+
+Before implementing, explicitly ask yourself:
+
+1. ☑️ Is this language-specific work? → Invoke Skill or Agent
+2. ☑️ Am I touching 2+ files? → Consider Agent delegation
+3. ☑️ Is this a known workflow? → Use Command
+4. ☑️ Is this security-sensitive? → Plan proactive security-auditor invocation
+5. ☑️ Will this need review? → Plan proactive code-reviewer invocation
+
+### Success Metric
+
+**Target: 50%+ of tasks should involve Skills/Commands/Agents**
+
+If you complete a task without delegation, review: "Should I have used a Skill/Command/Agent?"
+
 ## Available Plugins (Compact Reference)
 
 **Legend:** 🎯 Skills | 📋 Commands | 🤖 Agents

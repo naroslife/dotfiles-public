@@ -132,6 +132,33 @@
             "command": "bash -c 'CMD=$(jq -r .tool_input.command); if [[ \"$CMD\" =~ \"rm -rf\" ]] && [[ \"$CMD\" =~ (/|~|\\$HOME) ]]; then echo \"Dangerous rm -rf detected on critical paths\"; exit 2; fi'"
           }
         ]
+      },
+      {
+        "matcher": "Skill",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'DATA=$(cat); CMD=$(echo \"$DATA\" | jq -r .tool_input.command); echo \"[$(date \"+%Y-%m-%d %H:%M:%S\")] SKILL    | $CMD\" >> ~/.claude/delegation-log.txt'"
+          }
+        ]
+      },
+      {
+        "matcher": "SlashCommand",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'DATA=$(cat); CMD=$(echo \"$DATA\" | jq -r .tool_input.command); echo \"[$(date \"+%Y-%m-%d %H:%M:%S\")] COMMAND  | $CMD\" >> ~/.claude/delegation-log.txt'"
+          }
+        ]
+      },
+      {
+        "matcher": "Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'DATA=$(cat); AGENT=$(echo \"$DATA\" | jq -r .tool_input.subagent_type); PROMPT=$(echo \"$DATA\" | jq -r \".tool_input.prompt // \\\"No prompt\\\"\" | head -c 60); echo \"[$(date \"+%Y-%m-%d %H:%M:%S\")] AGENT    | $AGENT | $PROMPT...\" >> ~/.claude/delegation-log.txt'"
+          }
+        ]
       }
     ]
   },
