@@ -24,13 +24,47 @@ This file contains MCP servers that apply across ALL projects:
 - **memory**: Global knowledge graph for user preferences and patterns
 - **sequential-thinking**: Advanced reasoning capabilities
 - **fetch**: Web content retrieval
-- **Ref**: Documentation search
-- **filesystem-with-morph**: AI-powered file editing
+- **Ref**: Documentation search (requires `REF_API_KEY` env var)
+- **filesystem-with-morph**: AI-powered file editing (requires `MORPH_API_KEY` env var)
 - **markitdown**: Document conversion
 
 **Important:** The `apply.sh` script reads this file and uses `claude mcp add --scope user` commands to install each server into Claude Code's user-scoped configuration (`~/.config/Claude/claude_desktop_config.json`).
 
 **Serena is NOT in this file** - it's configured per-project in each project's `.mcp.json`.
+
+### Required Environment Variables
+
+Some MCP servers require API keys to be set as environment variables:
+
+1. **REF_API_KEY** - Required for the Ref documentation search server
+   ```bash
+   export REF_API_KEY="your-ref-api-key-here"
+   ```
+
+2. **MORPH_API_KEY** - Required for the filesystem-with-morph AI editing server
+   ```bash
+   export MORPH_API_KEY="your-morph-api-key-here"
+   ```
+
+**Setup Instructions:**
+
+Add these environment variables to your shell configuration file:
+
+- **Zsh**: Add to `~/.zshrc` or `~/.zshenv`
+- **Bash**: Add to `~/.bashrc` or `~/.bash_profile`
+- **Elvish**: Add to `~/.config/elvish/rc.elv`
+
+Example for Zsh:
+```bash
+# ~/.zshrc or ~/.zshenv
+export REF_API_KEY="ref-xxxxxxxxxxxxx"
+export MORPH_API_KEY="sk-xxxxxxxxxxxxx"
+```
+
+After adding the variables:
+1. Reload your shell: `source ~/.zshrc` (or restart your terminal)
+2. Verify: `echo $REF_API_KEY` and `echo $MORPH_API_KEY`
+3. Run `./apply.sh` to install the MCP servers with the environment variables
 
 ## memory.json - Global Knowledge Graph
 

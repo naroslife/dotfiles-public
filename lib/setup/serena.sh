@@ -40,12 +40,17 @@ setup_serena_config() {
 				log_debug "web_dashboard_open_on_launch already set to false"
 			else
 				log_info "Updating web_dashboard_open_on_launch to false"
-				sed -i 's/^web_dashboard_open_on_launch:.*$/web_dashboard_open_on_launch: false/' "$serena_config_target"
+				# Platform-safe sed: use temp file instead of -i
+				sed 's/^web_dashboard_open_on_launch:.*$/web_dashboard_open_on_launch: false/' "$serena_config_target" > "${serena_config_target}.tmp"
+				mv "${serena_config_target}.tmp" "$serena_config_target"
 			fi
 		else
 			# Add setting after web_dashboard line
 			log_info "Adding web_dashboard_open_on_launch: false to Serena config"
-			sed -i '/^web_dashboard:/a web_dashboard_open_on_launch: false' "$serena_config_target"
+			# Platform-safe sed: use temp file instead of -i
+			sed '/^web_dashboard:/a\
+web_dashboard_open_on_launch: false' "$serena_config_target" > "${serena_config_target}.tmp"
+			mv "${serena_config_target}.tmp" "$serena_config_target"
 		fi
 
 		log_info "✅ Serena configuration updated"
@@ -68,9 +73,14 @@ setup_serena_config() {
 			if [[ -f "$serena_config_target" ]]; then
 				log_info "Serena config initialized - setting web_dashboard_open_on_launch=false"
 				if grep -q "^web_dashboard_open_on_launch:" "$serena_config_target" 2>/dev/null; then
-					sed -i 's/^web_dashboard_open_on_launch:.*$/web_dashboard_open_on_launch: false/' "$serena_config_target"
+					# Platform-safe sed: use temp file
+					sed 's/^web_dashboard_open_on_launch:.*$/web_dashboard_open_on_launch: false/' "$serena_config_target" > "${serena_config_target}.tmp"
+					mv "${serena_config_target}.tmp" "$serena_config_target"
 				else
-					sed -i '/^web_dashboard:/a web_dashboard_open_on_launch: false' "$serena_config_target"
+					# Platform-safe sed: use temp file
+					sed '/^web_dashboard:/a\
+web_dashboard_open_on_launch: false' "$serena_config_target" > "${serena_config_target}.tmp"
+					mv "${serena_config_target}.tmp" "$serena_config_target"
 				fi
 				log_info "✅ Serena configuration created and updated"
 			else

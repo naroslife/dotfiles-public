@@ -39,11 +39,13 @@ Log file: ${DELEGATION_LOG}
 EOF
 }
 
-# Check if log file exists
+# Check if log file exists, create if missing
 check_log() {
     if [[ ! -f "$DELEGATION_LOG" ]]; then
-        echo -e "${YELLOW}No delegation log found at: ${DELEGATION_LOG}${NC}"
-        echo "Delegations will be logged after restarting Claude Code with the updated hooks."
+        echo -e "${YELLOW}No delegation log found. Creating log file...${NC}"
+        mkdir -p "$(dirname "$DELEGATION_LOG")"
+        touch "$DELEGATION_LOG"
+        echo -e "${YELLOW}Delegations will be logged after restarting Claude Code with the updated hooks.${NC}"
         exit 0
     fi
 }
@@ -75,7 +77,6 @@ watch_delegations() {
     echo -e "${CYAN}=== Watching Delegations (Ctrl+C to exit) ===${NC}\n"
 
     tail -f "$DELEGATION_LOG" | while IFS= read -r line; do
-        timestamp=$(echo "$line" | grep -oP '\[\K[^\]]+')
         if [[ $line =~ SKILL ]]; then
             echo -e "${GREEN}${line}${NC}"
         elif [[ $line =~ COMMAND ]]; then
@@ -96,6 +97,12 @@ show_stats() {
     local skills=$(grep -c "SKILL" "$DELEGATION_LOG" || echo 0)
     local commands=$(grep -c "COMMAND" "$DELEGATION_LOG" || echo 0)
     local agents=$(grep -c "AGENT" "$DELEGATION_LOG" || echo 0)
+
+    # Handle division by zero
+    if [[ $total -eq 0 ]]; then
+        echo -e "${YELLOW}No delegations logged yet.${NC}"
+        return 0
+    fi
 
     local skill_pct=$(awk "BEGIN {printf \"%.1f\", ($skills/$total)*100}")
     local command_pct=$(awk "BEGIN {printf \"%.1f\", ($commands/$total)*100}")

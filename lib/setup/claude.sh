@@ -160,8 +160,16 @@ setup_mcp_servers() {
 	local server_names
 	server_names=$(jq -r '.mcpServers | keys[]' "$mcp_global_config")
 
-	for server_name in $server_names; do
+	while IFS= read -r server_name; do
+		[[ -z "$server_name" ]] && continue
+
 		log_debug "Processing MCP server: $server_name"
+
+		# Check if server is already installed (idempotency)
+		if claude mcp list 2>/dev/null | grep -q "^$server_name"; then
+			log_debug "  MCP server $server_name already installed, skipping"
+			continue
+		fi
 
 		# Extract server configuration
 		local command
@@ -213,7 +221,7 @@ setup_mcp_servers() {
 		else
 			log_error "    ✗ Failed to add $server_name"
 		fi
-	done
+	done < <(jq -r '.mcpServers | keys[]' "$mcp_global_config")
 
 	log_info "✅ Global MCP servers setup completed"
 }

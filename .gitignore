@@ -33,3 +33,13 @@ Thumbs.db
 .serena/
 !.serena/serena_config.yml
 !.serena/project.yml
+
+# Security: Never commit files with API keys or secrets
+# Note: API keys should be in environment variables
+*.key
+*.secret
+*secret*.json
+*credential*.json
+.env
+.env.*
+!.env.example

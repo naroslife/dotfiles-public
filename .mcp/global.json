@@ -29,7 +29,7 @@
         "ref-tools-mcp@latest"
       ],
       "env": {
-        "REF_API_KEY": "ref-ec3ed93debbfb4c1e1be"
+        "REF_API_KEY": "${REF_API_KEY}"
       }
     },
     "markitdown": {
@@ -47,7 +47,7 @@
         "@morph-llm/morph-fast-apply"
       ],
       "env": {
-        "MORPH_API_KEY": "sk-KY5AhJtZMfK5isr8rjXIbXzFuvYKptWuZD5QqRvIZZPWXUPW",
+        "MORPH_API_KEY": "${MORPH_API_KEY}",
         "ALL_TOOLS": "false"
       }
     }

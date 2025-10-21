@@ -121,15 +121,15 @@
           },
           {
             "type": "command",
-            "command": "bash -c 'DATA=$(cat); CMD=$(echo \"$DATA\" | jq -r .tool_input.command); DESC=$(echo \"$DATA\" | jq -r \"if .tool_input.description then .tool_input.description else \\\"No description\\\" end\"); echo \"$CMD - $DESC\" >> ~/.claude/bash-command-log.txt'"
-          },
-          {
-            "type": "command",
             "command": "bash -c 'CMD=$(jq -r .tool_input.command); if [[ \"$CMD\" =~ \"git push.*--force\" ]] && ! [[ \"$CMD\" =~ \"--force-with-lease\" ]]; then echo \"Use --force-with-lease instead of --force for safer force pushes\"; exit 2; fi'"
           },
           {
             "type": "command",
             "command": "bash -c 'CMD=$(jq -r .tool_input.command); if [[ \"$CMD\" =~ \"rm -rf\" ]] && [[ \"$CMD\" =~ (/|~|\\$HOME) ]]; then echo \"Dangerous rm -rf detected on critical paths\"; exit 2; fi'"
+          },
+          {
+            "type": "command",
+            "command": "bash -c 'CMD=$(jq -r .tool_input.command); DESC=$(jq -r \".tool_input.description // \\\"No description\\\"\"); echo \"$CMD - $DESC\" >> ~/.claude/bash-command-log.txt'"
           }
         ]
       },

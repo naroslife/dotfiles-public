@@ -23,7 +23,7 @@ echo ""
 
 # Ensure wshobson/agents marketplace is added
 echo "📦 Adding wshobson/agents marketplace..."
-if claude plugin marketplace add wshobson/agents 2>&1 | /usr/bin/grep -qE "already added|Already added"; then
+if claude plugin marketplace add wshobson/agents 2>&1 | grep -qE "already added|Already added"; then
 	echo "  ⏭️  Marketplace already added"
 else
 	echo "  ✅ Marketplace added successfully"
@@ -93,7 +93,7 @@ for plugin in "${plugins[@]}"; do
 	# Capture output and exit code
 	output=$(claude plugin install "$plugin" 2>&1) || install_failed=true
 
-	if echo "$output" | /usr/bin/grep -qE "already installed|Already installed"; then
+	if echo "$output" | grep -qE "already installed|Already installed"; then
 		echo "  ⏭️  Already installed, skipping"
 		skipped=$((skipped + 1))
 	elif [ "${install_failed:-false}" = "true" ]; then
