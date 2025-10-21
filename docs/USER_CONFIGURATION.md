@@ -143,6 +143,37 @@ programs.zsh.enable = true;  # If you chose zsh
 
 ## Managing Configuration
 
+### User Re-selection During Setup
+
+During the interactive setup, you'll have an opportunity to confirm or change your user selection before applying the Home Manager configuration:
+
+```bash
+./apply.sh
+
+# ... earlier steps ...
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+User Selection Confirmation
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Selected user: naroslife
+
+This user will be used for:
+  • Home Manager configuration
+  • Git configuration
+  • Environment setup
+
+Continue with this user? [Y/n]: n
+
+# You can now re-select a different user
+Available user configurations:
+  - naroslife
+  - enterpriseuser
+Enter username for configuration: enterpriseuser
+```
+
+This allows you to change user selection without restarting the entire setup process.
+
 ### Update Existing Configuration
 
 Re-run the interactive setup:

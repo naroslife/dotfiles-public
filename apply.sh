@@ -170,6 +170,7 @@ main() {
     bootstrap_sops
 
     select_user
+    confirm_or_reselect_user
     apply_home_manager
     apply_wsl_optimizations
 
