@@ -175,11 +175,12 @@ check_wsl_optimizations() {
         local missing_settings=()
 
         if [[ -f "$wsl_conf" ]]; then
-            grep -q "systemd.*true" "$wsl_conf" 2>/dev/null && has_systemd=true
-            grep -q "enabled.*true" "$wsl_conf" 2>/dev/null && has_interop=true
-            grep -q "appendWindowsPath.*true" "$wsl_conf" 2>/dev/null && has_append_path=true
-            grep -q "\[automount\]" "$wsl_conf" 2>/dev/null && has_automount=true
-            grep -q "metadata" "$wsl_conf" 2>/dev/null && has_metadata=true
+            # Use section-aware parsing to avoid false positives
+            grep -A5 "^\[boot\]" "$wsl_conf" 2>/dev/null | grep -q "systemd.*true" && has_systemd=true
+            grep -A5 "^\[interop\]" "$wsl_conf" 2>/dev/null | grep -q "enabled.*true" && has_interop=true
+            grep -A5 "^\[interop\]" "$wsl_conf" 2>/dev/null | grep -q "appendWindowsPath.*true" && has_append_path=true
+            grep -A5 "^\[automount\]" "$wsl_conf" 2>/dev/null | grep -q "enabled.*true" && has_automount=true
+            grep -A5 "^\[automount\]" "$wsl_conf" 2>/dev/null | grep -q "metadata" && has_metadata=true
 
             # Track missing settings
             $has_systemd || missing_settings+=("systemd")

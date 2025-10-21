@@ -272,7 +272,7 @@ wslvar USERNAME
 dotfiles doctor
 ```
 
-Should show: ✓ WSL optimizations applied
+Should show: ✓ WSL fully optimized (interop, automount, clipboard, Windows PATH)
 
 ## Advanced Configuration
 
