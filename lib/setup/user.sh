@@ -90,6 +90,36 @@ select_user() {
     fi
 }
 
+# Confirm or re-select user before applying configuration
+confirm_or_reselect_user() {
+    if $ASSUME_YES; then
+        log_info "Proceeding with user: $TARGET_USER"
+        return 0
+    fi
+
+    echo
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    log_info "User Selection Confirmation"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo
+    echo "Selected user: ${COLOR_GREEN}$TARGET_USER${COLOR_NC}"
+    echo
+    echo "This user will be used for:"
+    echo "  • Home Manager configuration"
+    echo "  • Git configuration"
+    echo "  • Environment setup"
+    echo
+
+    if ask_yes_no "Continue with this user?" y; then
+        return 0
+    else
+        log_info "Re-selecting user..."
+        # Clear TARGET_USER to force re-selection
+        TARGET_USER=""
+        select_user
+    fi
+}
+
 # Run interactive user configuration
 run_user_configuration() {
     # Source the user config module
