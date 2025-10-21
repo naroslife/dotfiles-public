@@ -219,12 +219,13 @@ The configuration automatically detects WSL and:
 - Optimizes performance settings
 - Provides Windows interop commands
 - Shows helpful reminders once per day (not on every shell)
+- **Automatically configures `/etc/wsl.conf` with optimal settings**
 
-**Important:** WSL requires proper `/etc/wsl.conf` configuration for full functionality. See [WSL Setup Guide](docs/WSL_SETUP.md) for complete instructions.
+**Automatic Configuration:** The `apply.sh` script will automatically configure your `/etc/wsl.conf` file and notify you if a WSL restart is needed.
 
-**Quick Setup:**
+**Manual Configuration (if needed):**
 
-Create or edit `/etc/wsl.conf`:
+If you prefer to configure manually, create or edit `/etc/wsl.conf`:
 
 ```ini
 [boot]

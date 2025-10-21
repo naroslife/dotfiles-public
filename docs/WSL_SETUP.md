@@ -10,9 +10,32 @@ Complete guide for configuring Windows Subsystem for Linux (WSL) to work optimal
 
 ## Quick Setup
 
-### 1. Configure wsl.conf
+### Automatic Configuration (Recommended)
 
-WSL interop must be properly configured for seamless Windows-Linux integration. Create or edit `/etc/wsl.conf`:
+The dotfiles `apply.sh` script will **automatically configure** your `/etc/wsl.conf` file with optimal settings. Simply run:
+
+```bash
+git clone https://github.com/naroslife/dotfiles-public.git ~/dotfiles-public
+cd ~/dotfiles-public
+./apply.sh
+```
+
+The script will:
+- Check your current WSL configuration
+- Apply missing or incorrect settings automatically
+- Notify you if a WSL restart is required
+
+After the script completes, if changes were made, restart WSL:
+
+```powershell
+# In PowerShell or Command Prompt (Windows side)
+wsl --shutdown
+# Wait a few seconds, then restart your WSL terminal
+```
+
+### Manual Configuration (Alternative)
+
+If you prefer to configure manually, WSL interop must be properly configured for seamless Windows-Linux integration. Create or edit `/etc/wsl.conf`:
 
 ```bash
 sudo nano /etc/wsl.conf
@@ -43,15 +66,7 @@ wsl --shutdown
 # Wait a few seconds, then restart your WSL terminal
 ```
 
-### 2. Install Dotfiles
-
-```bash
-git clone https://github.com/naroslife/dotfiles-public.git ~/dotfiles-public
-cd ~/dotfiles-public
-./apply.sh
-```
-
-### 3. Verify Setup
+### Verify Setup
 
 Run the health check to verify everything is configured correctly:
 
