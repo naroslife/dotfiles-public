@@ -169,26 +169,51 @@ check_wsl_optimizations() {
         local wsl_conf="/etc/wsl.conf"
         local has_systemd=false
         local has_interop=false
+        local has_append_path=false
+        local has_automount=false
+        local has_metadata=false
+        local missing_settings=()
 
+        # Check wsl.conf settings
         if [[ -f "$wsl_conf" ]]; then
             grep -q "systemd.*true" "$wsl_conf" 2>/dev/null && has_systemd=true
-            grep -q "interop.*true" "$wsl_conf" 2>/dev/null && has_interop=true
+            grep -q "enabled.*true" "$wsl_conf" 2>/dev/null && has_interop=true
+            grep -q "appendWindowsPath.*true" "$wsl_conf" 2>/dev/null && has_append_path=true
+            grep -q "\[automount\]" "$wsl_conf" 2>/dev/null && has_automount=true
+            grep -q "metadata" "$wsl_conf" 2>/dev/null && has_metadata=true
         fi
 
-        # Check clipboard aliases
+        # Check clipboard integration
         local has_clipboard=false
         if command -v pbcopy >/dev/null 2>&1 || alias pbcopy &>/dev/null; then
             has_clipboard=true
         fi
 
-        if $has_systemd && $has_interop && $has_clipboard; then
-            check_pass "WSL optimizations applied"
+        # Check Windows PATH integration
+        local has_windows_path=false
+        if echo "$PATH" | grep -qi "windows" 2>/dev/null; then
+            has_windows_path=true
+        fi
+
+        # Collect missing settings
+        $has_systemd || missing_settings+=("systemd")
+        $has_interop || missing_settings+=("interop enabled")
+        $has_append_path || missing_settings+=("appendWindowsPath")
+        $has_metadata || missing_settings+=("metadata option")
+
+        # Determine overall status
+        if $has_systemd && $has_interop && $has_append_path && $has_metadata && $has_clipboard; then
+            check_pass "WSL configuration complete (systemd, interop, clipboard, metadata)"
+        elif [[ ${#missing_settings[@]} -gt 0 ]]; then
+            local missing_str=$(IFS=", "; echo "${missing_settings[*]}")
+            check_warn "WSL configuration incomplete (missing: $missing_str)" \
+                "See docs/WSL_SETUP.md for proper /etc/wsl.conf configuration"
         elif $has_clipboard; then
             check_warn "WSL partially optimized (clipboard configured)" \
-                "Consider enabling systemd in /etc/wsl.conf"
+                "See docs/WSL_SETUP.md for complete setup"
         else
             check_warn "WSL optimizations not fully applied" \
-                "Run: ./scripts/wsl-init.sh for WSL optimizations"
+                "See docs/WSL_SETUP.md for setup instructions"
         fi
     fi
 }

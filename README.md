@@ -220,6 +220,31 @@ The configuration automatically detects WSL and:
 - Provides Windows interop commands
 - Shows helpful reminders once per day (not on every shell)
 
+#### Quick wsl.conf Setup
+
+For seamless WSL integration, configure `/etc/wsl.conf`:
+
+```ini
+[boot]
+systemd = true
+
+[interop]
+enabled = true
+appendWindowsPath = true
+
+[automount]
+enabled = true
+options = "metadata,umask=22,fmask=11"
+mountFsTab = false
+```
+
+**After editing `/etc/wsl.conf`, restart WSL:**
+```powershell
+wsl --shutdown
+```
+
+See [docs/WSL_SETUP.md](docs/WSL_SETUP.md) for comprehensive setup guide, troubleshooting, and advanced configuration.
+
 ## Maintenance
 
 ### Update Dependencies
@@ -271,8 +296,12 @@ home-manager expire-generations "-30 days"
    - If you need `en_US.UTF-8`, install locale package and update `modules/environment.nix`
 
 4. **WSL-specific issues**
-   - Run `./scripts/apt-network-switch.sh` to fix APT repositories
-   - Ensure WSL2 is being used (not WSL1)
+   - **Clipboard not working**: Verify interop enabled in `/etc/wsl.conf` and restart WSL
+   - **File permission issues**: Add `metadata` option to `/etc/wsl.conf` automount section
+   - **Systemd not starting**: Ensure `systemd = true` in `/etc/wsl.conf` and WSL version 2
+   - **Network issues**: Run `./scripts/apt-network-switch.sh` to fix APT repositories
+   - **Verification**: Run `./scripts/dotfiles-doctor.sh` for automated health check
+   - See [docs/WSL_SETUP.md](docs/WSL_SETUP.md) for complete troubleshooting guide
 
 5. **Permission denied**
    - Home Manager doesn't require sudo
