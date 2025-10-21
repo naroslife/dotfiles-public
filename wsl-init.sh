@@ -1,10 +1,12 @@
 #!/bin/bash
 # WSL-specific initialization script
 
-# Function to check if we're running in WSL
-is_wsl() {
-	grep -qEi "(Microsoft|WSL)" /proc/version &>/dev/null
-}
+# Source common utilities for platform detection
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=lib/common.sh
+if [[ -f "$SCRIPT_DIR/lib/common.sh" ]]; then
+	source "$SCRIPT_DIR/lib/common.sh"
+fi
 
 if is_wsl; then
 	# Set up Windows PATH integration (if needed)

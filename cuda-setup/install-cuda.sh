@@ -6,64 +6,29 @@
 
 set -euo pipefail
 
-# Color output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+# Source common utilities
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=../lib/common.sh
+if [[ -f "$SCRIPT_DIR/../lib/common.sh" ]]; then
+    source "$SCRIPT_DIR/../lib/common.sh"
+else
+    echo "Error: Cannot find lib/common.sh" >&2
+    exit 1
+fi
 
-log_info() {
-    echo -e "${BLUE}[INFO]${NC} $1"
-}
-
-log_success() {
-    echo -e "${GREEN}[SUCCESS]${NC} $1"
-}
-
+# Wrapper for log_warn (common.sh uses log_warn, not log_warning)
 log_warning() {
-    echo -e "${YELLOW}[WARNING]${NC} $1"
-}
-
-log_error() {
-    echo -e "${RED}[ERROR]${NC} $1"
+    log_warn "$1"
 }
 
 # Check if running on WSL2
 check_wsl2() {
-    local is_wsl2=false
-    local detection_method=""
-
-    # Method 1: Check WSL_DISTRO_NAME environment variable (most reliable)
-    if [[ -n "${WSL_DISTRO_NAME:-}" ]]; then
-        is_wsl2=true
-        detection_method="WSL_DISTRO_NAME environment variable"
-    # Method 2: Check for WSLInterop (standard WSL2)
-    elif [[ -f /proc/sys/fs/binfmt_misc/WSLInterop ]]; then
-        is_wsl2=true
-        detection_method="WSLInterop file"
-    # Method 3: Check for WSLInterop-late (systemd-enabled WSL2)
-    elif [[ -f /proc/sys/fs/binfmt_misc/WSLInterop-late ]]; then
-        is_wsl2=true
-        detection_method="WSLInterop-late file (systemd enabled)"
-    # Method 4: Check kernel version for WSL2 signature
-    elif grep -qEi "(microsoft.*wsl2|wsl2)" /proc/version 2>/dev/null; then
-        is_wsl2=true
-        detection_method="kernel version"
-    # Method 5: Check WSL_INTEROP environment variable
-    elif [[ -n "${WSL_INTEROP:-}" ]]; then
-        is_wsl2=true
-        detection_method="WSL_INTEROP environment variable"
+    if ! is_wsl2; then
+        log_error "This script is designed for WSL2. Not running on WSL2."
+        exit 1
     fi
-
-    if [[ "$is_wsl2" == true ]]; then
-        log_success "Running on WSL2 (detected via $detection_method)"
-        return 0
-    fi
-
-    log_error "This script is designed for WSL2. Not running on WSL2."
-    log_error "Checked: WSL_DISTRO_NAME, WSLInterop files, kernel version, WSL_INTEROP"
-    exit 1
+    log_success "Running on WSL2"
+    return 0
 }
 
 # CUDA 12.9 minimum driver requirements

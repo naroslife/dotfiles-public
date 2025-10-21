@@ -5,23 +5,17 @@
 
 set -euo pipefail
 
-# Color output
-GREEN='\033[0;32m'
-RED='\033[0;31m'
-BLUE='\033[0;34m'
-NC='\033[0m'
+# Get directory of this script first
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-log_info() {
-    echo -e "${BLUE}[INFO]${NC} $1"
-}
-
-log_success() {
-    echo -e "${GREEN}[SUCCESS]${NC} $1"
-}
-
-log_error() {
-    echo -e "${RED}[ERROR]${NC} $1"
-}
+# Source common utilities
+# shellcheck source=../lib/common.sh
+if [[ -f "$SCRIPT_DIR/../lib/common.sh" ]]; then
+    source "$SCRIPT_DIR/../lib/common.sh"
+else
+    echo "Error: Cannot find lib/common.sh" >&2
+    exit 1
+fi
 
 # Check if CUDA is available
 if ! command -v nvcc &> /dev/null; then
@@ -31,8 +25,6 @@ if ! command -v nvcc &> /dev/null; then
     exit 1
 fi
 
-# Get directory of this script
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
 log_info "Compiling CUDA test program..."

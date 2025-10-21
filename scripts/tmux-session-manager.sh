@@ -4,12 +4,15 @@
 
 set -euo pipefail
 
-# Colors for output
-readonly RED='\033[0;31m'
-readonly GREEN='\033[0;32m'
-readonly YELLOW='\033[1;33m'
-readonly BLUE='\033[0;34m'
-readonly NC='\033[0m' # No Color
+# Source common utilities
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=../lib/common.sh
+if [[ -f "$SCRIPT_DIR/../lib/common.sh" ]]; then
+    source "$SCRIPT_DIR/../lib/common.sh"
+else
+    echo "Error: Cannot find lib/common.sh" >&2
+    exit 1
+fi
 
 # Configuration
 readonly RESURRECT_DIR="${HOME}/.tmux/resurrect"
@@ -17,21 +20,9 @@ readonly RESURRECT_SAVE_SCRIPT="${HOME}/.tmux/plugins/tmux-resurrect/scripts/sav
 readonly RESURRECT_RESTORE_SCRIPT="${HOME}/.tmux/plugins/tmux-resurrect/scripts/restore.sh"
 readonly MAX_SAVES_TO_KEEP=5
 
-# Helper functions
-log_info() {
-    echo -e "${BLUE}[INFO]${NC} $1"
-}
-
-log_success() {
-    echo -e "${GREEN}[SUCCESS]${NC} $1"
-}
-
+# Wrapper for log_warn (common.sh uses log_warn, not log_warning)
 log_warning() {
-    echo -e "${YELLOW}[WARNING]${NC} $1"
-}
-
-log_error() {
-    echo -e "${RED}[ERROR]${NC} $1"
+    log_warn "$1"
 }
 
 check_dependencies() {
