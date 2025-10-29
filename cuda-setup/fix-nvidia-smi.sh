@@ -6,41 +6,19 @@
 
 set -euo pipefail
 
-# Color output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+# Source common utilities
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-log_info() {
-    echo -e "${BLUE}[INFO]${NC} $1"
-}
-
-log_success() {
-    echo -e "${GREEN}[SUCCESS]${NC} $1"
-}
-
-log_warning() {
-    echo -e "${YELLOW}[WARNING]${NC} $1"
-}
-
-log_error() {
-    echo -e "${RED}[ERROR]${NC} $1"
-}
-
-# Check if running on WSL2
-check_wsl2() {
-    if [[ -n "${WSL_DISTRO_NAME:-}" ]] || \
-       [[ -f /proc/sys/fs/binfmt_misc/WSLInterop ]] || \
-       [[ -f /proc/sys/fs/binfmt_misc/WSLInterop-late ]] || \
-       grep -qEi "(microsoft.*wsl2|wsl2)" /proc/version 2>/dev/null; then
-        return 0
-    fi
-
-    log_error "This script is designed for WSL2"
-    return 1
-}
+if [[ -f "$SCRIPT_DIR/lib/common.sh" ]]; then
+    # shellcheck disable=SC1091
+    source "$SCRIPT_DIR/lib/common.sh"
+elif [[ -f "$SCRIPT_DIR/../lib/common.sh" ]]; then
+    # shellcheck disable=SC1091
+    source "$SCRIPT_DIR/../lib/common.sh"
+else
+    echo "Error: Could not find common.sh" >&2
+    exit 1
+fi
 
 # Fix nvidia-smi segfault by using Windows version
 fix_nvidia_smi() {
@@ -111,7 +89,7 @@ main() {
     log_info "nvidia-smi Segfault Fix for WSL2"
     echo
 
-    if ! check_wsl2; then
+    if ! is_wsl2; then
         exit 1
     fi
 

@@ -16,10 +16,40 @@
 
 set -euo pipefail
 
+# Suppress smart-reminders during setup script execution
+export CLAUDE=1
+
+# Unset problematic function overrides from user's shell environment
+# These may be inherited from a previous home-manager generation and can interfere with setup
+unset -f cd find ls grep 2>/dev/null || true
+
 # Source common utilities
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=lib/common.sh
-source "$SCRIPT_DIR/lib/common.sh"
+
+# Source setup modules with fallback paths
+source_module() {
+  local module="$1"
+  if [[ -f "$SCRIPT_DIR/$module" ]]; then
+    # shellcheck disable=SC1090
+    source "$SCRIPT_DIR/$module"
+  elif [[ -f "$SCRIPT_DIR/../$module" ]]; then
+    # shellcheck disable=SC1090
+    source "$SCRIPT_DIR/../$module"
+  else
+    die "Could not find module: $module"
+  fi
+}
+
+source_module "lib/common.sh"
+source_module "lib/sops_bootstrap.sh"
+source_module "lib/setup/nix.sh"
+source_module "lib/setup/user.sh"
+source_module "lib/setup/homemanager.sh"
+source_module "lib/setup/github.sh"
+source_module "lib/setup/claude.sh"
+source_module "lib/setup/serena.sh"
+source_module "lib/setup/platform/wsl.sh"
+source_module "lib/setup/platform/nvidia.sh"
 # shellcheck source=lib/sops_bootstrap.sh
 source "$SCRIPT_DIR/lib/sops_bootstrap.sh"
 
@@ -34,6 +64,8 @@ source "$SCRIPT_DIR/lib/setup/homemanager.sh"
 source "$SCRIPT_DIR/lib/setup/github.sh"
 # shellcheck source=lib/setup/claude.sh
 source "$SCRIPT_DIR/lib/setup/claude.sh"
+# shellcheck source=lib/setup/serena.sh
+source "$SCRIPT_DIR/lib/setup/serena.sh"
 # shellcheck source=lib/setup/platform/wsl.sh
 source "$SCRIPT_DIR/lib/setup/platform/wsl.sh"
 # shellcheck source=lib/setup/platform/nvidia.sh
@@ -51,41 +83,41 @@ INTERACTIVE_CONFIG=false
 
 # Parse command line arguments
 parse_arguments() {
-    while [[ $# -gt 0 ]]; do
-        case $1 in
-            -y|--yes)
-                ASSUME_YES=true
-                shift
-                ;;
-            -n|--no-backup)
-                CREATE_BACKUPS=false
-                shift
-                ;;
-            -u|--user)
-                TARGET_USER="$2"
-                shift 2
-                ;;
-            -v|--verbose)
-                LOG_LEVEL=$LOG_LEVEL_DEBUG
-                shift
-                ;;
-            -i|--interactive)
-                INTERACTIVE_CONFIG=true
-                shift
-                ;;
-            -h|--help)
-                show_help
-                exit 0
-                ;;
-            *)
-                die "Unknown option: $1. Use --help for usage information."
-                ;;
-        esac
-    done
+	while [[ $# -gt 0 ]]; do
+		case $1 in
+			-y |    --yes)
+				ASSUME_YES=true
+				shift
+				;;
+			-n |    --no-backup)
+				CREATE_BACKUPS=false
+				shift
+				;;
+			-u |    --user)
+				TARGET_USER="$2"
+				shift         2
+				;;
+			-v |    --verbose)
+				LOG_LEVEL=$LOG_LEVEL_DEBUG
+				shift
+				;;
+			-i |    --interactive)
+				INTERACTIVE_CONFIG=true
+				shift
+				;;
+			-h |    --help)
+				show_help
+				exit         0
+				;;
+			*)
+				die         "Unknown option: $1. Use --help for usage information."
+				;;
+		esac
+	done
 }
 
 show_help() {
-    cat << EOF
+	cat <<EOF
 Dotfiles Setup Script
 
 This script provides an interactive setup experience for the dotfiles repository.
@@ -113,31 +145,31 @@ EOF
 
 # Validation functions
 validate_prerequisites() {
-    log_info "Validating prerequisites"
+	log_info "Validating prerequisites"
 
-    # Check if git is available
-    require_command git "Please install git: sudo apt install git (Ubuntu/Debian) or brew install git (macOS)"
+	# Check if git is available
+	require_command git "Please install git: sudo apt install git (Ubuntu/Debian) or brew install git (macOS)"
 
-    # Validate repository state
-    if [[ ! -d ".git" ]]; then
-        die "This script must be run from the dotfiles repository root"
-    fi
+	# Validate repository state
+	if [[ ! -d ".git" ]]; then
+		die   "This script must be run from the dotfiles repository root"
+	fi
 
-    # Check for required files
-    local required_files=("flake.nix" "home.nix")
-    for file in "${required_files[@]}"; do
-        if [[ ! -f "$file" ]]; then
-            die "Required file not found: $file"
-        fi
-    done
+	# Check for required files
+	local required_files=("flake.nix" "home.nix")
+	for file in "${required_files[@]}"; do
+		if   [[ ! -f "$file" ]]; then
+			die      "Required file not found: $file"
+		fi
+	done
 
-    # Validate Nix files
-    if command -v nix >/dev/null 2>&1; then
-        validate_config_file "flake.nix" "nix"
-        validate_config_file "home.nix" "nix"
-    fi
+	# Validate Nix files
+	if command -v nix >/dev/null 2>&1; then
+		validate_config_file   "flake.nix" "nix"
+		validate_config_file   "home.nix" "nix"
+	fi
 
-    log_info "Prerequisites validation passed"
+	log_info "Prerequisites validation passed"
 }
 
 # Nix installation with enhanced security
@@ -146,54 +178,57 @@ validate_prerequisites() {
 
 # Main setup orchestration
 main() {
-    log_info "🚀 Starting dotfiles setup"
-    log_info "Platform: $(detect_platform)"
+	log_info "🚀 Starting dotfiles setup"
+	log_info "Platform: $(detect_platform)"
 
-    # Parse command line arguments
-    parse_arguments "$@"
+	# Parse command line arguments
+	parse_arguments "$@"
 
-    # Show configuration
-    log_debug "Configuration:"
-    log_debug "  ASSUME_YES: $ASSUME_YES"
-    log_debug "  CREATE_BACKUPS: $CREATE_BACKUPS"
-    log_debug "  TARGET_USER: ${TARGET_USER:-auto}"
-    log_debug "  INTERACTIVE_CONFIG: $INTERACTIVE_CONFIG"
-    log_debug "  LOG_LEVEL: $LOG_LEVEL"
+	# Show configuration
+	log_debug "Configuration:"
+	log_debug "  ASSUME_YES: $ASSUME_YES"
+	log_debug "  CREATE_BACKUPS: $CREATE_BACKUPS"
+	log_debug "  TARGET_USER: ${TARGET_USER:-auto}"
+	log_debug "  INTERACTIVE_CONFIG: $INTERACTIVE_CONFIG"
+	log_debug "  LOG_LEVEL: $LOG_LEVEL"
 
-    # Setup steps
-    validate_prerequisites
-    run_user_configuration
-    check_nix_installation
-    setup_git_submodules
+	# Setup steps
+	validate_prerequisites
+	run_user_configuration
+	check_nix_installation
+	setup_git_submodules
 
-    # Bootstrap sops-nix if needed (before Home Manager)
-    bootstrap_sops
+	# Bootstrap sops-nix if needed (before Home Manager)
+	bootstrap_sops
 
-    select_user
-    apply_home_manager
-    apply_wsl_optimizations
+	select_user
+	apply_home_manager
+	apply_wsl_optimizations
 
-    # Optional Claude Code setup
-    setup_claude
+	# Optional Claude Code setup
+	setup_claude
 
-    # Optional GitHub CLI setup
-    if ! $ASSUME_YES && ask_yes_no "Would you like to set up GitHub CLI authentication?"; then
-        export SETUP_GITHUB_CLI=true
-        setup_github_cli
-    fi
+	# Optional Serena MCP setup
+	setup_serena_config
 
-    # Platform-specific post-configuration optimizations
-    offer_wsl_config
-    setup_cuda_wsl
-    setup_nvidia_drivers
+	# Optional GitHub CLI setup
+	if ! $ASSUME_YES && ask_yes_no "Would you like to set up GitHub CLI authentication?"; then
+		export   SETUP_GITHUB_CLI=true
+		setup_github_cli
+	fi
 
-    log_info "✅ Dotfiles setup completed successfully!"
-    log_info ""
-    log_info "🔄 Please restart your shell or run: source ~/.bashrc"
+	# Platform-specific post-configuration optimizations
+	offer_wsl_config
+	setup_cuda_wsl
+	setup_nvidia_drivers
 
-    if is_wsl; then
-        log_info "🖥️  WSL detected - GUI applications should work after restart"
-    fi
+	log_info "✅ Dotfiles setup completed successfully!"
+	log_info ""
+	log_info "🔄 Please restart your shell or run: source ~/.bashrc"
+
+	if is_wsl2; then
+		log_info   "🖥️  WSL detected - GUI applications should work after restart"
+	fi
 }
 
 # Run main function with all arguments

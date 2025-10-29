@@ -8,7 +8,7 @@ set -euo pipefail
 if [[ -n "${HOMEMANAGER_SETUP_LOADED:-}" ]]; then
     return 0
 fi
-readonly HOMEMANAGER_SETUP_LOADED=1
+HOMEMANAGER_SETUP_LOADED=1
 
 # Source common utilities
 _HM_MODULE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

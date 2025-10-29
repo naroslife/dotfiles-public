@@ -159,9 +159,13 @@
         fi
       }
 
-      # Source mutable local configuration for ad-hoc changes
-      if [ -f ~/.bashrc.local ]; then
-        source ~/.bashrc.local
+      # Source common mutable local configuration for ad-hoc changes
+      if [ -f ~/.rc.mutable.local ]; then
+        source ~/.rc.mutable.local
+      fi
+      # Source bash-specific mutable local configuration for ad-hoc changes
+      if [ -f ~/.bashrc.mutable.local ]; then
+        source ~/.bashrc.mutable.local
       fi
     '';
   };

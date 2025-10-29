@@ -7,6 +7,20 @@
 TEMP_DIR="${TEMP_DIR:-/tmp/nix-deploy-$$}"
 CACHE_DIR="${NIX_DEPLOY_CACHE_DIR:-$HOME/.cache/nix-deploy}"
 
+# Source common utilities
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+if [[ -f "$SCRIPT_DIR/lib/common.sh" ]]; then
+    # shellcheck disable=SC1091
+    source "$SCRIPT_DIR/lib/common.sh"
+elif [[ -f "$SCRIPT_DIR/../lib/common.sh" ]]; then
+    # shellcheck disable=SC1091
+    source "$SCRIPT_DIR/../lib/common.sh"
+else
+    echo "Error: Could not find common.sh" >&2
+    exit 1
+fi
+
 # Logging
 LOG_FILE="${LOG_FILE:-$CONFIG_DIR/logs/deploy-$(date +%Y%m%d-%H%M%S).log}"
 
@@ -18,37 +32,6 @@ init_directories() {
     mkdir -p "$(dirname "$LOG_FILE")"
 }
 
-# Logging functions
-log() {
-    local level="$1"
-    shift
-    local message="$*"
-    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
-
-    echo "[$timestamp] [$level] $message" >> "$LOG_FILE"
-
-    case "$level" in
-        ERROR)
-            print_error "$message"
-            ;;
-        WARN)
-            print_warn "$message"
-            ;;
-        INFO)
-            if $VERBOSE; then
-                print_info "$message"
-            fi
-            ;;
-        DEBUG)
-            print_debug "$message"
-            ;;
-    esac
-}
-
-log_error() { log ERROR "$@"; }
-log_warn() { log WARN "$@"; }
-log_info() { log INFO "$@"; }
-log_debug() { log DEBUG "$@"; }
 
 # Check if command exists
 command_exists() {

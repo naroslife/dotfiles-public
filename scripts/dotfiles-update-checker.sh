@@ -9,11 +9,11 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/../lib/common.sh"
 
 # Constants
-readonly CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/dotfiles"
-readonly CACHE_FILE="$CACHE_DIR/last-update-check"
-readonly CACHE_EXPIRY_SECONDS=$((24 * 60 * 60))  # 24 hours
-readonly DEFAULT_REMOTE="origin"
-readonly DEFAULT_BRANCH="main"
+CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/dotfiles"
+CACHE_FILE="$CACHE_DIR/last-update-check"
+CACHE_EXPIRY_SECONDS=$((24 * 60 * 60)) # 24 hours
+DEFAULT_REMOTE="origin"
+DEFAULT_BRANCH="main"
 
 # Options
 FORCE_CHECK=false
@@ -28,38 +28,38 @@ mkdir -p "$CACHE_DIR"
 parse_options() {
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            -f|--force)
-                FORCE_CHECK=true
-                shift
-                ;;
-            -p|--pull)
-                AUTO_PULL=true
-                shift
-                ;;
-            -v|--verbose)
-                VERBOSE=true
-                export LOG_LEVEL=$LOG_LEVEL_DEBUG
-                shift
-                ;;
-            -q|--quiet)
-                QUIET=true
-                shift
-                ;;
-            -h|--help)
-                show_help
-                exit 0
-                ;;
-            *)
-                log_error "Unknown option: $1"
-                show_help
-                exit 1
-                ;;
+        -f | --force)
+            FORCE_CHECK=true
+            shift
+            ;;
+        -p | --pull)
+            AUTO_PULL=true
+            shift
+            ;;
+        -v | --verbose)
+            VERBOSE=true
+            export LOG_LEVEL=$LOG_LEVEL_DEBUG
+            shift
+            ;;
+        -q | --quiet)
+            QUIET=true
+            shift
+            ;;
+        -h | --help)
+            show_help
+            exit 0
+            ;;
+        *)
+            log_error "Unknown option: $1"
+            show_help
+            exit 1
+            ;;
         esac
     done
 }
 
 show_help() {
-    cat << EOF
+    cat <<EOF
 Usage: $(basename "$0") [OPTIONS]
 
 Smart update checker for dotfiles repository.
@@ -243,21 +243,21 @@ display_updates() {
 
                 # Colorize based on conventional commit type
                 case "$message" in
-                    feat:*|feat\(*\):*)
-                        echo -e "  ${COLOR_GREEN}•${COLOR_NC} $message"
-                        ;;
-                    fix:*|fix\(*\):*)
-                        echo -e "  ${COLOR_YELLOW}•${COLOR_NC} $message"
-                        ;;
-                    docs:*|docs\(*\):*)
-                        echo -e "  ${COLOR_BLUE}•${COLOR_NC} $message"
-                        ;;
-                    refactor:*|refactor\(*\):*|chore:*|chore\(*\):*)
-                        echo -e "  ${COLOR_CYAN}•${COLOR_NC} $message"
-                        ;;
-                    *)
-                        echo -e "  • $message"
-                        ;;
+                feat:* | feat\(*\):*)
+                    echo -e "  ${COLOR_GREEN}•${COLOR_NC} $message"
+                    ;;
+                fix:* | fix\(*\):*)
+                    echo -e "  ${COLOR_YELLOW}•${COLOR_NC} $message"
+                    ;;
+                docs:* | docs\(*\):*)
+                    echo -e "  ${COLOR_BLUE}•${COLOR_NC} $message"
+                    ;;
+                refactor:* | refactor\(*\):* | chore:* | chore\(*\):*)
+                    echo -e "  ${COLOR_CYAN}•${COLOR_NC} $message"
+                    ;;
+                *)
+                    echo -e "  • $message"
+                    ;;
                 esac
             done
             echo
@@ -317,7 +317,7 @@ save_cache() {
     local timestamp
     timestamp=$(date +%s)
 
-    cat > "$CACHE_FILE" << EOF
+    cat >"$CACHE_FILE" <<EOF
 timestamp=$timestamp
 data=$data
 EOF
@@ -355,7 +355,7 @@ main() {
     # Get repository information
     local repo_info current_branch remote_name remote_branch
     repo_info=$(get_repo_info "$ROOT_DIR")
-    IFS='|' read -r current_branch remote_name remote_branch <<< "$repo_info"
+    IFS='|' read -r current_branch remote_name remote_branch <<<"$repo_info"
 
     log_debug "Repository info: branch=$current_branch, remote=$remote_name/$remote_branch"
 
@@ -370,8 +370,8 @@ main() {
         cache_data=$(load_cache)
 
         if [[ -n "$cache_data" ]]; then
-            IFS='|' read -r last_check_time update_info <<< "$cache_data"
-            IFS='|' read -r behind_count ahead_count local_commit remote_commit <<< "$update_info"
+            IFS='|' read -r last_check_time update_info <<<"$cache_data"
+            IFS='|' read -r behind_count ahead_count local_commit remote_commit <<<"$update_info"
 
             # Verify that our local commit hasn't changed
             local current_local_commit
@@ -401,7 +401,7 @@ main() {
         # Check for updates
         local update_info
         update_info=$(check_updates "$remote_name" "$remote_branch" "$current_branch")
-        IFS='|' read -r behind_count ahead_count local_commit remote_commit <<< "$update_info"
+        IFS='|' read -r behind_count ahead_count local_commit remote_commit <<<"$update_info"
 
         # Save to cache
         save_cache "$update_info"

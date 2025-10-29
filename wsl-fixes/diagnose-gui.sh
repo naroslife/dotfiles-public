@@ -18,12 +18,12 @@ echo "WAYLAND_DISPLAY: ${WAYLAND_DISPLAY:-NOT SET}"
 echo
 
 echo "=== X11 Sockets ==="
-ls -la /tmp/.X11-unix/ 2>&1 | head -5
-ls -la /mnt/wslg/.X11-unix/ 2>&1 | head -5
+command ls -la /tmp/.X11-unix/ 2>&1 | head -5
+command ls -la /mnt/wslg/.X11-unix/ 2>&1 | head -5
 echo
 
 echo "=== WSLg Directory ==="
-ls -la /mnt/wslg/ 2>&1 | head -10
+command ls -la /mnt/wslg/ 2>&1 | head -10
 echo
 
 echo "=== X Server Test ==="

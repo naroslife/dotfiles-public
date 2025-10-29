@@ -185,8 +185,8 @@
 
         # Override cd function for zsh (similar to bash but with zsh syntax)
         function cd() {
-          show_reminder "cd" "br" "interactive directory navigation with broot"
           if [ -z "''${CLAUDE:-}" ]; then
+            show_reminder "cd" "br" "interactive directory navigation with broot"
             if command -v __zoxide_z >/dev/null 2>&1; then
               __zoxide_z "$@"
             else
@@ -197,7 +197,14 @@
           fi
         }
 
-        set +u
+        # Source mutable local configuration for ad-hoc changes
+        if [ -f ~/.rc.mutable.local ]; then
+          source ~/.rc.mutable.local
+        fi
+        # Source zsh-specific mutable local configuration for ad-hoc changes
+        if [ -f ~/.zshrc.mutable.local ]; then
+          source ~/.zshrc.mutable.local
+        fi
       ''
     ];
   };

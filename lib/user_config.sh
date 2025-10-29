@@ -17,7 +17,7 @@ LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$LIB_DIR/common.sh"
 
 # Configuration version for migration support
-readonly CONFIG_VERSION="2.0.0"
+CONFIG_VERSION="2.0.0"
 
 # Configuration file paths
 USER_CONFIG_FILE="${USER_CONFIG_FILE:-$HOME/.config/dotfiles/user.conf}"
@@ -141,26 +141,26 @@ migrate_config() {
 
     # Version-specific migrations
     case "$from_version" in
-        "1.0.0")
-            # Legacy format - add version field
-            log_debug "Migrating from legacy format (1.0.0)"
+    "1.0.0")
+        # Legacy format - add version field
+        log_debug "Migrating from legacy format (1.0.0)"
 
-            # Load existing config
-            # shellcheck source=/dev/null
-            source "$USER_CONFIG_FILE"
+        # Load existing config
+        # shellcheck source=/dev/null
+        source "$USER_CONFIG_FILE"
 
-            # Add version and re-save
-            save_user_config
-            ;;
-        "2.0.0")
-            # Current version - no migration needed
-            log_debug "Configuration is already at current version"
-            return 0
-            ;;
-        *)
-            log_warn "Unknown configuration version: $from_version"
-            return 1
-            ;;
+        # Add version and re-save
+        save_user_config
+        ;;
+    "2.0.0")
+        # Current version - no migration needed
+        log_debug "Configuration is already at current version"
+        return 0
+        ;;
+    *)
+        log_warn "Unknown configuration version: $from_version"
+        return 1
+        ;;
     esac
 
     return 0
@@ -199,13 +199,13 @@ save_user_config() {
         for key in "${!USER_CONFIG[@]}"; do
             # Escape special characters in values
             local escaped_value="${USER_CONFIG[$key]}"
-            escaped_value="${escaped_value//\\/\\\\}"  # Escape backslashes
-            escaped_value="${escaped_value//\"/\\\"}"  # Escape quotes
-            escaped_value="${escaped_value//\$/\\\$}"  # Escape dollar signs
-            escaped_value="${escaped_value//\`/\\\`}"  # Escape backticks
+            escaped_value="${escaped_value//\\/\\\\}" # Escape backslashes
+            escaped_value="${escaped_value//\"/\\\"}" # Escape quotes
+            escaped_value="${escaped_value//\$/\\\$}" # Escape dollar signs
+            escaped_value="${escaped_value//\`/\\\`}" # Escape backticks
             echo "USER_CONFIG[$key]=\"${escaped_value}\""
         done
-    } > "$temp_file" 2>/dev/null; then
+    } >"$temp_file" 2>/dev/null; then
         # If write failed, restore from backup and clean up
         rm -f "$temp_file"
         if [[ -n "$backup_file" ]]; then
@@ -232,7 +232,7 @@ save_user_config() {
         backup_count=$(find "$USER_CONFIG_DIR" -name "$(basename "$USER_CONFIG_FILE").backup_*" 2>/dev/null | wc -l)
 
         if [[ $backup_count -gt 3 ]]; then
-            find "$USER_CONFIG_DIR" -name "$(basename "$USER_CONFIG_FILE").backup_*" -type f -print0 2>/dev/null | \
+            find "$USER_CONFIG_DIR" -name "$(basename "$USER_CONFIG_FILE").backup_*" -type f -print0 2>/dev/null |
                 xargs -0 ls -t 2>/dev/null | tail -n +4 | xargs -r rm -f
             log_debug "Cleaned old backups, keeping 3 most recent"
         fi
@@ -314,7 +314,7 @@ collect_username() {
         "Enter your username" \
         "username" \
         "${USER_CONFIG[username]}" \
-        "username"  # Use validation key
+        "username" # Use validation key
 }
 
 # Collect git configuration
@@ -328,14 +328,14 @@ collect_git_config() {
         "Enter your full name for Git commits" \
         "git_name" \
         "${USER_CONFIG[git_name]}" \
-        "git_name"  # Use validation key
+        "git_name" # Use validation key
 
     # Git email
     prompt_with_validation \
         "Enter your email for Git commits" \
         "git_email" \
         "${USER_CONFIG[git_email]}" \
-        "git_email"  # Use validation key
+        "git_email" # Use validation key
 
     # Git signing key (optional)
     if ask_yes_no "Do you want to configure Git commit signing?" n; then
@@ -343,7 +343,7 @@ collect_git_config() {
             "Enter your GPG key ID" \
             "git_signing_key" \
             "${USER_CONFIG[git_signing_key]:-}" \
-            "git_signing_key"  # Use validation key
+            "git_signing_key" # Use validation key
     fi
 }
 
@@ -359,7 +359,7 @@ collect_environment_config() {
             "Enter corporate test IPs (comma-separated)" \
             "corp_test_ips" \
             "${USER_CONFIG[corp_test_ips]}" \
-            "corp_test_ips"  # Use validation key
+            "corp_test_ips" # Use validation key
     fi
 
     # Proxy configuration (optional)
@@ -368,13 +368,13 @@ collect_environment_config() {
             "Enter HTTP proxy URL" \
             "http_proxy" \
             "${USER_CONFIG[http_proxy]:-}" \
-            "proxy_url"  # Use validation key
+            "proxy_url" # Use validation key
 
         prompt_with_validation \
             "Enter HTTPS proxy URL" \
             "https_proxy" \
             "${USER_CONFIG[https_proxy]:-${USER_CONFIG[http_proxy]}}" \
-            "proxy_url"  # Use validation key
+            "proxy_url" # Use validation key
 
         prompt_with_validation \
             "Enter no-proxy domains (comma-separated)" \
@@ -398,7 +398,7 @@ collect_shell_preferences() {
         "Choose your default shell" \
         "shell" \
         "${USER_CONFIG[shell]}" \
-        "shell"  # Use validation key
+        "shell" # Use validation key
 
     # Default editor
     echo "Available editors: vim, nvim, emacs, nano, code"
@@ -406,7 +406,7 @@ collect_shell_preferences() {
         "Choose your default editor" \
         "editor" \
         "${USER_CONFIG[editor]}" \
-        "editor"  # Use validation key
+        "editor" # Use validation key
 
     # Timezone
     local current_tz
@@ -415,7 +415,7 @@ collect_shell_preferences() {
         "Enter your timezone" \
         "timezone" \
         "${USER_CONFIG[timezone]:-$current_tz}" \
-        "timezone"  # Use validation key
+        "timezone" # Use validation key
 }
 
 # Display configuration summary
@@ -500,7 +500,7 @@ generate_nix_config() {
         return 1
     fi
 
-    cat > "$output_file" << EOF
+    cat >"$output_file" <<EOF
 # User-specific Nix configuration
 # Generated from interactive setup on $(date)
 {

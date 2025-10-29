@@ -6,13 +6,16 @@ set -euo pipefail
 
 # Script directory and root
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 
 # Source common utilities
-if [[ -f "$ROOT_DIR/lib/common.sh" ]]; then
-    source "$ROOT_DIR/lib/common.sh"
+if [[ -f "$SCRIPT_DIR/lib/common.sh" ]]; then
+    # shellcheck disable=SC1091
+    source "$SCRIPT_DIR/lib/common.sh"
+elif [[ -f "$SCRIPT_DIR/../lib/common.sh" ]]; then
+    # shellcheck disable=SC1091
+    source "$SCRIPT_DIR/../lib/common.sh"
 else
-    echo "Error: Could not find lib/common.sh" >&2
+    echo "Error: Could not find common.sh" >&2
     exit 1
 fi
 

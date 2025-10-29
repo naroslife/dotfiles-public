@@ -42,8 +42,8 @@ show_reminder() {
 
 # Command overrides with smart reminders
 cd() {
-  show_reminder "cd" "br" "interactive directory navigation with broot"
   if [ -z "${CLAUDE:-}" ]; then
+    show_reminder "cd" "br" "interactive directory navigation with broot"
     if command -v __zoxide_z >/dev/null 2>&1; then
       __zoxide_z "$@"
     else
@@ -55,63 +55,63 @@ cd() {
 }
 
 find() {
-  show_reminder "find" "fd" "faster and more user-friendly file finder"
+  [ -z "${CLAUDE:-}" ] && show_reminder "find" "fd" "faster and more user-friendly file finder"
   command find "$@"
 }
 
 htop() {
-  show_reminder "htop" "btm" "modern system monitor with better visuals"
+  [ -z "${CLAUDE:-}" ] && show_reminder "htop" "btm" "modern system monitor with better visuals"
   command htop "$@"
 }
 
 top() {
-  show_reminder "top" "btm" "modern system monitor with graphs and colors"
+  [ -z "${CLAUDE:-}" ] && show_reminder "top" "btm" "modern system monitor with graphs and colors"
   command top "$@"
 }
 
 ls() {
-  show_reminder "ls" "eza" "modern ls with colors, icons, and git integration"
+  [ -z "${CLAUDE:-}" ] && show_reminder "ls" "eza" "modern ls with colors, icons, and git integration"
   command ls "$@"
 }
 
 du() {
-  show_reminder "du" "dust" "modern du with tree view and colors"
+  [ -z "${CLAUDE:-}" ] && show_reminder "du" "dust" "modern du with tree view and colors"
   command du "$@"
 }
 
 df() {
-  show_reminder "df" "duf" "modern df with better formatting and colors"
+  [ -z "${CLAUDE:-}" ] && show_reminder "df" "duf" "modern df with better formatting and colors"
   command df "$@"
 }
 
 ps() {
-  show_reminder "ps" "procs" "modern ps with colors and search capabilities"
+  [ -z "${CLAUDE:-}" ] && show_reminder "ps" "procs" "modern ps with colors and search capabilities"
   command ps "$@"
 }
 
 ping() {
-  show_reminder "ping" "gping" "ping with real-time graphs"
+  [ -z "${CLAUDE:-}" ] && show_reminder "ping" "gping" "ping with real-time graphs"
   command ping "$@"
 }
 
 dig() {
-  show_reminder "dig" "dog" "modern dig with better output and DNS-over-HTTPS"
+  [ -z "${CLAUDE:-}" ] && show_reminder "dig" "dog" "modern dig with better output and DNS-over-HTTPS"
   command dig "$@"
 }
 
 man() {
-  show_reminder "man" "tldr" "simplified and practical examples"
+  [ -z "${CLAUDE:-}" ] && show_reminder "man" "tldr" "simplified and practical examples"
   command man "$@"
 }
 
 wc() {
-  show_reminder "wc" "tokei" "fast code line counter with language detection"
+  [ -z "${CLAUDE:-}" ] && show_reminder "wc" "tokei" "fast code line counter with language detection"
   command wc "$@"
 }
 
 # Git improvements (only show occasionally, not aliased)
 git() {
-  if [[ "$1" == "diff" ]]; then
+  if [ -z "${CLAUDE:-}" ] && [[ "$1" == "diff" ]]; then
     show_reminder "git_diff" "git difftool" "use delta for syntax-highlighted diffs"
   fi
   command git "$@"
