@@ -25,8 +25,31 @@ unset -f cd find ls grep 2>/dev/null || true
 
 # Source common utilities
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=lib/common.sh
-source "$SCRIPT_DIR/lib/common.sh"
+
+# Source setup modules with fallback paths
+source_module() {
+  local module="$1"
+  if [[ -f "$SCRIPT_DIR/$module" ]]; then
+    # shellcheck disable=SC1090
+    source "$SCRIPT_DIR/$module"
+  elif [[ -f "$SCRIPT_DIR/../$module" ]]; then
+    # shellcheck disable=SC1090
+    source "$SCRIPT_DIR/../$module"
+  else
+    die "Could not find module: $module"
+  fi
+}
+
+source_module "lib/common.sh"
+source_module "lib/sops_bootstrap.sh"
+source_module "lib/setup/nix.sh"
+source_module "lib/setup/user.sh"
+source_module "lib/setup/homemanager.sh"
+source_module "lib/setup/github.sh"
+source_module "lib/setup/claude.sh"
+source_module "lib/setup/serena.sh"
+source_module "lib/setup/platform/wsl.sh"
+source_module "lib/setup/platform/nvidia.sh"
 # shellcheck source=lib/sops_bootstrap.sh
 source "$SCRIPT_DIR/lib/sops_bootstrap.sh"
 
@@ -203,7 +226,7 @@ main() {
 	log_info ""
 	log_info "🔄 Please restart your shell or run: source ~/.bashrc"
 
-	if is_wsl; then
+	if is_wsl2; then
 		log_info   "🖥️  WSL detected - GUI applications should work after restart"
 	fi
 }

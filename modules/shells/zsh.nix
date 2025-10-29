@@ -197,7 +197,14 @@
           fi
         }
 
-        set +u
+        # Source mutable local configuration for ad-hoc changes
+        if [ -f ~/.rc.mutable.local ]; then
+          source ~/.rc.mutable.local
+        fi
+        # Source zsh-specific mutable local configuration for ad-hoc changes
+        if [ -f ~/.zshrc.mutable.local ]; then
+          source ~/.zshrc.mutable.local
+        fi
       ''
     ];
   };

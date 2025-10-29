@@ -6,52 +6,25 @@
 
 set -euo pipefail
 
-# Color output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-CYAN='\033[0;36m'
-NC='\033[0m' # No Color
+# Source common utilities
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-log_info() {
-    echo -e "${BLUE}[INFO]${NC} $1"
-}
-
-log_success() {
-    echo -e "${GREEN}[SUCCESS]${NC} $1"
-}
-
-log_warning() {
-    echo -e "${YELLOW}[WARNING]${NC} $1"
-}
-
-log_error() {
-    echo -e "${RED}[ERROR]${NC} $1"
-}
-
-log_highlight() {
-    echo -e "${CYAN}[DRIVER]${NC} $1"
-}
+if [[ -f "$SCRIPT_DIR/lib/common.sh" ]]; then
+    # shellcheck disable=SC1091
+    source "$SCRIPT_DIR/lib/common.sh"
+elif [[ -f "$SCRIPT_DIR/../lib/common.sh" ]]; then
+    # shellcheck disable=SC1091
+    source "$SCRIPT_DIR/../lib/common.sh"
+else
+    echo "Error: Could not find common.sh" >&2
+    exit 1
+fi
 
 # CUDA 12.9 minimum driver requirements
 # Source: https://docs.nvidia.com/cuda/cuda-toolkit-release-notes/index.html
-readonly CUDA_VERSION="12.9"
-readonly MIN_WINDOWS_DRIVER="528.33"  # Minimum Windows driver for CUDA 12.9
-readonly RECOMMENDED_DRIVER="566.03"   # Latest stable driver (as of March 2024)
-
-# Check if running on WSL2
-check_wsl2() {
-    if [[ -n "${WSL_DISTRO_NAME:-}" ]] || \
-       [[ -f /proc/sys/fs/binfmt_misc/WSLInterop ]] || \
-       [[ -f /proc/sys/fs/binfmt_misc/WSLInterop-late ]] || \
-       grep -qEi "(microsoft.*wsl2|wsl2)" /proc/version 2>/dev/null; then
-        return 0
-    fi
-
-    log_error "This script is designed for WSL2"
-    return 1
-}
+  CUDA_VERSION="12.9"
+  MIN_WINDOWS_DRIVER="528.33"  # Minimum Windows driver for CUDA 12.9
+  RECOMMENDED_DRIVER="566.03"   # Latest stable driver (as of March 2024)
 
 # Fix nvidia-smi segfault by using Windows version
 fix_nvidia_smi() {
@@ -114,8 +87,8 @@ get_driver_version() {
     local driver_output
     driver_output=$(/mnt/c/Windows/System32/nvidia-smi.exe 2>&1 || true)
 
-    if echo "$driver_output" | grep -q "Driver Version:"; then
-        echo "$driver_output" | grep -oP 'Driver Version: \K[0-9.]+' | head -1
+    if echo "$driver_output" | command grep -q "Driver Version:"; then
+        echo "$driver_output" | command grep -oP 'Driver Version: \K[0-9.]+' | head -1
         return 0
     fi
 
@@ -131,8 +104,8 @@ get_driver_cuda_version() {
     local driver_output
     driver_output=$(/mnt/c/Windows/System32/nvidia-smi.exe 2>&1 || true)
 
-    if echo "$driver_output" | grep -q "CUDA Version:"; then
-        echo "$driver_output" | grep -oP 'CUDA Version: \K[0-9.]+' | head -1
+    if echo "$driver_output" | command grep -q "CUDA Version:"; then
+        echo "$driver_output" | command grep -oP 'CUDA Version: \K[0-9.]+' | head -1
         return 0
     fi
 
@@ -169,7 +142,7 @@ print_driver_update_instructions() {
     log_info "Minimum required: $MIN_WINDOWS_DRIVER"
     log_info "Recommended: $RECOMMENDED_DRIVER or newer"
     echo
-    log_highlight "How to update your NVIDIA driver on Windows:"
+    log_info "How to update your NVIDIA driver on Windows:"
     echo
     echo "Option 1: GeForce Experience (Easiest)"
     echo "  1. Open GeForce Experience on Windows"
@@ -234,7 +207,7 @@ main() {
     echo
 
     # Check if WSL2
-    if ! check_wsl2; then
+    if ! is_wsl2; then
         exit 1
     fi
 

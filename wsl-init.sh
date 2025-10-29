@@ -1,12 +1,21 @@
 #!/bin/bash
 # WSL-specific initialization script
 
-# Function to check if we're running in WSL
-is_wsl() {
-	grep -qEi "(Microsoft|WSL)" /proc/version &>/dev/null
-}
+# Source common utilities
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-if is_wsl; then
+if [[ -f "$SCRIPT_DIR/lib/common.sh" ]]; then
+    # shellcheck disable=SC1091
+    source "$SCRIPT_DIR/lib/common.sh"
+elif [[ -f "$SCRIPT_DIR/../lib/common.sh" ]]; then
+    # shellcheck disable=SC1091
+    source "$SCRIPT_DIR/../lib/common.sh"
+else
+    echo "Error: Could not find common.sh" >&2
+    exit 1
+fi
+
+if is_wsl2; then
 	# Set up Windows PATH integration (if needed)
 	if [[ -d "/mnt/c/Windows/System32" ]]; then
 		export PATH="$PATH:/mnt/c/Windows/System32"

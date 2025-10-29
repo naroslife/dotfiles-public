@@ -8,7 +8,7 @@ set -euo pipefail
 if [[ -n "${USER_SETUP_LOADED:-}" ]]; then
     return 0
 fi
-readonly USER_SETUP_LOADED=1
+USER_SETUP_LOADED=1
 
 # Source common utilities
 _USER_MODULE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -73,7 +73,7 @@ select_user() {
     while IFS= read -r user; do
         echo "  - $user"
         user_array+=("$user")
-    done <<< "$available_users"
+    done <<<"$available_users"
 
     if [[ ${#user_array[@]} -eq 1 ]]; then
         TARGET_USER="${user_array[0]}"

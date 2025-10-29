@@ -9,9 +9,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/../lib/common.sh"
 
 # Constants
-readonly PROFILE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/dotfiles/profiles"
-readonly PROFILE_ITERATIONS=3
-readonly COMPONENT_MARKER="DOTFILES_PROFILE_COMPONENT"
+PROFILE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/dotfiles/profiles"
+PROFILE_ITERATIONS=3
+COMPONENT_MARKER="DOTFILES_PROFILE_COMPONENT"
 
 # Create profile directory
 mkdir -p "$PROFILE_DIR"
@@ -69,7 +69,7 @@ create_instrumented_script() {
     local shell_type="$1"
     local output_file="$2"
 
-    cat > "$output_file" << 'EOF'
+    cat >"$output_file" <<'EOF'
 #!/usr/bin/env bash
 # Instrumented shell initialization for profiling
 
@@ -91,8 +91,8 @@ TOTAL_START_NS=$(date +%s%N 2>/dev/null || echo 0)
 EOF
 
     case "$shell_type" in
-        bash)
-            cat >> "$output_file" << 'EOF'
+    bash)
+        cat >>"$output_file" <<'EOF'
 # Profile Bash initialization
 COMPONENT_START_NS=$(date +%s%N 2>/dev/null || echo 0)
 
@@ -157,10 +157,10 @@ if [[ -f "$HOME/.bashrc" ]]; then
 fi
 
 EOF
-            ;;
+        ;;
 
-        zsh)
-            cat >> "$output_file" << 'EOF'
+    zsh)
+        cat >>"$output_file" <<'EOF'
 # Profile Zsh initialization
 COMPONENT_START_NS=$(date +%s%N 2>/dev/null || echo 0)
 
@@ -198,10 +198,10 @@ fi
 # (Carapace, Starship, Atuin, Zoxide, etc.)
 
 EOF
-            ;;
+        ;;
     esac
 
-    cat >> "$output_file" << 'EOF'
+    cat >>"$output_file" <<'EOF'
 # Record total time
 TOTAL_END_NS=$(date +%s%N 2>/dev/null || echo 0)
 if [[ "$TOTAL_START_NS" != "0" && "$TOTAL_END_NS" != "0" ]]; then
@@ -236,7 +236,7 @@ profile_shell_instrumented() {
                 total_time_ms=$time_ms
             fi
         fi
-    done <<< "$profile_output"
+    done <<<"$profile_output"
 
     # Clean up
     rm -f "$instrumented_script"
@@ -250,13 +250,13 @@ profile_shell_simple() {
 
     log_debug "Profiling $shell_cmd startup ($iterations iterations)..."
 
-    for ((i=1; i<=iterations; i++)); do
+    for ((i = 1; i <= iterations; i++)); do
         local start_ns end_ns duration_ms
         start_ns=$(get_timestamp_ns)
         $shell_cmd -i -c 'exit' 2>/dev/null
         end_ns=$(get_timestamp_ns)
 
-        duration_ms=$(( (end_ns - start_ns) / 1000000 ))
+        duration_ms=$(((end_ns - start_ns) / 1000000))
         total_ms=$((total_ms + duration_ms))
 
         log_debug "  Iteration $i: ${duration_ms}ms"
@@ -345,21 +345,21 @@ display_results() {
             echo "  • Largest component: $max_component (${max_time}ms)"
 
             case "$max_component" in
-                nix_profile)
-                    echo "  • Consider optimizing Nix profile loading"
-                    ;;
-                starship_init)
-                    echo "  • Review Starship configuration for expensive modules"
-                    ;;
-                atuin_init)
-                    echo "  • Check Atuin database size and sync settings"
-                    ;;
-                custom_config)
-                    echo "  • Review custom aliases and functions for optimization"
-                    ;;
-                oh_my_zsh|prezto)
-                    echo "  • Consider reducing loaded plugins/modules"
-                    ;;
+            nix_profile)
+                echo "  • Consider optimizing Nix profile loading"
+                ;;
+            starship_init)
+                echo "  • Review Starship configuration for expensive modules"
+                ;;
+            atuin_init)
+                echo "  • Check Atuin database size and sync settings"
+                ;;
+            custom_config)
+                echo "  • Review custom aliases and functions for optimization"
+                ;;
+            oh_my_zsh | prezto)
+                echo "  • Consider reducing loaded plugins/modules"
+                ;;
             esac
         fi
 
@@ -431,37 +431,37 @@ profile_current_shell() {
 parse_options() {
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            -h|--help)
-                echo "Usage: $0 [options]"
-                echo
-                echo "Options:"
-                echo "  -h, --help     Show this help message"
-                echo "  -v, --verbose  Enable verbose output"
-                echo "  -s, --shell    Profile specific shell (bash, zsh)"
-                echo "  -i, --iterations N  Number of iterations for averaging (default: 3)"
-                echo
-                echo "Examples:"
-                echo "  $0                    # Profile current shell"
-                echo "  $0 --shell bash       # Profile bash specifically"
-                echo "  $0 --iterations 5     # Average over 5 runs"
-                exit 0
-                ;;
-            -v|--verbose)
-                export LOG_LEVEL=$LOG_LEVEL_DEBUG
-                shift
-                ;;
-            -s|--shell)
-                PROFILE_SHELL="$2"
-                shift 2
-                ;;
-            -i|--iterations)
-                PROFILE_ITERATIONS="$2"
-                shift 2
-                ;;
-            *)
-                log_error "Unknown option: $1"
-                exit 1
-                ;;
+        -h | --help)
+            echo "Usage: $0 [options]"
+            echo
+            echo "Options:"
+            echo "  -h, --help     Show this help message"
+            echo "  -v, --verbose  Enable verbose output"
+            echo "  -s, --shell    Profile specific shell (bash, zsh)"
+            echo "  -i, --iterations N  Number of iterations for averaging (default: 3)"
+            echo
+            echo "Examples:"
+            echo "  $0                    # Profile current shell"
+            echo "  $0 --shell bash       # Profile bash specifically"
+            echo "  $0 --iterations 5     # Average over 5 runs"
+            exit 0
+            ;;
+        -v | --verbose)
+            export LOG_LEVEL=$LOG_LEVEL_DEBUG
+            shift
+            ;;
+        -s | --shell)
+            PROFILE_SHELL="$2"
+            shift 2
+            ;;
+        -i | --iterations)
+            PROFILE_ITERATIONS="$2"
+            shift 2
+            ;;
+        *)
+            log_error "Unknown option: $1"
+            exit 1
+            ;;
         esac
     done
 }
@@ -480,15 +480,15 @@ main() {
     # Profile the shell
     if [[ -n "${PROFILE_SHELL:-}" ]]; then
         case "$PROFILE_SHELL" in
-            bash|zsh)
-                SHELL=$(command -v "$PROFILE_SHELL")
-                export SHELL
-                profile_current_shell
-                ;;
-            *)
-                log_error "Unsupported shell: $PROFILE_SHELL"
-                exit 1
-                ;;
+        bash | zsh)
+            SHELL=$(command -v "$PROFILE_SHELL")
+            export SHELL
+            profile_current_shell
+            ;;
+        *)
+            log_error "Unsupported shell: $PROFILE_SHELL"
+            exit 1
+            ;;
         esac
     else
         profile_current_shell

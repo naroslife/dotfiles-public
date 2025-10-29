@@ -11,8 +11,8 @@ let
     history-status = "switch_history status";
 
     # Sudo with Nix environment preservation
-    nsudo = "sudo env PATH=$PATH";
-    sudo-nix = "sudo env PATH=$PATH";
+    nsudo = "sudo env PATH='$PATH'";
+    sudo-nix = "sudo env PATH='$PATH'";
 
     # File operations
     la = "tree";

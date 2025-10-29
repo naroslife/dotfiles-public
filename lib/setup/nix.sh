@@ -8,13 +8,12 @@ set -euo pipefail
 if [[ -n "${NIX_SETUP_LOADED:-}" ]]; then
     return 0
 fi
-readonly NIX_SETUP_LOADED=1
+NIX_SETUP_LOADED=1
 
 # Source common utilities
 _NIX_MODULE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=lib/common.sh
 source "$_NIX_MODULE_DIR/../common.sh"
-
 
 # Nix installation with enhanced security
 install_nix() {

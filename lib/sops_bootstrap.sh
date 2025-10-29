@@ -9,11 +9,11 @@ if [[ -z "${COMMON_SH_LOADED:-}" ]]; then
 fi
 
 # Configuration
-readonly SOPS_CONFIG_FILE=".sops.yaml"
-readonly SECRETS_DIR="secrets"
-readonly SECRETS_FILE="$SECRETS_DIR/secrets.yaml"
-readonly SECRETS_EXAMPLE="$SECRETS_DIR/secrets.yaml.example"
-readonly SSH_KEY_PATH="$HOME/.ssh/id_ed25519"
+SOPS_CONFIG_FILE=".sops.yaml"
+SECRETS_DIR="secrets"
+SECRETS_FILE="$SECRETS_DIR/secrets.yaml"
+SECRETS_EXAMPLE="$SECRETS_DIR/secrets.yaml.example"
+SSH_KEY_PATH="$HOME/.ssh/id_ed25519"
 
 # Check if sops-nix is configured in the repository
 is_sops_configured() {
