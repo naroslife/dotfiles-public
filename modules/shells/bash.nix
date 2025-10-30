@@ -5,6 +5,10 @@
     # shellAliases are configured in aliases.nix
 
     bashrcExtra = ''
+      # Disable bash-completion before loading profile scripts (we use carapace instead)
+      # This prevents bash_completion.sh from loading if present in profile.d
+      BASH_COMPLETION_VERSINFO=999
+
       # Source Nix
       if [ -e "$HOME/.nix-profile/etc/profile.d/nix-daemon.sh" ]; then
         source "$HOME/.nix-profile/etc/profile.d/nix-daemon.sh"
@@ -89,7 +93,7 @@
       fi
       # === End AI Agent Detection ===
 
-      # Load carapace completion if available
+      # Load carapace completion (replaces bash-completion entirely)
       if command -v carapace >/dev/null 2>&1; then
         source <(carapace _carapace bash)
       fi
