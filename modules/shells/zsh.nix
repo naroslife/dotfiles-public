@@ -161,7 +161,8 @@
 
         # Initialize carapace completion for zsh
         if command -v carapace >/dev/null 2>&1; then
-          export CARAPACE_BRIDGES=''${CARAPACE_BRIDGES:-'zsh,bash'}
+          # Bridge bash-completion for zsh (adds bash completion library)
+          export CARAPACE_BRIDGES='bash'
           source <(carapace _carapace)
         fi
 
