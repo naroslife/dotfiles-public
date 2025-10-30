@@ -94,8 +94,9 @@
       # === End AI Agent Detection ===
 
       # Load carapace completion (replaces bash-completion entirely)
+      # DO NOT bridge bash-completion - it causes pop_var_context errors
       if command -v carapace >/dev/null 2>&1; then
-        export CARAPACE_BRIDGES=''${CARAPACE_BRIDGES:-'zsh,bash'}
+        export CARAPACE_BRIDGES='zsh'  # Only bridge zsh, not bash
         source <(carapace _carapace bash)
       fi
 
