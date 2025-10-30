@@ -108,11 +108,11 @@ check_home_manager() {
     check_pass "Home Manager available (version $hm_version)"
   else
     # Check if it's available via nix run
-    if command -v nix >/dev/null 2>&1 && nix run home-manager/master -- --version &>/dev/null; then
+    if command -v nix >/dev/null 2>&1 && nix run home-manager/release-25.05 -- --version &>/dev/null; then
       check_pass "Home Manager available (via nix run)"
     else
       check_fail "Home Manager not available" \
-        "Install: nix run home-manager/master -- init"
+        "Install: nix run home-manager/release-25.05 -- init"
     fi
   fi
 }

@@ -17,7 +17,7 @@ This is a personal dotfiles-public repository managed with Nix Home Manager, pro
 ./apply.sh
 
 # Apply with specific username (flake mode)
-nix run home-manager/master -- switch --impure --flake ".#enterpriseuser"
+nix run home-manager/release-25.05 -- switch --impure --flake ".#enterpriseuser"
 # Available usernames: naroslife, enterpriseuser
 
 # Update and apply

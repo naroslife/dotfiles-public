@@ -33,7 +33,7 @@ apply_home_manager() {
     # Export CURRENT_USER for dynamic user detection in flake.nix
     export CURRENT_USER="$TARGET_USER"
 
-    local home_manager_cmd="nix run home-manager/master -- switch --impure --flake \".#$TARGET_USER\""
+    local home_manager_cmd="nix run home-manager/release-25.05 -- switch --impure --flake \".#$TARGET_USER\""
 
     log_info "Executing: $home_manager_cmd"
     if ! eval "$home_manager_cmd"; then
