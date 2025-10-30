@@ -2,6 +2,7 @@
 {
   programs.bash = {
     enable = true;
+    enableCompletion = false;  # Disable Home Manager's bash-completion (using carapace instead)
     # shellAliases are configured in aliases.nix
 
     bashrcExtra = ''
