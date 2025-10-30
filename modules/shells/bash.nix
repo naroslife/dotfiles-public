@@ -89,15 +89,10 @@
       fi
       # === End AI Agent Detection ===
 
-      # Lazy-load carapace completion (only when needed)
-      _lazy_load_carapace() {
-        if command -v carapace >/dev/null 2>&1; then
-          source <(carapace _carapace)
-          unset -f _lazy_load_carapace
-        fi
-      }
-      # Trigger on first tab completion
-      complete -F _lazy_load_carapace -D
+      # Load carapace completion if available
+      if command -v carapace >/dev/null 2>&1; then
+        source <(carapace _carapace bash)
+      fi
 
       # WSL-specific initialization
       if [ -z "''${CLAUDE:-}" ] && [ -f "$HOME/dotfiles-public/wsl-init.sh" ]; then
