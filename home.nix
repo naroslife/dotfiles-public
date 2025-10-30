@@ -22,9 +22,6 @@
     # Tmux scripts (configuration now in modules/dev/default.nix)
     ".config/tmux/scripts".source = ./tmux/scripts;
 
-    # Carapace configuration
-    ".config/carapace".source = ./carapace;
-
     # Note: starship, tmux, and atuin configurations are now managed
     # via Nix modules in modules/shells/default.nix and modules/dev/default.nix
 

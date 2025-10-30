@@ -1,6 +1,0 @@
-# yaml-language-server: $schema=https://carapace.sh/schemas/command.json
-name: tmuxinator
-description: Tmuxinator is a tool for managing complex tmux sessions easily.
-parsing: disabled
-completion:
-  positionalany: ["$carapace.bridge.Fish([tmuxinator])"]

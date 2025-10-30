@@ -47,10 +47,10 @@
     };
 
     # Carapace completion specs
-    ".config/carapace/specs" = {
-      source = ../../carapace/specs;
-      recursive = true;
-    };
+    # ".config/carapace/specs" = {
+    #   source = ../../carapace/specs;
+    #   recursive = true;
+    # };
   };
 
   # Environment variables are configured in modules/environment.nix

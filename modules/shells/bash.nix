@@ -95,6 +95,7 @@
 
       # Load carapace completion (replaces bash-completion entirely)
       if command -v carapace >/dev/null 2>&1; then
+        export CARAPACE_BRIDGES=''${CARAPACE_BRIDGES:-'zsh,bash'}
         source <(carapace _carapace bash)
       fi
 

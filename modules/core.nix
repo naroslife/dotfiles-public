@@ -48,7 +48,7 @@
 
     # === Shell Essentials ===
     bashInteractive
-    # bash-completion # Disabled - using carapace instead (carapace provides all completions)
+    # bash-completion
 
     # === Fonts ===
     fira-code

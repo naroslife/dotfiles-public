@@ -161,7 +161,8 @@
 
         # Initialize carapace completion for zsh
         if command -v carapace >/dev/null 2>&1; then
-          source <(carapace _carapace zsh)
+          export CARAPACE_BRIDGES=''${CARAPACE_BRIDGES:-'zsh,bash'}
+          source <(carapace _carapace)
         fi
 
         # WSL-specific initialization
