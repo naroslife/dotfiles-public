@@ -191,7 +191,7 @@ common_subcommands = [
     };
   };
 
-  programs.fzf = shellHelpers.enableWithShells defaultShells;
+  # programs.fzf = shellHelpers.enableWithShells defaultShells;
 
   programs.direnv = shellHelpers.enableWithShells defaultShells;
 

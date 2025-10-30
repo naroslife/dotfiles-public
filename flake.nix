@@ -2,10 +2,10 @@
   description = "Modular Home Manager configuration with Nix flakes";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-25.05";
 
     home-manager = {
-      url = "github:nix-community/home-manager";
+      url = "github:nix-community/home-manager/release-25.05";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -28,7 +28,7 @@
           allowUnfreePredicate = _: true;
         };
         overlays = [
-          nur.overlay
+          nur.overlays.default
           # Custom overlays can be added here
         ];
       };

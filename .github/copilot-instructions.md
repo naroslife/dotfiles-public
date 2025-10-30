@@ -14,8 +14,9 @@ This is a **Nix/Home Manager-based dotfiles system** that provides reproducible 
 ## Multi-Shell Strategy
 
 The system supports **three shells with consistent configuration**:
+
 - **Elvish** (primary) - Uses `elvish/rc.elv` with EPM package manager and custom modules
-- **Zsh** (secondary) - Configured in `home.nix` with completions and modern integrations  
+- **Zsh** (secondary) - Configured in `home.nix` with completions and modern integrations
 - **Bash** (fallback) - Extensive configuration in `home.nix` with function overrides and smart reminders
 
 All shells share identical aliases, functions, and tool integrations defined in `home.nix`.
@@ -23,26 +24,32 @@ All shells share identical aliases, functions, and tool integrations defined in 
 ## Critical Development Workflows
 
 ### Deployment Commands
+
 ```bash
 # Local application (interactive)
 ./apply.sh [--dry-run] [--help]
 
-# Remote deployment (network-restricted environments)  
+# Remote deployment (network-restricted environments)
 ./deploy-remote.sh user@remote-host
 
 # Manual Home Manager flake application
-nix run home-manager/master -- switch --flake .#username --impure
+nix run home-manager/release-25.05 -- switch --flake .#username --impure
 ```
 
 ### User Configuration Pattern
+
 The flake supports multiple users defined in `flake.nix`:
+
 ```nix
 users = [ "naroslife" "enterpriseuser" ]; # Add usernames here
 ```
+
 Each user gets automatically configured git credentials and home directory paths.
 
 ### Git Submodule Integration
+
 Optional submodules provide shell enhancements:
+
 - **`stdlib.sh/`** - Bash standard library (auto-sourced in shells)
 - **`base/`** - Shell framework with utilities
 - **`util-linux/`** - Custom util-linux build
@@ -52,12 +59,15 @@ Enable with: `git submodule update --init --recursive`
 ## Environment-Specific Adaptations
 
 ### WSL Detection & Optimization
+
 - **`wsl-init.sh`** - Automatic WSL environment detection and clipboard integration
 - Windows PATH integration and performance optimizations
 - WSL-specific aliases: `pbcopy`, `pbpaste`, `open` (via wslview)
 
 ### Runtime Tool Switching
+
 History tools (Atuin/McFly) can be switched at runtime without rebuilds:
+
 ```bash
 switch_history atuin|mcfly|status  # Available in all shells
 use-atuin / use-mcfly             # Shell aliases
@@ -66,11 +76,13 @@ use-atuin / use-mcfly             # Shell aliases
 ## Modern CLI Philosophy
 
 The configuration promotes **modern CLI tool adoption** with:
+
 - Smart command reminders (every 5th usage) suggesting modern alternatives
 - Comprehensive aliases mapping legacy → modern tools
 - Tool-specific configurations optimized for productivity
 
 Example patterns:
+
 - `ls` → `eza` (with icons, git integration)
 - `find` → `fd` (faster, user-friendly)
 - `cat` → `bat` (syntax highlighting)
@@ -79,26 +91,32 @@ Example patterns:
 ## Configuration Management Patterns
 
 ### File Organization
-- **Program configs**: `programs.*` blocks in `home.nix`  
+
+- **Program configs**: `programs.*` blocks in `home.nix`
 - **External configs**: `home.file.*` for symlinking from dedicated directories
 - **Environment variables**: `home.sessionVariables` for shell-agnostic settings
 
 ### Package Categories
+
 Packages are organized by purpose in `home.nix`:
+
 - Version Control & Git Tools
-- Shell & Terminal Environment  
+- Shell & Terminal Environment
 - Modern CLI Replacements
 - Development toolchains (Java, C/C++, etc.)
 
-## Security & Environment Considerations  
+## Security & Environment Considerations
 
 ### Nix Environment Preservation
+
 Custom `nsudo`/`sudo-nix` functions preserve Nix PATH when using sudo:
+
 ```bash
 nsudo systemctl restart service  # Maintains access to Nix-installed tools
 ```
 
 ### Path & Library Configuration
+
 - **PKG_CONFIG_PATH** - Ensures Ubuntu system libraries remain accessible
 - **LD_LIBRARY_PATH** - Custom library paths for development projects
 - **PATH management** - Careful ordering to prioritize Nix tools while preserving system access
@@ -113,8 +131,9 @@ nsudo systemctl restart service  # Maintains access to Nix-installed tools
 ## Testing & Validation
 
 After configuration changes:
+
 1. **Local validation**: `./apply.sh --dry-run`
-2. **Build test**: `nix build .#homeConfigurations.username.activationPackage`  
+2. **Build test**: `nix build .#homeConfigurations.username.activationPackage`
 3. **Shell reload**: Test aliases and functions in all supported shells
 4. **WSL testing**: Verify WSL-specific integrations if applicable
 
@@ -125,6 +144,7 @@ After configuration changes:
 The `deploy-remote.sh` script enables deploying complete Nix/Home Manager environments to machines with **no or limited internet access** through a sophisticated closure-based approach.
 
 #### Deployment Workflow Overview
+
 ```bash
 # From internet-connected machine
 ./deploy-remote.sh user@restricted-host
@@ -136,6 +156,7 @@ The `deploy-remote.sh` script enables deploying complete Nix/Home Manager enviro
 #### Step-by-Step Process
 
 **Phase 1: Local Build & Closure Computation**
+
 ```bash
 # Build configuration locally with full internet access
 nix build --no-link --print-out-paths .#homeConfigurations.username.activationPackage
@@ -145,6 +166,7 @@ nix-store -qR /nix/store/xxx-home-manager-generation
 ```
 
 **Phase 2: Nix Installation on Remote (if needed)**
+
 - Downloads Nix installer locally first (handles restricted environments)
 - Copies installer to remote via SCP
 - Runs installation without internet dependency
@@ -152,6 +174,7 @@ nix-store -qR /nix/store/xxx-home-manager-generation
 
 **Phase 3: Store Path Transfer**
 Two transfer methods (automatic fallback):
+
 ```bash
 # Method 1: Direct SSH store (preferred)
 nix copy --to "ssh://user@host" /nix/store/path --no-check-sigs
@@ -162,6 +185,7 @@ scp closure.nar remote:/tmp/ && ssh remote "nix-store --import < /tmp/closure.na
 ```
 
 **Phase 4: Repository Sync & Activation**
+
 ```bash
 # Sync dotfiles-public repository (excluding .git)
 rsync -av --exclude='.git' ./ user@host:~/dotfiles-public/
@@ -174,16 +198,19 @@ ssh user@host "/nix/store/activation-path/activate"
 #### Key Architectural Principles
 
 **Complete Offline Operation**
+
 - All dependencies pre-computed and transferred
 - No network requests during remote activation
 - Nix store provides hermetic environment
 
 **Bandwidth Optimization**
+
 - Only transfers store paths not already present
 - Efficient NAR format for large closures
 - Rsync for incremental repository updates
 
 **Error Recovery**
+
 - Automatic fallback between transfer methods
 - Validates SSH connectivity before operations
 - Creates update helper scripts for future deployments
@@ -191,6 +218,7 @@ ssh user@host "/nix/store/activation-path/activate"
 #### Environment-Specific Considerations
 
 **Corporate/Restricted Networks**
+
 ```bash
 # Pre-download all dependencies locally
 nix-store -qR $(nix build --no-link --print-out-paths .#homeConfigurations.username.activationPackage)
@@ -200,11 +228,13 @@ nix path-info -S /nix/store/path  # Shows total MB
 ```
 
 **Air-Gapped Systems**
+
 - Complete isolation from internet during activation
 - Self-contained Nix environment with all tools
 - Update mechanism requires re-running from internet-connected machine
 
 **WSL/Windows Integration**
+
 - Handles Windows path conversions in WSL environments
 - Preserves WSL-specific optimizations post-deployment
 - `wsl-init.sh` automatically detects and configures WSL integration
@@ -213,12 +243,14 @@ nix path-info -S /nix/store/path  # Shows total MB
 
 **Generated Update Helper**
 The deployment creates `~/dotfiles-public/update-from-local.sh` on remote:
+
 ```bash
 # Remote update process (run from internet-connected machine)
 ./deploy-remote.sh user@restricted-host
 ```
 
 **Manual Update Process**
+
 ```bash
 # 1. On internet machine: pull latest changes
 git pull && git submodule update --remote
@@ -233,16 +265,19 @@ nix build .#homeConfigurations.username.activationPackage
 #### Troubleshooting Common Issues
 
 **Large Closure Sizes**
+
 - C++ development tools can create 500MB+ closures
 - Use `nix path-info -S` to identify large dependencies
 - Consider selective package removal for bandwidth-constrained environments
 
 **SSH Key Authentication**
+
 - Deployment requires passwordless SSH access
 - Use `ssh-copy-id user@host` to set up keys
 - Test with `ssh -o BatchMode=yes user@host` before deployment
 
 **Nix Daemon Issues**
+
 - Remote installation may require `sudo` access for daemon setup
 - Deployment waits 5 seconds for daemon initialization
 - Check `/etc/nix/nix.conf` for flakes support after installation

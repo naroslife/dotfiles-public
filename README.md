@@ -55,7 +55,7 @@ curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix 
 echo "experimental-features = nix-command flakes" >> ~/.config/nix/nix.conf
 
 # Apply configuration
-nix run home-manager/master -- switch --impure --flake .#$USER
+nix run home-manager/release-25.05 -- switch --impure --flake .#$USER
 ```
 
 ## Project Structure
@@ -360,4 +360,3 @@ dotfiles doctor            # Comprehensive health check
 - [AI Agent Mode](docs/AI_AGENT_MODE.md) - AI detection system
 - [Architecture](ARCHITECTURE.md) - System design
 - [Performance](docs/PERFORMANCE.md) - Optimization guide
-
