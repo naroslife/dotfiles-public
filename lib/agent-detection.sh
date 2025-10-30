@@ -128,20 +128,18 @@ _smart_alias() {
   local modern_cmd="$1"
   local posix_cmd="$2"
   shift 2
-  local args="$@"
 
   # Check context at runtime (when alias is executed)
   if is_agent_context; then
     # Agent context: use POSIX-compliant tool
-    command $posix_cmd $args
+    command "$posix_cmd" "$@"
   else
     # Human context: use modern tool if available, fall back to POSIX
-    local modern_tool="${modern_cmd%% *}" # Extract tool name from command
-    if command -v "$modern_tool" >/dev/null 2>&1; then
-      eval "$modern_cmd $args"
+    if command -v "$modern_cmd" >/dev/null 2>&1; then
+      command "$modern_cmd" "$@"
     else
       # Fallback to POSIX if modern tool not found
-      command $posix_cmd $args
+      command "$posix_cmd" "$@"
     fi
   fi
 }
