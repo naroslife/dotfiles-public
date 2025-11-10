@@ -12,10 +12,12 @@ set -euo pipefail
 
 # Constants
 if [[ -z "${SCRIPT_DIR:-}" ]]; then
-    readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    readonly SCRIPT_DIR
 fi
 if [[ -z "${ROOT_DIR:-}" ]]; then
-    readonly ROOT_DIR="$(dirname "$SCRIPT_DIR")"
+    ROOT_DIR="$(dirname "$SCRIPT_DIR")"
+    readonly ROOT_DIR
 fi
 readonly LOG_LEVEL_ERROR=1
 readonly LOG_LEVEL_WARN=2
@@ -30,7 +32,6 @@ readonly COLOR_RED='\033[0;31m'
 readonly COLOR_GREEN='\033[0;32m'
 readonly COLOR_YELLOW='\033[1;33m'
 readonly COLOR_BLUE='\033[0;34m'
-readonly COLOR_PURPLE='\033[0;35m'
 readonly COLOR_CYAN='\033[0;36m'
 readonly COLOR_NC='\033[0m' # No Color
 
@@ -43,26 +44,26 @@ log() {
 
     if [[ $level -le $LOG_LEVEL ]]; then
         case $level in
-            $LOG_LEVEL_ERROR)
+            "$LOG_LEVEL_ERROR")
                 echo -e "${COLOR_RED}[ERROR]${COLOR_NC} [$timestamp] $message" >&2
                 ;;
-            $LOG_LEVEL_WARN)
+            "$LOG_LEVEL_WARN")
                 echo -e "${COLOR_YELLOW}[WARN]${COLOR_NC} [$timestamp] $message" >&2
                 ;;
-            $LOG_LEVEL_INFO)
+            "$LOG_LEVEL_INFO")
                 echo -e "${COLOR_GREEN}[INFO]${COLOR_NC} [$timestamp] $message"
                 ;;
-            $LOG_LEVEL_DEBUG)
+            "$LOG_LEVEL_DEBUG")
                 echo -e "${COLOR_BLUE}[DEBUG]${COLOR_NC} [$timestamp] $message"
                 ;;
         esac
     fi
 }
 
-log_error() { log $LOG_LEVEL_ERROR "$1"; }
-log_warn() { log $LOG_LEVEL_WARN "$1"; }
-log_info() { log $LOG_LEVEL_INFO "$1"; }
-log_debug() { log $LOG_LEVEL_DEBUG "$1"; }
+log_error() { log "$LOG_LEVEL_ERROR" "$1"; }
+log_warn() { log "$LOG_LEVEL_WARN" "$1"; }
+log_info() { log "$LOG_LEVEL_INFO" "$1"; }
+log_debug() { log "$LOG_LEVEL_DEBUG" "$1"; }
 
 # Enhanced error handling
 die() {
@@ -100,7 +101,7 @@ fetch_url() {
     if [[ -n "$expected_checksum" ]]; then
         log_debug "Verifying checksum using $checksum_algorithm"
         local actual_checksum
-        actual_checksum=$(${checksum_algorithm}sum "$output_file" | cut -d' ' -f1)
+        actual_checksum=$("${checksum_algorithm}sum" "$output_file" | cut -d' ' -f1)
 
         if [[ "$actual_checksum" != "$expected_checksum" ]]; then
             rm -f "$output_file"
@@ -113,38 +114,108 @@ fetch_url() {
 }
 
 # Platform detection
+is_wsl2() {
+  local is_wsl2=false
+  local detection_method=""
+
+  # Method 1: Check WSL_DISTRO_NAME environment variable (most reliable)
+  if [[ -n "${WSL_DISTRO_NAME:-}" ]]; then
+    is_wsl2=true
+    detection_method="WSL_DISTRO_NAME environment variable"
+  # Method 2: Check for WSLInterop (standard WSL2)
+  elif [[ -f /proc/sys/fs/binfmt_misc/WSLInterop ]]; then
+    is_wsl2=true
+    detection_method="WSLInterop file"
+  # Method 3: Check for WSLInterop-late (systemd-enabled WSL2)
+  elif [[ -f /proc/sys/fs/binfmt_misc/WSLInterop-late ]]; then
+    is_wsl2=true
+    detection_method="WSLInterop-late file (systemd enabled)"
+  # Method 4: Check kernel version for WSL2 signature
+  elif command grep -qEi "(microsoft.*wsl2|wsl2)" /proc/version 2>/dev/null; then
+    is_wsl2=true
+    detection_method="kernel version"
+  # Method 5: Check WSL_INTEROP environment variable
+  elif [[ -n "${WSL_INTEROP:-}" ]]; then
+    is_wsl2=true
+    detection_method="WSL_INTEROP environment variable"
+  fi
+
+  if [[ "$is_wsl2" == true ]]; then
+    log_debug "Running on WSL2 (detected via $detection_method)"
+    return 0
+  fi
+
+  log_debug "Not running on WSL2"
+  return 1
+}
+
+is_linux() {
+  [[ "$(uname -s)" == "Linux" ]] && ! is_wsl2
+}
+
+is_macos() {
+  [[ "$(uname -s)" == "Darwin" ]]
+}
+
+# Platform detection (echoes platform string)
+# Uses return codes from is_*() functions to avoid output contamination
 detect_platform() {
-    local platform=""
+  # Redirect all output from is_* functions to /dev/null to ensure clean string return
+  if is_wsl2 >/dev/null 2>&1; then
+    echo "wsl2"
+  elif is_linux >/dev/null 2>&1; then
+    echo "linux"
+  elif is_macos >/dev/null 2>&1; then
+    echo "macos"
+  else
+    echo "unknown"
+  fi
+}
 
-    case "$(uname -s)" in
-        Linux*)
-            if [[ -f /proc/sys/fs/binfmt_misc/WSLInterop ]]; then
-                platform="wsl"
-            else
-                platform="linux"
-            fi
-            ;;
-        Darwin*)
-            platform="macos"
-            ;;
-        *)
-            platform="unknown"
-            ;;
-    esac
+# OS detection
+detect_os() {
+  local platform="unknown"
 
-    echo "$platform"
+  # Check for Linux variants
+  if [[ -f /etc/os-release ]]; then
+    # Regular Linux
+    . /etc/os-release
+    platform="${ID:-unknown}"
+  fi
+
+  echo "$platform"
+}
+
+# Architecture detection
+detect_arch() {
+  case "$(uname -m)" in
+  x86_64 | amd64)
+    echo "x86_64"
+    ;;
+  aarch64 | arm64)
+    echo "aarch64"
+    ;;
+  armv7l)
+    echo "armv7l"
+    ;;
+  *)
+    echo "$(uname -m)"
+    ;;
+  esac
+}
+
+# OS version detection
+detect_os_version() {
+  if [[ -f /etc/os-release ]]; then
+    . /etc/os-release
+    echo "${VERSION_ID:-unknown}"
+  else
+    echo "unknown"
+  fi
 }
 
 is_wsl() {
     [[ "$(detect_platform)" == "wsl" ]]
-}
-
-is_linux() {
-    [[ "$(detect_platform)" == "linux" ]]
-}
-
-is_macos() {
-    [[ "$(detect_platform)" == "macos" ]]
 }
 
 # User interaction functions
@@ -275,8 +346,13 @@ cleanup_on_exit() {
 trap cleanup_on_exit EXIT INT TERM
 
 # Export functions that should be available to sourcing scripts
-export -f log log_error log_warn log_info log_debug
-export -f die require_command fetch_url
-export -f detect_platform is_wsl is_linux is_macos
-export -f ask_yes_no backup_file validate_config_file
-export -f show_progress
+# Note: export -f is bash-specific; these functions are available when sourced in any POSIX shell
+if [[ -n "${BASH_VERSION:-}" ]]; then
+  # Bash supports export -f
+  export -f log log_error log_warn log_info log_debug
+  export -f die require_command fetch_url
+  export -f detect_platform is_wsl is_linux is_macos
+  export -f ask_yes_no backup_file validate_config_file
+  export -f show_progress
+fi
+# In zsh and other shells, functions are automatically available when the file is sourced

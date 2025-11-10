@@ -16,7 +16,7 @@ use github.com/muesli/elvish-libs/git
 use github.com/naroslife/elvish-modules/log
 use github.com/naroslife/elvish-modules/you-should-use
 
-set paths = [~/.nvm/versions/node/v22.14.0/bin ~/.sdkman/candidates/gradle/current/bin ~/.local/usr/bin ~/.local/bin ~/.cargo/bin ~/.atuin/bin ~/.cargo/env ~/go/bin ~/.gem/ruby/(ruby -e 'print RUBY_VERSION')/bin $@paths]
+set paths = [~/.npm-global/bin ~/.nvm/versions/node/v22.14.0/bin ~/.sdkman/candidates/gradle/current/bin ~/.local/usr/bin ~/.local/bin ~/.cargo/bin ~/.atuin/bin ~/.cargo/env ~/go/bin ~/.gem/ruby/(ruby -e 'print RUBY_VERSION')/bin $@paths]
 set-env XDG_CONFIG_HOME ~/.config
 set-env FZF_DEFAULT_COMMAND 'fd --type f --hidden --follow'
 
@@ -155,3 +155,43 @@ fn help {
   each {|f| log:print-stuff '@INFO:' '@For help in the future just type help / printKeybinds / printTmux'; call $detail_printTmux [] [&]; call $detail_printKeybinds [] [&]} [detail_printTmux] | column -t -s "@" -R 1,2
 }
 help
+
+# === Package Manager Helper Functions ===
+
+# Clean npm global packages
+fn npm-clean { 
+  echo "Cleaning npm global packages..."
+  rm -rf ~/.npm-global
+  mkdir -p ~/.npm-global
+  echo "✓ npm global packages cleaned"
+}
+
+# Clean pip user packages
+fn pip-clean {
+  echo "Cleaning pip user packages..."
+  rm -rf ~/.local/lib/python*/site-packages/*
+  rm -rf ~/.local/bin
+  mkdir -p ~/.local/bin
+  echo "✓ pip user packages cleaned"
+}
+
+# Clean cargo packages
+fn cargo-clean {
+  echo "Cleaning cargo packages..."
+  rm -rf ~/.cargo/bin
+  mkdir -p ~/.cargo/bin
+  echo "✓ cargo packages cleaned"
+}
+
+# Python virtual environment helper
+fn venv {
+  if (path:is-dir .venv) {
+    echo "Virtual environment already exists in .venv"
+    use .venv/bin/activate.elv
+  } else {
+    echo "Creating virtual environment in .venv..."
+    python -m venv .venv
+    use .venv/bin/activate.elv
+    echo "✓ Virtual environment created and activated"
+  }
+}

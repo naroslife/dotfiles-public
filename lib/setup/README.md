@@ -79,7 +79,7 @@ set -euo pipefail
 if [[ -n "${MODULE_NAME_LOADED:-}" ]]; then
     return 0
 fi
-readonly MODULE_NAME_LOADED=1
+  MODULE_NAME_LOADED=1
 
 # Source common utilities
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

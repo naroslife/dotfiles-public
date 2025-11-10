@@ -8,12 +8,12 @@ set -euo pipefail
 if [[ -n "${USER_SETUP_LOADED:-}" ]]; then
     return 0
 fi
-readonly USER_SETUP_LOADED=1
+USER_SETUP_LOADED=1
 
 # Source common utilities
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+_USER_MODULE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=lib/common.sh
-source "$SCRIPT_DIR/../common.sh"
+source "$_USER_MODULE_DIR/../common.sh"
 
 # Git submodule management
 setup_git_submodules() {
@@ -73,7 +73,7 @@ select_user() {
     while IFS= read -r user; do
         echo "  - $user"
         user_array+=("$user")
-    done <<< "$available_users"
+    done <<<"$available_users"
 
     if [[ ${#user_array[@]} -eq 1 ]]; then
         TARGET_USER="${user_array[0]}"
@@ -94,17 +94,17 @@ select_user() {
 run_user_configuration() {
     # Source the user config module
     # shellcheck source=lib/user_config.sh
-    source "$SCRIPT_DIR/../user_config.sh"
+    source "$_USER_MODULE_DIR/../user_config.sh"
 
-    if $INTERACTIVE_CONFIG || (! $ASSUME_YES && ask_yes_no "Would you like to configure user-specific settings?" n); then
-        log_info "Starting interactive user configuration"
-        if run_interactive_config; then
-            log_info "User configuration completed successfully"
+    # if $INTERACTIVE_CONFIG || (! $ASSUME_YES && ask_yes_no "Would you like to configure user-specific settings?" n); then
+    #     log_info "Starting interactive user configuration"
+    #     if run_interactive_config; then
+    #         log_info "User configuration completed successfully"
 
-            # Export configuration for use in Home Manager
-            export_user_config
-        else
-            log_warn "User configuration skipped or cancelled"
-        fi
-    fi
+    #         # Export configuration for use in Home Manager
+    #         export_user_config
+    #     else
+    #         log_warn "User configuration skipped or cancelled"
+    #     fi
+    # fi
 }

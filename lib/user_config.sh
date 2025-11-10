@@ -17,7 +17,7 @@ LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$LIB_DIR/common.sh"
 
 # Configuration version for migration support
-readonly CONFIG_VERSION="2.0.0"
+CONFIG_VERSION="2.0.0"
 
 # Configuration file paths
 USER_CONFIG_FILE="${USER_CONFIG_FILE:-$HOME/.config/dotfiles/user.conf}"
@@ -25,6 +25,8 @@ USER_CONFIG_DIR="${USER_CONFIG_DIR:-$(dirname "$USER_CONFIG_FILE")}"
 TEMP_CONFIG_FILE="${TEMP_CONFIG_FILE:-$(mktemp)}"
 
 # Default values
+# Note: These are intentionally empty. Actual defaults are defined in modules/defaults.nix
+# This shell script only collects user preferences, Nix provides the defaults
 DEFAULT_GIT_NAME=""
 DEFAULT_GIT_EMAIL=""
 DEFAULT_CORP_TEST_IPS=""
@@ -62,6 +64,8 @@ VALIDATION_PATTERNS[timezone]="^[A-Z][A-Za-z_/]+$"
 VALIDATION_PATTERNS[timezone_error]="Please enter a valid timezone (e.g., America/New_York, Europe/London)"
 
 # Initialize configuration with defaults
+# Note: Most defaults are now managed in modules/defaults.nix
+# This just initializes the array with empty/detected values
 init_user_config() {
     # Ensure array is declared
     if [[ -z "${USER_CONFIG+x}" ]]; then
@@ -72,9 +76,10 @@ init_user_config() {
     USER_CONFIG[git_name]="$DEFAULT_GIT_NAME"
     USER_CONFIG[git_email]="$DEFAULT_GIT_EMAIL"
     USER_CONFIG[corp_test_ips]="$DEFAULT_CORP_TEST_IPS"
-    USER_CONFIG[shell]="bash"
-    USER_CONFIG[editor]="vim"
-    USER_CONFIG[timezone]="UTC"
+    # Shell, editor, timezone: empty here, defaults come from modules/defaults.nix
+    USER_CONFIG[shell]=""
+    USER_CONFIG[editor]=""
+    USER_CONFIG[timezone]=""
 }
 
 # Load existing configuration if available with version checking
@@ -136,26 +141,26 @@ migrate_config() {
 
     # Version-specific migrations
     case "$from_version" in
-        "1.0.0")
-            # Legacy format - add version field
-            log_debug "Migrating from legacy format (1.0.0)"
+    "1.0.0")
+        # Legacy format - add version field
+        log_debug "Migrating from legacy format (1.0.0)"
 
-            # Load existing config
-            # shellcheck source=/dev/null
-            source "$USER_CONFIG_FILE"
+        # Load existing config
+        # shellcheck source=/dev/null
+        source "$USER_CONFIG_FILE"
 
-            # Add version and re-save
-            save_user_config
-            ;;
-        "2.0.0")
-            # Current version - no migration needed
-            log_debug "Configuration is already at current version"
-            return 0
-            ;;
-        *)
-            log_warn "Unknown configuration version: $from_version"
-            return 1
-            ;;
+        # Add version and re-save
+        save_user_config
+        ;;
+    "2.0.0")
+        # Current version - no migration needed
+        log_debug "Configuration is already at current version"
+        return 0
+        ;;
+    *)
+        log_warn "Unknown configuration version: $from_version"
+        return 1
+        ;;
     esac
 
     return 0
@@ -194,13 +199,13 @@ save_user_config() {
         for key in "${!USER_CONFIG[@]}"; do
             # Escape special characters in values
             local escaped_value="${USER_CONFIG[$key]}"
-            escaped_value="${escaped_value//\\/\\\\}"  # Escape backslashes
-            escaped_value="${escaped_value//\"/\\\"}"  # Escape quotes
-            escaped_value="${escaped_value//\$/\\\$}"  # Escape dollar signs
-            escaped_value="${escaped_value//\`/\\\`}"  # Escape backticks
+            escaped_value="${escaped_value//\\/\\\\}" # Escape backslashes
+            escaped_value="${escaped_value//\"/\\\"}" # Escape quotes
+            escaped_value="${escaped_value//\$/\\\$}" # Escape dollar signs
+            escaped_value="${escaped_value//\`/\\\`}" # Escape backticks
             echo "USER_CONFIG[$key]=\"${escaped_value}\""
         done
-    } > "$temp_file" 2>/dev/null; then
+    } >"$temp_file" 2>/dev/null; then
         # If write failed, restore from backup and clean up
         rm -f "$temp_file"
         if [[ -n "$backup_file" ]]; then
@@ -223,12 +228,11 @@ save_user_config() {
     # Success - remove backup (keep last 3 backups)
     if [[ -n "$backup_file" ]]; then
         # Keep only the 3 most recent backups
-        local backup_pattern="${USER_CONFIG_FILE}.backup_*"
         local backup_count
         backup_count=$(find "$USER_CONFIG_DIR" -name "$(basename "$USER_CONFIG_FILE").backup_*" 2>/dev/null | wc -l)
 
         if [[ $backup_count -gt 3 ]]; then
-            find "$USER_CONFIG_DIR" -name "$(basename "$USER_CONFIG_FILE").backup_*" -type f -print0 2>/dev/null | \
+            find "$USER_CONFIG_DIR" -name "$(basename "$USER_CONFIG_FILE").backup_*" -type f -print0 2>/dev/null |
                 xargs -0 ls -t 2>/dev/null | tail -n +4 | xargs -r rm -f
             log_debug "Cleaned old backups, keeping 3 most recent"
         fi
@@ -310,7 +314,7 @@ collect_username() {
         "Enter your username" \
         "username" \
         "${USER_CONFIG[username]}" \
-        "username"  # Use validation key
+        "username" # Use validation key
 }
 
 # Collect git configuration
@@ -324,14 +328,14 @@ collect_git_config() {
         "Enter your full name for Git commits" \
         "git_name" \
         "${USER_CONFIG[git_name]}" \
-        "git_name"  # Use validation key
+        "git_name" # Use validation key
 
     # Git email
     prompt_with_validation \
         "Enter your email for Git commits" \
         "git_email" \
         "${USER_CONFIG[git_email]}" \
-        "git_email"  # Use validation key
+        "git_email" # Use validation key
 
     # Git signing key (optional)
     if ask_yes_no "Do you want to configure Git commit signing?" n; then
@@ -339,7 +343,7 @@ collect_git_config() {
             "Enter your GPG key ID" \
             "git_signing_key" \
             "${USER_CONFIG[git_signing_key]:-}" \
-            "git_signing_key"  # Use validation key
+            "git_signing_key" # Use validation key
     fi
 }
 
@@ -355,7 +359,7 @@ collect_environment_config() {
             "Enter corporate test IPs (comma-separated)" \
             "corp_test_ips" \
             "${USER_CONFIG[corp_test_ips]}" \
-            "corp_test_ips"  # Use validation key
+            "corp_test_ips" # Use validation key
     fi
 
     # Proxy configuration (optional)
@@ -364,13 +368,13 @@ collect_environment_config() {
             "Enter HTTP proxy URL" \
             "http_proxy" \
             "${USER_CONFIG[http_proxy]:-}" \
-            "proxy_url"  # Use validation key
+            "proxy_url" # Use validation key
 
         prompt_with_validation \
             "Enter HTTPS proxy URL" \
             "https_proxy" \
             "${USER_CONFIG[https_proxy]:-${USER_CONFIG[http_proxy]}}" \
-            "proxy_url"  # Use validation key
+            "proxy_url" # Use validation key
 
         prompt_with_validation \
             "Enter no-proxy domains (comma-separated)" \
@@ -394,7 +398,7 @@ collect_shell_preferences() {
         "Choose your default shell" \
         "shell" \
         "${USER_CONFIG[shell]}" \
-        "shell"  # Use validation key
+        "shell" # Use validation key
 
     # Default editor
     echo "Available editors: vim, nvim, emacs, nano, code"
@@ -402,7 +406,7 @@ collect_shell_preferences() {
         "Choose your default editor" \
         "editor" \
         "${USER_CONFIG[editor]}" \
-        "editor"  # Use validation key
+        "editor" # Use validation key
 
     # Timezone
     local current_tz
@@ -411,7 +415,7 @@ collect_shell_preferences() {
         "Enter your timezone" \
         "timezone" \
         "${USER_CONFIG[timezone]:-$current_tz}" \
-        "timezone"  # Use validation key
+        "timezone" # Use validation key
 }
 
 # Display configuration summary
@@ -450,6 +454,7 @@ show_config_summary() {
 }
 
 # Generate Nix configuration from user data
+# shellcheck disable=SC2120
 generate_nix_config() {
     local output_file="${1:-$HOME/.config/dotfiles/user.nix}"
 
@@ -481,7 +486,21 @@ generate_nix_config() {
         no_proxy="noProxy = \"${USER_CONFIG[no_proxy]}\";"
     fi
 
-    cat > "$output_file" << EOF
+    # Validate required fields
+    if [[ -z "${USER_CONFIG[username]:-}" ]]; then
+        log_error "Cannot generate Nix config: username is required"
+        return 1
+    fi
+    if [[ -z "${USER_CONFIG[git_name]:-}" ]]; then
+        log_error "Cannot generate Nix config: git_name is required"
+        return 1
+    fi
+    if [[ -z "${USER_CONFIG[git_email]:-}" ]]; then
+        log_error "Cannot generate Nix config: git_email is required"
+        return 1
+    fi
+
+    cat >"$output_file" <<EOF
 # User-specific Nix configuration
 # Generated from interactive setup on $(date)
 {
@@ -493,14 +512,16 @@ generate_nix_config() {
     $git_signing
   };
 
-  shell = {
-    default = "${USER_CONFIG[shell]}";
-    editor = "${USER_CONFIG[editor]}";
+  shell = {${USER_CONFIG[shell]:+
+    default = \"${USER_CONFIG[shell]}\";
+}${USER_CONFIG[editor]:+
+    editor = \"${USER_CONFIG[editor]}\";
+}
   };
 
-  environment = {
-    timezone = "${USER_CONFIG[timezone]}";
-    $corp_ips
+  environment = {${USER_CONFIG[timezone]:+
+    timezone = \"${USER_CONFIG[timezone]}\";
+}    $corp_ips
     $http_proxy
     $https_proxy
     $no_proxy
@@ -570,6 +591,7 @@ run_interactive_config() {
         if save_user_config; then
             echo
             # Try to generate Nix config but don't fail if it errors
+            # shellcheck disable=SC2119
             if generate_nix_config; then
                 echo
                 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

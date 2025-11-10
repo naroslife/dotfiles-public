@@ -11,7 +11,7 @@ in
   # Session environment variables
   home.sessionVariables = {
     # === Editor and Pager ===
-    EDITOR = "code";
+    EDITOR = "vim";
     VISUAL = "nvim";
     PAGER = "less";
     MANPAGER = "less -R";

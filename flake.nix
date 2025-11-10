@@ -28,7 +28,7 @@
           allowUnfreePredicate = _: true;
         };
         overlays = [
-          nur.overlay
+          nur.overlays.default
           # Custom overlays can be added here
         ];
       };
@@ -46,9 +46,9 @@
               email = "robi54321@gmail.com";
               fullName = "Robert Nagy";
             };
-            enterpriseuser = {
-              email = "enterpriseuser@gmail.com";
-              fullName = "User enterpriseuser";
+            uif58593 = {
+              email = "uif58593@gmail.com";
+              fullName = "User uif58593";
             };
           };
 
@@ -71,7 +71,7 @@
       # User configurations (can be extended)
       users = {
         naroslife = detectUserInfo "naroslife";
-        enterpriseuser = detectUserInfo "enterpriseuser";
+        uif58593 = detectUserInfo "uif58593";
         # Dynamic user detection - will be added at build time
       };
 

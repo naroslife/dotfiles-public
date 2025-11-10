@@ -41,9 +41,9 @@
       complete -F _lazy_load_carapace -D
 
       # WSL-specific initialization
-      if [ -z "''${CLAUDE:-}" ] && [ -f "$HOME/dotfiles-public/wsl-init.sh" ]; then
-        source "$HOME/dotfiles-public/wsl-init.sh"
-      fi
+      # if [ -z "''${CLAUDE:-}" ] && [ -f "$HOME/dotfiles-public/wsl-init.sh" ]; then
+      #   source "$HOME/dotfiles-public/wsl-init.sh"
+      # fi
 
       # Lazy-load custom functions (only source if directory exists and has files)
       if [ -d "$HOME/dotfiles-public/scripts/functions" ] && [ -n "$(ls -A "$HOME/dotfiles-public/scripts/functions"/*.sh 2>/dev/null)" ]; then

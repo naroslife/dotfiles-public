@@ -8,30 +8,20 @@ set -euo pipefail
 if [[ -n "${NIX_SETUP_LOADED:-}" ]]; then
     return 0
 fi
-readonly NIX_SETUP_LOADED=1
+NIX_SETUP_LOADED=1
 
 # Source common utilities
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+_NIX_MODULE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=lib/common.sh
-source "$SCRIPT_DIR/../common.sh"
-
-# Configuration
-readonly NIX_INSTALL_URL="https://nixos.org/nix/install"
-readonly NIX_INSTALL_CHECKSUM="751c3bb0b72d2b1c79975e8b45325ce80ee17f5c64ae59e11e1d2fce01aeccad"
+source "$_NIX_MODULE_DIR/../common.sh"
 
 # Nix installation with enhanced security
 install_nix() {
     log_info "Installing Nix package manager"
+    # Use Determinate Systems installer for enhanced reliability
+    log_debug "Using Determinate Systems Nix installer"
 
-    local temp_installer
-    temp_installer=$(mktemp)
-    TEMP_FILES="${TEMP_FILES:-} $temp_installer"
-
-    # Download with checksum verification
-    fetch_url "$NIX_INSTALL_URL" "$temp_installer" "$NIX_INSTALL_CHECKSUM"
-
-    # Install Nix
-    if ! sh "$temp_installer" --daemon; then
+    if ! curl -fsSL https://install.determinate.systems/nix | sh -s -- install --determinate; then
         die "Nix installation failed"
     fi
 
@@ -51,7 +41,13 @@ check_nix_installation() {
     if ! command -v nix >/dev/null 2>&1; then
         log_warn "Nix is not installed or not in PATH"
 
-        if $ASSUME_YES || ask_yes_no "Would you like to install Nix?"; then
+        log_info "Trying to setup shell with Nix environment"
+        # Source Nix environment
+        if [[ -f "/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh" ]]; then
+            log_info "Sourcing Nix environment from /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh"
+            # shellcheck source=/dev/null
+            source "/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh"
+        elif $ASSUME_YES || ask_yes_no "Would you like to install Nix?"; then
             install_nix
         else
             die "Nix is required for this setup. Please install it manually."

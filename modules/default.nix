@@ -3,7 +3,7 @@
   imports = [
     ./core.nix
     ./environment.nix
-    ./user-config.nix
+    # ./user-config.nix
     ./secrets.nix
     ./validation.nix
     ./shells

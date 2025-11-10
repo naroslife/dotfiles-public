@@ -8,12 +8,12 @@ set -euo pipefail
 if [[ -n "${HOMEMANAGER_SETUP_LOADED:-}" ]]; then
     return 0
 fi
-readonly HOMEMANAGER_SETUP_LOADED=1
+HOMEMANAGER_SETUP_LOADED=1
 
 # Source common utilities
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+_HM_MODULE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=lib/common.sh
-source "$SCRIPT_DIR/../common.sh"
+source "$_HM_MODULE_DIR/../common.sh"
 
 # Home Manager application
 apply_home_manager() {
@@ -30,6 +30,9 @@ apply_home_manager() {
     fi
 
     # Apply configuration
+    # Export CURRENT_USER for dynamic user detection in flake.nix
+    export CURRENT_USER="$TARGET_USER"
+
     local home_manager_cmd="nix run home-manager/master -- switch --impure --flake \".#$TARGET_USER\""
 
     log_info "Executing: $home_manager_cmd"

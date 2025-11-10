@@ -6,31 +6,38 @@ set -euo pipefail
 
 # Guard against multiple sourcing
 if [[ -n "${WSL_SETUP_LOADED:-}" ]]; then
-    return 0
+  return 0
 fi
-readonly WSL_SETUP_LOADED=1
+WSL_SETUP_LOADED=1
 
 # Source common utilities
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+_WSL_MODULE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=lib/common.sh
-source "$SCRIPT_DIR/../../common.sh"
+source "$_WSL_MODULE_DIR/../../common.sh"
 
 # WSL-specific optimizations
 apply_wsl_optimizations() {
-    if ! is_wsl; then
-        return 0
-    fi
+  if ! is_wsl2; then
+    return 0
+  fi
 
-    log_info "Applying WSL-specific optimizations"
+  log_info "Applying WSL-specific optimizations"
 
-    # Check if WSL init script exists and is executable
-    local wsl_init_script="$ROOT_DIR/wsl-init.sh"
-    if [[ -f "$wsl_init_script" && -x "$wsl_init_script" ]]; then
-        log_info "Running WSL initialization script"
-        if ! "$wsl_init_script"; then
-            log_warn "WSL initialization script failed, continuing anyway"
-        fi
-    else
-        log_debug "WSL init script not found or not executable: $wsl_init_script"
+  # Check if WSL init script exists and is executable
+  local wsl_init_script="$SCRIPT_DIR/wsl-init.sh"
+
+  # Try script directory first, then parent directory
+  if [[ ! -f "$wsl_init_script" ]]; then
+    wsl_init_script="$SCRIPT_DIR/../wsl-init.sh"
+    log_debug "Checking parent directory for wsl-init.sh: $wsl_init_script"
+  fi
+
+  if [[ -f "$wsl_init_script" && -x "$wsl_init_script" ]]; then
+    log_info "Running WSL initialization script"
+    if ! "$wsl_init_script"; then
+      log_warn "WSL initialization script failed, continuing anyway"
     fi
+  else
+    log_debug "WSL init script not found or not executable: $wsl_init_script"
+  fi
 }

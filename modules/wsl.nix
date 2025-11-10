@@ -49,7 +49,6 @@
     pbpaste = "powershell.exe Get-Clipboard";
 
     # Windows app shortcuts
-    code = "code.exe";
     explorer = "explorer.exe";
 
     # WSL GUI application launchers

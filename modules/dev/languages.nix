@@ -27,7 +27,7 @@
     gtest # Google Test framework
     eigen # C++ template library for linear algebra
     opencv # Computer vision library
-    qt6.full
+    # qt6.full
     gtk4
     glfw # OpenGL/Vulkan window and input library
     glew # OpenGL Extension Wrangler
@@ -59,10 +59,11 @@
     # === Language-specific Package Managers ===
     # Python with common packages
     (python3.withPackages (ps: with ps; [
+      # Code Quality & Formatting
       pycodestyle # Python style checker
       black # Uncompromising Python formatter
       mypy # Static type checker
-      pytest # Testing framework
+            pytest # Testing framework
       requests # HTTP library
       textual # Modern TUI framework
     ]))

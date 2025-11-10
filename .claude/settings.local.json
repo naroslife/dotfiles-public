@@ -1,19 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Read(//home/enterpriseuser/.config/Next-Client/**)",
-      "Read(//home/enterpriseuser/dev/Next-Client-1.10.0/squashfs-root/resources/**)",
-      "mcp__serena__check_onboarding_performed",
-      "mcp__serena__list_dir",
-      "mcp__sequential-thinking__sequentialthinking",
-      "mcp__serena__get_symbols_overview",
-      "mcp__serena__search_for_pattern",
-      "mcp__serena__write_memory",
-      "mcp__serena__think_about_whether_you_are_done",
-      "mcp__serena__think_about_task_adherence",
-      "mcp__serena__think_about_collected_information",
-      "mcp__serena__list_memories",
-      "mcp__serena__read_memory"
+      "Read(//home/uif58593/.serena/**)",
+      "Skill(backend-development:api-design-principles)"
     ],
     "deny": [],
     "ask": []

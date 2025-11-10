@@ -2,29 +2,27 @@
 {
   programs.ssh = {
     enable = true;
-    enableDefaultConfig = false; # Suppress default config warnings
 
     # Global match blocks
     matchBlocks = {
       # Default settings for all hosts
       "*" = {
         # Control master for connection sharing (huge performance boost)
-        controlMaster = "auto";
-        controlPath = "~/.ssh/control-%r@%h:%p";
-        controlPersist = "10m";
+        # controlMaster = "auto";
+        # controlPath = "~/.ssh/control-%r@%h:%p";
+        # controlPersist = "10m";
 
         # Agent configuration
-        forwardAgent = true;
-        addKeysToAgent = "yes";
+        # forwardAgent = true;
 
         # Connection settings
-        serverAliveInterval = 15;
-        serverAliveCountMax = 3;
+        # serverAliveInterval = 15;
+        # serverAliveCountMax = 3;
 
         # Security settings
-        hashKnownHosts = true;
+        # hashKnownHosts = true;
 
-        sendEnv = [ "LANG" "LC_*" ];
+        # sendEnv = [ "LANG" "LC_*" ];
         extraOptions = {
           # Legacy MAC support (only if needed for old servers)
           MACs = "+hmac-md5,hmac-sha1";
@@ -49,6 +47,9 @@
 
           # Keep alive
           TCPKeepAlive = "yes";
+
+          # SSH agent configuration (add keys automatically)
+          AddKeysToAgent = "yes";
 
           # Use modern ciphers and key exchange
           Ciphers = "chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr";

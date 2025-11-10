@@ -13,19 +13,19 @@ let
   defaultConfig = {
     username = config.home.username or "user";
 
-    git = {
-      userName = "Your Name";
-      userEmail = "you@example.com";
-    };
+    # git = {
+    #   userName = "Your Name";
+    #   userEmail = "uif58593@gmail.com";
+    # };
 
-    shell = {
-      default = "bash";
-      editor = "vim";
-    };
+    # shell = {
+    #   default = "bash";
+    #   editor = "vim";
+    # };
 
-    environment = {
-      timezone = "UTC";
-    };
+    # environment = {
+    #   timezone = "UTC";
+    # };
   };
 
   # Load user config if it exists, otherwise use defaults
@@ -39,31 +39,31 @@ in
   # Apply user configuration
   config = {
     # Git configuration
-    programs.git = {
-      userName = userConfig.git.userName;
-      userEmail = userConfig.git.userEmail;
-      signing = lib.mkIf (userConfig.git ? signingKey) {
-        signByDefault = true;
-        key = userConfig.git.signingKey;
-      };
-    };
+    # programs.git = {
+    #   userName = userConfig.git.userName;
+    #   userEmail = userConfig.git.userEmail;
+    #   signing = lib.mkIf (userConfig.git ? signingKey) {
+    #     signByDefault = true;
+    #     key = userConfig.git.signingKey;
+    #   };
+    # };
 
     # Shell configuration
-    home.sessionVariables = {
-      EDITOR = userConfig.shell.editor;
-      TZ = userConfig.environment.timezone;
-    } // lib.optionalAttrs (userConfig.environment ? httpProxy) {
-      HTTP_PROXY = userConfig.environment.httpProxy;
-      http_proxy = userConfig.environment.httpProxy;
-    } // lib.optionalAttrs (userConfig.environment ? httpsProxy) {
-      HTTPS_PROXY = userConfig.environment.httpsProxy;
-      https_proxy = userConfig.environment.httpsProxy;
-    } // lib.optionalAttrs (userConfig.environment ? noProxy) {
-      NO_PROXY = userConfig.environment.noProxy;
-      no_proxy = userConfig.environment.noProxy;
-    } // lib.optionalAttrs (userConfig.environment ? corpTestIps) {
-      CORP_TEST_IPS = userConfig.environment.corpTestIps;
-    };
+    # home.sessionVariables = {
+    #   EDITOR = userConfig.shell.editor;
+    #   TZ = userConfig.environment.timezone;
+    # } // lib.optionalAttrs (userConfig.environment ? httpProxy) {
+    #   HTTP_PROXY = userConfig.environment.httpProxy;
+    #   http_proxy = userConfig.environment.httpProxy;
+    # } // lib.optionalAttrs (userConfig.environment ? httpsProxy) {
+    #   HTTPS_PROXY = userConfig.environment.httpsProxy;
+    #   https_proxy = userConfig.environment.httpsProxy;
+    # } // lib.optionalAttrs (userConfig.environment ? noProxy) {
+    #   NO_PROXY = userConfig.environment.noProxy;
+    #   no_proxy = userConfig.environment.noProxy;
+    # } // lib.optionalAttrs (userConfig.environment ? corpTestIps) {
+    #   CORP_TEST_IPS = userConfig.environment.corpTestIps;
+    # };
 
     # Default shell selection - don't override existing settings
     # These are just preferences, the actual shell configs are in modules/shells/

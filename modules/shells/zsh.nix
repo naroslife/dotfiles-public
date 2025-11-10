@@ -64,8 +64,18 @@
         bindkey '^k' up-line-or-search
         bindkey '^j' down-line-or-search
         bindkey '^W' backward-kill-word
-        bindkey "^[[1;5C" forward-word
-        bindkey "^[[1;5D" backward-word
+
+        # Home/End keys (multiple variations for different terminals)
+        bindkey "^[[H" beginning-of-line      # Home (standard)
+        bindkey "^[[1~" beginning-of-line     # Home (alternate)
+        bindkey "^[[F" end-of-line            # End (standard)
+        bindkey "^[[4~" end-of-line           # End (alternate)
+
+        # Ctrl + Arrow keys for word navigation (multiple variations)
+        bindkey "^[[1;5C" forward-word        # Ctrl+Right (standard)
+        bindkey "^[[1;5D" backward-word       # Ctrl+Left (standard)
+        bindkey "^[^[[C" forward-word         # Ctrl+Right (alternate)
+        bindkey "^[^[[D" backward-word        # Ctrl+Left (alternate)
 
         # KUBECONFIG
         export KUBECONFIG=~/.kube/config
@@ -85,7 +95,7 @@
         zstyle ':completion:*' verbose yes
         zstyle ':completion:*' group-name '''
         # Preview directory's content with eza when completing cd
-        zstyle ':fzf-tab:complete:cd:*' fzf-preview 'eza -1 --color=always $realpath'
+        zstyle ':fzf-tab:complete:cd:*' fzf-preview '/home/uif58593/.nix-profile/bin/eza -1 --color=always $realpath'
         # Switch group using `,` and `.`
         zstyle ':fzf-tab:*' switch-group ',' '.'
         # Use tmux popup for fzf-tab (if in tmux)
@@ -99,9 +109,9 @@
         fi
 
         # WSL-specific initialization
-        if [ -z "''${CLAUDE:-}" ] && [ -f "$HOME/dotfiles-public/wsl-init.sh" ]; then
-          source "$HOME/dotfiles-public/wsl-init.sh"
-        fi
+        # if [ -z "''${CLAUDE:-}" ] && [ -f "$HOME/dotfiles-public/wsl-init.sh" ]; then
+        #   source "$HOME/dotfiles-public/wsl-init.sh"
+        # fi
 
         # Lazy-load custom functions (only source if directory exists and has files)
         if [ -d "$HOME/dotfiles-public/scripts/functions" ] && [ -n "$(ls -A "$HOME/dotfiles-public/scripts/functions"/*.sh 2>/dev/null)" ]; then

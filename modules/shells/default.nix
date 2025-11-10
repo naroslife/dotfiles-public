@@ -121,7 +121,7 @@ in
       history_filter = [
         "^ls"
         "^cd"
-        "^pwd"
+  "^pwd"
         "^exit"
         "^clear"
       ];
