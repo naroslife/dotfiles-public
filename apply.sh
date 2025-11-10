@@ -194,7 +194,7 @@ main() {
 
 	# Setup steps
 	validate_prerequisites
-	run_user_configuration
+	# run_user_configuration
 	check_nix_installation
 	setup_git_submodules
 

@@ -106,7 +106,7 @@ in
       sync_address = "https://api.atuin.sh";
 
       # Search settings
-      search_mode = "skim";
+      search_mode = "fuzzy";
       filter_mode = "global";
       filter_mode_shell_up_key_binding = "global";
       style = "full";
