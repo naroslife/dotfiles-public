@@ -12,6 +12,3 @@ ide/
 # Exclude ccline binary and cache
 ccline/ccline
 ccline/.api_usage_cache.json
-
-# Exclude plugins directory (installed via setup script)
-plugins/
