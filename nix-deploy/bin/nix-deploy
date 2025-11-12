@@ -309,9 +309,13 @@ main() {
 
     # Handle special modes
     if $ROLLBACK; then
-        print_header "Rolling Back Deployment"
-        rollback_deployment
-        exit 0
+        print_error "Rollback functionality has been removed in the manual deployment mode."
+        print_info "To rollback, SSH to the remote and run:"
+        print_info "  home-manager switch --rollback"
+        print_info "Or manually switch to a previous generation:"
+        print_info "  nix-env --list-generations"
+        print_info "  nix-env --switch-generation <number>"
+        exit 1
     fi
 
     if $RESUME; then
@@ -349,24 +353,18 @@ main() {
         print_info "Would transfer: $package_path"
     fi
 
-    # Phase 4: Remote Installation
-    print_header "Phase 4: Remote Installation"
+    # Package transfer complete - user must complete deployment manually
     if ! $DRY_RUN; then
-        execute_remote_installation
+        print_header "Transfer Complete - Manual Deployment Required"
+        print_info "The deployment package has been transferred to the remote machine."
+        print_info "The automated phases have been removed in favor of manual execution."
+        print_info ""
+        print_info "Please see the instructions that were displayed above."
     else
-        print_info "Would execute remote installation"
+        print_header "Dry Run Complete"
+        print_info "In actual deployment, the package would be transferred and"
+        print_info "instructions would be generated on the remote machine."
     fi
-
-    # Phase 5: Validation
-    print_header "Phase 5: Post-Deployment Validation"
-    if ! $DRY_RUN; then
-        validate_deployment
-    else
-        print_info "Would validate deployment"
-    fi
-
-    print_header "Deployment Complete"
-    print_info "Successfully deployed to $TARGET"
 
     # Show post-deployment information
     show_post_deployment_info
@@ -396,28 +394,41 @@ EOF
 
 # Show post-deployment information
 show_post_deployment_info() {
+    local remote_temp=$(get_config_value "deployment.paths.temp_dir" "/tmp/nix-deploy")
+
     cat << EOF
 
-${BOLD}${GREEN}✓ Deployment Successful${RESET}
+${BOLD}${GREEN}✓ Package Transfer Complete${RESET}
 
-${BOLD}Next Steps:${RESET}
+${BOLD}Manual Deployment Steps:${RESET}
+
 1. SSH to the remote machine:
    ${CYAN}ssh $(get_config_value "connection.user")@$(get_config_value "connection.host")${RESET}
 
-2. Verify the deployment:
-   ${CYAN}nix-env --list-generations${RESET}
-   ${CYAN}home-manager generations${RESET}
+2. Navigate to the deployment directory:
+   ${CYAN}cd $remote_temp${RESET}
 
-3. Source your shell configuration:
+3. Read the deployment instructions:
+   ${CYAN}cat INSTRUCTIONS.md${RESET}
+
+4. Follow the step-by-step instructions in INSTRUCTIONS.md:
+   - Run ./install-nix.sh (if Nix not installed)
+   - Run ./import-closure.sh
+   - Run ./activate-profile.sh
+   - Run ./setup-shell.sh (optional)
+   - Run ./validate.sh (optional)
+
+5. After successful deployment, start a new shell or:
    ${CYAN}source ~/.bashrc${RESET}
-   Or start a new shell session
 
-${BOLD}Rollback (if needed):${RESET}
-   ${CYAN}nix-deploy --target $TARGET --rollback${RESET}
+${BOLD}Troubleshooting:${RESET}
+   - Each script has detailed error messages
+   - Check script output for specific issues
+   - See INSTRUCTIONS.md for troubleshooting section
 
 ${BOLD}Logs:${RESET}
    Local:  $CONFIG_DIR/logs/deploy-$(date +%Y%m%d-%H%M%S).log
-   Remote: /tmp/nix-deploy/deploy.log
+   Remote: $remote_temp/ (check script outputs)
 
 EOF
 }

@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 #
-# install-nix.sh - Install Nix offline on remote machine
+# install-nix.sh - Install Nix with online/offline fallback
+# Uses Determinate Nix Installer: https://github.com/DeterminateSystems/nix-installer
 #
 
 set -euo pipefail
 
-# Default installation type
-INSTALL_TYPE="${1:-single-user}"
+# Default installation arguments
+INSTALL_ARGS="${*:---no-confirm}"
 
 # Colors for output
 RED='\033[0;31m'
@@ -16,260 +17,171 @@ BLUE='\033[0;34m'
 RESET='\033[0m'
 
 echo_info() {
-    echo -e "${GREEN}[INFO]${RESET} $1"
+	echo -e "${GREEN}[INFO]${RESET} $1"
 }
 
 echo_warn() {
-    echo -e "${YELLOW}[WARN]${RESET} $1"
+	echo -e "${YELLOW}[WARN]${RESET} $1"
 }
 
 echo_error() {
-    echo -e "${RED}[ERROR]${RESET} $1"
+	echo -e "${RED}[ERROR]${RESET} $1"
 }
 
 echo_step() {
-    echo -e "${BLUE}→${RESET} $1"
+	echo -e "${BLUE}→${RESET} $1"
+}
+
+echo_success() {
+	echo -e "${GREEN}✅${RESET} $1"
 }
 
 # Check if Nix is already installed
 if command -v nix >/dev/null 2>&1; then
-    echo_warn "Nix is already installed: $(nix --version)"
-    echo_info "Skipping installation"
-    exit 0
+	echo_warn "Nix is already installed: $(nix --version)"
+	echo_info "Skipping installation"
+	exit 0
 fi
 
-echo_info "Installing Nix (offline mode)"
-echo_info "Installation type: $INSTALL_TYPE"
-
-# Check for root (not allowed for single-user)
-if [[ "$INSTALL_TYPE" == "single-user" ]] && [[ $EUID -eq 0 ]]; then
-    echo_error "Single-user installation cannot be run as root"
-    exit 1
-fi
-
-# Check for root (required for multi-user)
-if [[ "$INSTALL_TYPE" == "multi-user" ]] && [[ $EUID -ne 0 ]]; then
-    echo_error "Multi-user installation must be run as root"
-    exit 1
-fi
-
-# Find Nix installer package
-NIX_INSTALLER=""
-if [[ -f "nix-installer.tar.gz" ]]; then
-    NIX_INSTALLER="nix-installer.tar.gz"
-elif [[ -f "nix.tar.xz" ]]; then
-    NIX_INSTALLER="nix.tar.xz"
-else
-    echo_error "No Nix installer package found"
-    echo_info "Expected: nix-installer.tar.gz or nix.tar.xz"
-    exit 1
-fi
-
-echo_step "Extracting Nix installer..."
-INSTALLER_DIR="nix-installer-tmp"
-rm -rf "$INSTALLER_DIR"
-mkdir -p "$INSTALLER_DIR"
-
-case "$NIX_INSTALLER" in
-    *.tar.gz)
-        tar -xzf "$NIX_INSTALLER" -C "$INSTALLER_DIR"
-        ;;
-    *.tar.xz)
-        tar -xf "$NIX_INSTALLER" -C "$INSTALLER_DIR"
-        ;;
-    *)
-        echo_error "Unknown installer format: $NIX_INSTALLER"
-        exit 1
-        ;;
-esac
-
-# Find the actual Nix directory
-NIX_DIR=$(find "$INSTALLER_DIR" -maxdepth 2 -name "nix-*" -type d | head -1)
-if [[ -z "$NIX_DIR" ]]; then
-    echo_error "Could not find Nix directory in installer"
-    exit 1
-fi
-
-echo_info "Found Nix at: $NIX_DIR"
+echo_info "Installing Nix using Determinate Nix Installer"
+echo_info "Installation will try online method first, then fall back to offline"
 
 # Detect platform for WSL workarounds
 IS_WSL=false
 if grep -qi microsoft /proc/version 2>/dev/null; then
-    IS_WSL=true
-    echo_info "WSL environment detected"
+	IS_WSL=true
+	echo_info "WSL environment detected"
 fi
 
-# Single-user installation
-if [[ "$INSTALL_TYPE" == "single-user" ]]; then
-    echo_step "Performing single-user installation..."
+# WSL: Pre-create /nix directory with proper permissions
+if $IS_WSL && [[ ! -d /nix ]]; then
+	echo_step "Setting up /nix directory for WSL..."
+	if sudo mkdir -p /nix 2>/dev/null; then
+		sudo chown "$(whoami)" /nix
+		echo_info "/nix directory created and owned by $(whoami)"
+	else
+		echo_error "Failed to create /nix directory"
+		echo_info "Please run manually: sudo mkdir -p /nix && sudo chown $(whoami) /nix"
+		exit 1
+	fi
+fi
 
-    # Create necessary directories
-    echo_info "Creating Nix directories..."
-    mkdir -p "$HOME/.local/state/nix/profiles"
-    mkdir -p "$HOME/.config/nix"
+# Phase 1: Try online installation
+echo ""
+echo_step "Phase 1: Attempting online installation..."
+ONLINE_SUCCESS=false
 
-    # For single-user on systems where we can't modify /nix
-    if [[ ! -d /nix ]] && [[ ! -w / ]]; then
-        echo_warn "Cannot create /nix, trying user-local installation"
-        # This is more complex and may not work well
-        echo_error "User-local Nix installation not fully supported"
-        echo_info "Please ask your administrator to create /nix with appropriate permissions"
-        exit 1
-    fi
+if command -v curl >/dev/null 2>&1; then
+	echo_info "Downloading installer from https://install.determinate.systems/nix"
 
-    # Create /nix if possible
-    if [[ ! -d /nix ]]; then
-        if $IS_WSL; then
-            echo_info "Creating /nix for WSL..."
-            # WSL may need special handling
-            if ! sudo mkdir -p /nix; then
-                echo_error "Failed to create /nix"
-                echo_info "Please run: sudo mkdir -p /nix && sudo chown $(whoami) /nix"
-                exit 1
-            fi
-            sudo chown "$(whoami)" /nix
-        else
-            echo_info "Creating /nix..."
-            if ! mkdir -p /nix; then
-                echo_error "Failed to create /nix"
-                echo_info "You may need sudo: sudo mkdir -p /nix && sudo chown $(whoami) /nix"
-                exit 1
-            fi
-        fi
-    fi
+	if curl -L https://install.determinate.systems/nix | sh -s -- install $INSTALL_ARGS; then
+		ONLINE_SUCCESS=true
+		echo_success "Online installation successful!"
+	else
+		echo_warn "Online installation failed (exit code: $?)"
+	fi
+else
+	echo_warn "curl not available for online installation"
+fi
 
-    # Check /nix ownership
-    if [[ ! -w /nix ]]; then
-        echo_error "/nix is not writable by current user"
-        echo_info "Please run: sudo chown $(whoami) /nix"
-        exit 1
-    fi
+# Phase 2: Fall back to offline installer if online failed
+if ! $ONLINE_SUCCESS; then
+	echo ""
+	echo_step "Phase 2: Falling back to offline installation..."
 
-    # Run installer
-    echo_step "Running Nix installer..."
-    cd "$NIX_DIR"
+	# Find offline installer
+	OFFLINE_INSTALLER=""
+	if [[ -f "nix-installer.sh" ]]; then
+		OFFLINE_INSTALLER="nix-installer.sh"
+	elif [[ -f "./nix-installer.sh" ]]; then
+		OFFLINE_INSTALLER="./nix-installer.sh"
+	else
+		echo_error "Offline installer not found"
+		echo_info "Expected: nix-installer.sh in current directory"
+		echo_info ""
+		echo_error "Both online and offline installation failed"
+		exit 1
+	fi
 
-    # Create a minimal install script if the standard one doesn't exist
-    if [[ ! -f "install" ]]; then
-        echo_warn "Standard installer not found, using fallback method"
+	echo_info "Using offline installer: $OFFLINE_INSTALLER"
 
-        # Copy Nix store
-        echo_info "Copying Nix store..."
-        cp -r store /nix/
+	if bash "$OFFLINE_INSTALLER" install $INSTALL_ARGS; then
+		echo_success "Offline installation successful!"
+	else
+		echo_error "Offline installation failed (exit code: $?)"
+		echo_error ""
+		echo_error "Installation failed. Please check the error messages above."
+		exit 1
+	fi
+fi
 
-        # Set up profile
-        echo_info "Setting up profile..."
-        PROFILE_DIR="/nix/var/nix/profiles/per-user/$(whoami)"
-        mkdir -p "$PROFILE_DIR"
-        ln -sf /nix/store/*-nix-*/bin/nix-env "$HOME/.local/bin/nix-env" 2>/dev/null || true
+# Phase 3: Configure for potential offline use
+echo ""
+echo_step "Phase 3: Configuring Nix..."
 
-        # Basic setup script
-        cat > "$HOME/.config/nix/nix.sh" << 'EOF'
-# Nix single-user installation
-export NIX_PATH="$HOME/.nix-defexpr/channels"
-export PATH="/nix/var/nix/profiles/per-user/$USER/profile/bin:$PATH"
-export PATH="$HOME/.nix-profile/bin:$PATH"
-EOF
+# Determine config file location
+if [[ -d /etc/nix ]]; then
+	# Multi-user installation
+	CONFIG_FILE="/etc/nix/nix.conf"
+	echo_info "Detected multi-user installation"
+else
+	# Single-user installation
+	mkdir -p "$HOME/.config/nix"
+	CONFIG_FILE="$HOME/.config/nix/nix.conf"
+	echo_info "Detected single-user installation"
+fi
 
-    else
-        # Use standard installer
-        ./install --no-daemon --no-channel-add
-    fi
+# Add offline-friendly settings if not already present
+if [[ -f "$CONFIG_FILE" ]]; then
+	if ! grep -q "# nix-deploy offline configuration" "$CONFIG_FILE"; then
+		echo_info "Adding offline-friendly settings to $CONFIG_FILE"
+		cat >>"$CONFIG_FILE" <<'EOF'
 
-    # Configure for offline use
-    echo_step "Configuring Nix for offline use..."
-    cat > "$HOME/.config/nix/nix.conf" << 'EOF'
-# Offline configuration
-substituters =
+# nix-deploy offline configuration
+# These settings allow Nix to work without binary cache access
+# Comment out if online access is restored
 require-sigs = false
 sandbox = false
 EOF
-
-    # Add to shell profile
-    echo_step "Adding Nix to shell profile..."
-
-    PROFILE_FILE=""
-    if [[ -f "$HOME/.bashrc" ]]; then
-        PROFILE_FILE="$HOME/.bashrc"
-    elif [[ -f "$HOME/.zshrc" ]]; then
-        PROFILE_FILE="$HOME/.zshrc"
-    elif [[ -f "$HOME/.profile" ]]; then
-        PROFILE_FILE="$HOME/.profile"
-    fi
-
-    if [[ -n "$PROFILE_FILE" ]]; then
-        if ! grep -q "nix.sh" "$PROFILE_FILE" 2>/dev/null; then
-            cat >> "$PROFILE_FILE" << 'EOF'
-
-# Nix single-user
-if [ -e "$HOME/.nix-profile/etc/profile.d/nix.sh" ]; then
-    . "$HOME/.nix-profile/etc/profile.d/nix.sh"
-elif [ -e "/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh" ]; then
-    . "/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh"
-fi
-EOF
-            echo_info "Added Nix to $PROFILE_FILE"
-        fi
-    fi
-
+	else
+		echo_info "Offline settings already present in $CONFIG_FILE"
+	fi
 else
-    # Multi-user installation
-    echo_step "Performing multi-user installation..."
-
-    # This is more complex and requires root
-    echo_warn "Multi-user installation in offline mode is complex"
-    echo_info "Using standard installer if available..."
-
-    cd "$NIX_DIR"
-    if [[ -f "install" ]]; then
-        ./install --daemon --no-channel-add
-    else
-        echo_error "Multi-user installation requires the standard installer"
-        exit 1
-    fi
-
-    # Configure for offline use
-    echo_step "Configuring Nix for offline use..."
-    cat > /etc/nix/nix.conf << 'EOF'
-# Offline configuration
-substituters =
-require-sigs = false
-build-users-group = nixbld
-EOF
-
-    # Start daemon if systemd available
-    if command -v systemctl >/dev/null 2>&1; then
-        echo_info "Starting Nix daemon..."
-        systemctl enable nix-daemon || true
-        systemctl start nix-daemon || true
-    fi
+	echo_warn "Config file not found: $CONFIG_FILE"
 fi
 
-# Clean up installer
-echo_step "Cleaning up..."
-cd ..
-rm -rf "$INSTALLER_DIR"
-
-# Verify installation
-echo_step "Verifying installation..."
+# Phase 4: Verify installation
+echo ""
+echo_step "Phase 4: Verifying installation..."
 
 # Source Nix environment for current shell
 if [[ -f "$HOME/.nix-profile/etc/profile.d/nix.sh" ]]; then
-    source "$HOME/.nix-profile/etc/profile.d/nix.sh"
+	# shellcheck disable=SC1091
+	source "$HOME/.nix-profile/etc/profile.d/nix.sh"
 elif [[ -f "/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh" ]]; then
-    source "/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh"
+	# shellcheck disable=SC1091
+	source "/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh"
 fi
 
 if command -v nix >/dev/null 2>&1; then
-    echo_info "✅ Nix installed successfully!"
-    echo_info "Version: $(nix --version)"
+	echo_success "Nix installed successfully!"
+	echo_info "Version: $(nix --version)"
+	echo_info "Install method: $([ "$ONLINE_SUCCESS" = "true" ] && echo "online" || echo "offline")"
 else
-    echo_warn "Nix installed but not available in current shell"
-    echo_info "Please run: source ~/.bashrc"
-    echo_info "Or start a new shell session"
+	echo_warn "Nix installed but not available in current shell"
+	echo_info "To use Nix in this shell, run:"
+	if [[ -f "$HOME/.nix-profile/etc/profile.d/nix.sh" ]]; then
+		echo_info "  source ~/.nix-profile/etc/profile.d/nix.sh"
+	elif [[ -f "/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh" ]]; then
+		echo_info "  source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh"
+	fi
+	echo_info ""
+	echo_info "Or start a new shell session"
 fi
 
+echo ""
+echo_success "Installation complete!"
 echo_info ""
-echo_info "Installation complete!"
-echo_info "Note: This is an offline installation - no binary cache is configured"
-echo_info "All packages must be built from source or imported from closures"
+echo_info "Next steps:"
+echo_info "  1. Start a new shell or source the Nix profile"
+echo_info "  2. Run: ./import-closure.sh"

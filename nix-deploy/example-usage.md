@@ -43,38 +43,68 @@ Flake reference: .#enterpriseuser
 Target description: Restricted WSL environment
 ```
 
-### Step 3: First Deployment
+### Step 3: Transfer Package
 
 ```bash
-# Deploy interactively (recommended for first time)
+# Transfer package to remote (nix-deploy handles this)
 nix-deploy --target restricted-wsl
 
 # The tool will:
 # 1. Build your Home Manager configuration locally
-# 2. Package everything (Nix closure + installer)
-# 3. Transfer via SSH
-# 4. Install Nix on remote (if needed)
-# 5. Activate your profile
-# 6. Setup shell integration
+# 2. Package everything (Nix closure + Determinate Nix installer)
+# 3. Transfer via SSH to /tmp/nix-deploy/
+# 4. Generate INSTRUCTIONS.md on remote
+# 5. Display next steps
 ```
 
-### Step 4: Verify Deployment
+### Step 4: Manual Deployment on Remote
 
-SSH to your remote machine:
+SSH to your remote machine and execute the scripts:
+
 ```bash
 ssh enterpriseuser@192.168.1.100
+cd /tmp/nix-deploy
+
+# Read the instructions first
+cat INSTRUCTIONS.md
+
+# Step 1: Install Nix (if needed)
+bash ./install-nix.sh
+# - Tries online installation first
+# - Falls back to offline if no internet
+
+# Step 2: Import the closure
+bash ./import-closure.sh
+
+# Step 3: Activate your profile
+bash ./activate-profile.sh
+
+# Step 4: Setup shell integration (optional)
+bash ./setup-shell.sh
+
+# Step 5: Validate (optional)
+bash ./validate.sh
+```
+
+### Step 5: Verify and Use
+
+After successful manual deployment:
+
+```bash
+# Start a new shell or source profile
+source ~/.bashrc
 
 # Check deployment
 which elvish         # Your configured shell
 home-manager --version  # Home Manager installed
 nix-env -q          # List installed packages
 
-# Source environment
-source ~/.bashrc    # Or start new shell
-
 # Test your tools
 starship --version
 elvish
+
+# Cleanup deployment files (optional)
+rm -rf /tmp/nix-deploy
 ```
 
 ## Common Scenarios
@@ -92,9 +122,9 @@ platform:
 
 deployment:
   nix:
-    install_type: "single-user"  # Best for WSL
+    install_if_missing: true  # Download Determinate Nix installer
   wsl:
-    fix_permissions: true
+    fix_permissions: true  # WSL-specific /nix handling
 ```
 
 Deploy:
@@ -138,9 +168,21 @@ nix-deploy --target restricted-wsl
 
 ### Rollback if Needed
 
+Rollback is now manual for full control:
+
 ```bash
+# SSH to the remote
+ssh enterpriseuser@192.168.1.100
+
+# List generations
+home-manager generations
+
 # Rollback to previous generation
-nix-deploy --target restricted-wsl --rollback
+home-manager switch --rollback
+
+# Or switch to specific generation
+nix-env --list-generations
+nix-env --switch-generation <number>
 ```
 
 ## Advanced Configuration
@@ -211,25 +253,31 @@ nix-deploy --target restricted-wsl --debug --verbose
 tail -f ~/.config/nix-deploy/logs/deploy-*.log
 ```
 
-### Manual Steps
+### Manual Workflow (All Deployments)
 
-If automation fails, you can run steps manually:
+All deployments now follow the manual workflow for security and control:
 
 ```bash
-# 1. Build locally
-nix build .#homeConfigurations.enterpriseuser.activationPackage
+# 1. Local: Transfer package (nix-deploy does this)
+nix-deploy --target restricted-wsl
 
-# 2. Package
-nix-store --export $(nix-store -qR result) | zstd > closure.nar.zst
+# 2. Remote: SSH and navigate
+ssh user@remote
+cd /tmp/nix-deploy
 
-# 3. Transfer
-scp closure.nar.zst user@remote:/tmp/
+# 3. Remote: Read instructions
+cat INSTRUCTIONS.md
 
-# 4. On remote, import
-zstd -d closure.nar.zst | nix-store --import
+# 4. Remote: Execute scripts step-by-step
+bash ./install-nix.sh      # Install Nix (online/offline fallback)
+bash ./import-closure.sh   # Import store paths
+bash ./activate-profile.sh # Activate configuration
+bash ./setup-shell.sh      # Setup shell (optional)
+bash ./validate.sh         # Validate (optional)
 
-# 5. Activate
-/nix/store/xxx-home-manager-generation/activate
+# 5. Remote: Verify and use
+source ~/.bashrc
+which elvish
 ```
 
 ## Tips and Best Practices
@@ -275,9 +323,8 @@ platform:
 deployment:
   home_manager:
     flake_ref: ".#minimal"
-  options:
-    backup_existing_profile: true
-    cleanup_temp_files: true
+  nix:
+    install_if_missing: true
 ```
 
 ### Production Server
@@ -303,10 +350,6 @@ deployment:
     flake_ref: ".#production"
   nix:
     install_if_missing: true
-    install_type: "multi-user"  # For production
-  options:
-    backup_existing_profile: true
-    post_deploy_validation: true
 
 resources:
   min_disk_space: "10GB"
