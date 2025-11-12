@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Read(//home/uif58593/.serena/**)",
-      "Skill(backend-development:api-design-principles)"
+      "Skill(backend-development:api-design-principles)",
+      "mcp__serena__get_symbols_overview",
+      "mcp__serena__find_file"
     ],
     "deny": [],
     "ask": []

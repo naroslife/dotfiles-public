@@ -107,80 +107,32 @@ in
 
       # Search settings
       search_mode = "fuzzy";
-      filter_mode = "global";
-      filter_mode_shell_up_key_binding = "global";
-      style = "full";
-      inline_height = 20;
+      filter_mode = "host";
+      filter_mode_shell_up_key_binding = "session";
+      style = "compact";
+      inline_height = 10;
       show_preview = true;
 
       # Performance settings
-      max_preview_height = 10; # Limit preview height for faster rendering
+      max_preview_height = 4; # Limit preview height for faster rendering
       prefers_reduced_motion = false;
-
-      # Groups command history by Git repository root
-      workspaces = true;
-# Shows N lines above/below the selected command in preview
-      scroll_context_lines = 2;
 
       # History settings
       history_filter = [
-        # Navigation (replaced by modern tools)
-  "^ls" "^ll" "^la" "^l"  # You use eza
-  "^cd"                    # You use zoxide (z)
+        "^ls"
+        "^cd"
   "^pwd"
-
-  # Shell management
-  "^exit" "^logout"
-  "^clear" "^cls"
-
-  # History tools themselves
-  "^atuin"
-  "^mcfly"
-  "^history"
-  "^switch_history"        # Your custom function from home.nix
-
-  # Nix evaluation commands (not reproducible outside context)
-  "^nix repl"
-  "^nix eval"
+        "^exit"
+        "^clear"
       ];
 
       # Key bindings
       enter_accept = false;
 
       # Stats settings
-      common_prefix = [
-  "sudo"
-  "nsudo"      # Your custom Nix-preserving sudo
-  "sudo-nix"   # Alias from home.nix
-  "doas"       # If you use doas
-];
+      common_prefix = [ "sudo" ];
+      common_subcommands = [ "docker" "git" "npm" "cargo" ];
 
-common_subcommands = [
-  # Version control
-  "git"
-
-  # Package managers
-  "npm" "pnpm" "yarn"
-  "cargo"
-
-  # Nix ecosystem (critical for your dotfiles)
-  "nix"           # nix build, nix run, nix develop
-  "home-manager"  # Your primary deployment tool
-  "nix-env"
-  "nix-shell"
-
-  # Containers
-  "docker"
-  "podman"        # If you use podman
-
-  # System management
-  "systemctl"
-  "journalctl"
-
-  # Modern CLI tools with subcommands
-  "gh"            # GitHub CLI
-  "kubectl"       # If using Kubernetes
-];
       # Sync settings
       key_path = "~/.local/share/atuin/key";
       session_path = "~/.local/share/atuin/session";
@@ -191,7 +143,7 @@ common_subcommands = [
     };
   };
 
-  # programs.fzf = shellHelpers.enableWithShells defaultShells;
+  programs.fzf = shellHelpers.enableWithShells defaultShells;
 
   programs.direnv = shellHelpers.enableWithShells defaultShells;
 

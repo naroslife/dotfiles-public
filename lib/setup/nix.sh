@@ -41,7 +41,13 @@ check_nix_installation() {
     if ! command -v nix >/dev/null 2>&1; then
         log_warn "Nix is not installed or not in PATH"
 
-        if $ASSUME_YES || ask_yes_no "Would you like to install Nix?"; then
+        log_info "Trying to setup shell with Nix environment"
+        # Source Nix environment
+        if [[ -f "/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh" ]]; then
+            log_info "Sourcing Nix environment from /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh"
+            # shellcheck source=/dev/null
+            source "/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh"
+        elif $ASSUME_YES || ask_yes_no "Would you like to install Nix?"; then
             install_nix
         else
             die "Nix is required for this setup. Please install it manually."

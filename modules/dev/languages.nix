@@ -27,7 +27,7 @@
     gtest # Google Test framework
     eigen # C++ template library for linear algebra
     opencv # Computer vision library
-    qt6.full
+    # qt6.full
     gtk4
     glfw # OpenGL/Vulkan window and input library
     glew # OpenGL Extension Wrangler
@@ -63,55 +63,10 @@
       pycodestyle # Python style checker
       black # Uncompromising Python formatter
       mypy # Static type checker
-      pylint # Comprehensive code analysis
-      flake8 # Style guide enforcement
-      isort # Import sorting
-      autopep8 # PEP 8 auto-formatter
-
-      # Testing
-      pytest # Testing framework
-      pytest-cov # Coverage plugin for pytest
-      pytest-xdist # Parallel test execution
-      hypothesis # Property-based testing
-      tox # Test automation
-
-      # HTTP & Networking
+            pytest # Testing framework
       requests # HTTP library
-      httpx # Modern async HTTP client
-      urllib3 # HTTP client
-      aiohttp # Async HTTP client/server
-
-      # Data Science & Analysis
-      numpy # Numerical computing
-      pandas # Data manipulation and analysis
-      matplotlib # Plotting library
-      scipy # Scientific computing
-
-      # CLI & TUI
       textual # Modern TUI framework
-      rich # Rich text and formatting
-      click # CLI creation kit
-      typer # Modern CLI framework (built on click)
-      prompt-toolkit # Interactive CLI building
-
-      # Development Tools
-      ipython # Enhanced interactive Python shell
-      # pdbpp # Not available in nixpkgs - use ipdb instead
-      ipdb # IPython-enabled debugger (better alternative to pdbpp)
-      poetry-core # Poetry build backend
-      setuptools # Package development
-      wheel # Built package format
-      pip # Package installer
-
-      # Utilities
-      pyyaml # YAML parser
-      toml # TOML parser
-      jinja2 # Template engine
-      python-dateutil # Date/time utilities
-      tqdm # Progress bars
     ]))
-    pipx # Install and run Python applications in isolated environments
-
 
     # Ruby with tmuxinator
     (ruby.withPackages (rbps: with rbps; [
@@ -122,7 +77,10 @@
   # Tool versions (for asdf/rtx compatibility)
   home.file.".tool-versions".source = ../../.tool-versions;
 
-  # Note: NPM configuration is managed in home.nix
+  # NPM configuration for user-level global installs
+  home.file.".npmrc".text = ''
+    prefix=''${HOME}/.npm-global
+  '';
 
   # Environment variables for languages
   home.sessionVariables = {

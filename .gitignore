@@ -30,9 +30,9 @@ Thumbs.db
 
 # Serena configuration
 # Keep the config template and project settings, but ignore dynamic files
-.serena/
-!.serena/serena_config.yml
-!.serena/project.yml
+# .serena/
+# !.serena/serena_config.yml
+# !.serena/project.yml
 
 # Security: Never commit files with API keys or secrets
 # Note: API keys should be in environment variables

@@ -9,26 +9,24 @@ let
 in
 {
   # Session environment variables
-  # Values sourced from config.dotfiles.defaults (single source of truth)
   home.sessionVariables = {
     # === Editor and Pager ===
-    # These use defaults from modules/defaults.nix and can be overridden by user-config.nix
-    EDITOR = lib.mkDefault config.dotfiles.defaults.editor.actual;
-    VISUAL = lib.mkDefault config.dotfiles.defaults.editor.visual;
-    PAGER = lib.mkDefault config.dotfiles.defaults.pager.default;
-    MANPAGER = lib.mkDefault config.dotfiles.defaults.pager.manpager;
-    SYSTEMD_PAGER = lib.mkDefault config.dotfiles.defaults.pager.default;
+    EDITOR = "vim";
+    VISUAL = "nvim";
+    PAGER = "less";
+    MANPAGER = "less -R";
+    SYSTEMD_PAGER = "less";
 
     # === Terminal ===
-    TERMINAL = lib.mkDefault config.dotfiles.defaults.terminal.emulator;
-    TERM = lib.mkDefault config.dotfiles.defaults.terminal.term;
-    COLORTERM = lib.mkDefault config.dotfiles.defaults.terminal.colorterm;
+    TERMINAL = "alacritty";
+    TERM = "xterm-256color";
+    COLORTERM = "truecolor";
 
     # === Browser ===
     BROWSER =
       if (builtins.pathExists /proc/sys/fs/binfmt_misc/WSLInterop)
-      then config.dotfiles.defaults.browser.wsl
-      else config.dotfiles.defaults.browser.gui;
+      then "wslview"
+      else "firefox";
 
     # === XDG Base Directory Specification ===
     XDG_CONFIG_HOME = xdgConfig;
@@ -58,8 +56,6 @@ in
     PYTHONUNBUFFERED = "1";
     PIP_DISABLE_PIP_VERSION_CHECK = "1";
     PIP_NO_CACHE_DIR = "1";
-    PIP_USER = "1";
-    PYTHONUSERBASE = "${homeDir}/.local";
     VIRTUAL_ENV_DISABLE_PROMPT = "1";
 
     # Node.js
@@ -68,7 +64,6 @@ in
 
     # Ruby
     GEM_HOME = "${homeDir}/.gem";
-    GEM_PATH = "${homeDir}/.gem";
     BUNDLE_USER_HOME = "${homeDir}/.bundle";
 
     # Java
@@ -87,7 +82,7 @@ in
     HISTTIMEFORMAT = "%F %T ";
 
     # === Less configuration ===
-    LESS = config.dotfiles.defaults.pager.options;
+    LESS = "-FRXi";
     LESSHISTFILE = "${xdgCache}/less/history";
     LESSKEY = "${xdgConfig}/less/lesskey";
     LESSCHARSET = "utf-8";
@@ -202,9 +197,6 @@ in
     mkdir -p ${homeDir}/repos
     mkdir -p ${homeDir}/go/bin
     mkdir -p ${homeDir}/.npm-global
-    mkdir -p ${homeDir}/.gem
-    mkdir -p ${homeDir}/.local/bin
-    mkdir -p ${homeDir}/.cargo/bin
   '';
 
   # Ripgrep config file

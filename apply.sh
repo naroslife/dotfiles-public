@@ -50,26 +50,7 @@ source_module "lib/setup/claude.sh"
 source_module "lib/setup/serena.sh"
 source_module "lib/setup/platform/wsl.sh"
 source_module "lib/setup/platform/nvidia.sh"
-# shellcheck source=lib/sops_bootstrap.sh
-source "$SCRIPT_DIR/lib/sops_bootstrap.sh"
 
-# Source setup modules
-# shellcheck source=lib/setup/nix.sh
-source "$SCRIPT_DIR/lib/setup/nix.sh"
-# shellcheck source=lib/setup/user.sh
-source "$SCRIPT_DIR/lib/setup/user.sh"
-# shellcheck source=lib/setup/homemanager.sh
-source "$SCRIPT_DIR/lib/setup/homemanager.sh"
-# shellcheck source=lib/setup/github.sh
-source "$SCRIPT_DIR/lib/setup/github.sh"
-# shellcheck source=lib/setup/claude.sh
-source "$SCRIPT_DIR/lib/setup/claude.sh"
-# shellcheck source=lib/setup/serena.sh
-source "$SCRIPT_DIR/lib/setup/serena.sh"
-# shellcheck source=lib/setup/platform/wsl.sh
-source "$SCRIPT_DIR/lib/setup/platform/wsl.sh"
-# shellcheck source=lib/setup/platform/nvidia.sh
-source "$SCRIPT_DIR/lib/setup/platform/nvidia.sh"
 
 # Configuration (exported for use by sourced modules)
 export CONFIG_DIR="$HOME/.config"
@@ -194,7 +175,7 @@ main() {
 
 	# Setup steps
 	validate_prerequisites
-	# run_user_configuration
+	run_user_configuration
 	check_nix_installation
 	setup_git_submodules
 
@@ -203,24 +184,24 @@ main() {
 
 	select_user
 	apply_home_manager
-	apply_wsl_optimizations
+	# apply_wsl_optimizations
 
 	# Optional Claude Code setup
-	setup_claude
+	# setup_claude
 
 	# Optional Serena MCP setup
-	setup_serena_config
+	# setup_serena_config
 
 	# Optional GitHub CLI setup
-	if ! $ASSUME_YES && ask_yes_no "Would you like to set up GitHub CLI authentication?"; then
-		export   SETUP_GITHUB_CLI=true
-		setup_github_cli
-	fi
+	# if ! $ASSUME_YES && ask_yes_no "Would you like to set up GitHub CLI authentication?"; then
+	# 	export   SETUP_GITHUB_CLI=true
+	# 	setup_github_cli
+	# fi
 
 	# Platform-specific post-configuration optimizations
-	offer_wsl_config
-	setup_cuda_wsl
-	setup_nvidia_drivers
+	# offer_wsl_config
+	# setup_cuda_wsl
+	# setup_nvidia_drivers
 
 	log_info "✅ Dotfiles setup completed successfully!"
 	log_info ""

@@ -99,25 +99,6 @@
       # Pane settings
       setw -g pane-base-index 1
 
-      # Automatic restoration
-      set -g @continuum-restore 'on'
-      set -g @continuum-save-interval '5'
-      set -g @continuum-boot 'on'
-
-      # Restore vim/nvim sessions
-      set -g @resurrect-strategy-vim 'session'
-      set -g @resurrect-strategy-nvim 'session'
-
-      # Restore pane contents
-      set -g @resurrect-capture-pane-contents 'on'
-
-      # Restore additional programs
-      set -g @resurrect-processes 'ssh psql mysql sqlite3 "git log" "~npm start" "~yarn start"'
-
-      # Quick session save/restore
-      bind-key C-s run-shell "tmux display-message 'Saving session...'; ~/.tmux/plugins/tmux-resurrect/scripts/save.sh"
-      bind-key C-r run-shell "tmux display-message 'Restoring session...'; ~/.tmux/plugins/tmux-resurrect/scripts/restore.sh"
-
       # Status bar styling
       set -g status on
       set -g status-interval 1
@@ -129,9 +110,9 @@
       set -g status-left-length 30
       set -g status-left '#[bg=#3b4261,fg=#82aaff,bold] #S #[bg=#1e2030] '
 
-      # Status right - with continuum status indicator
-      set -g status-right-length 80
-      set -g status-right '#[bg=#3b4261,fg=#82aaff] #{continuum_status} | %Y-%m-%d %H:%M '
+      # Status right
+      set -g status-right-length 60
+      set -g status-right '#[bg=#3b4261,fg=#82aaff] %Y-%m-%d %H:%M '
 
       # Window status
       setw -g window-status-format '#[bg=#1e2030,fg=#828bb8] #I:#W '

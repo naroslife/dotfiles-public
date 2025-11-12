@@ -96,15 +96,15 @@ run_user_configuration() {
     # shellcheck source=lib/user_config.sh
     source "$_USER_MODULE_DIR/../user_config.sh"
 
-    if $INTERACTIVE_CONFIG || (! $ASSUME_YES && ask_yes_no "Would you like to configure user-specific settings?" n); then
-        log_info "Starting interactive user configuration"
-        if run_interactive_config; then
-            log_info "User configuration completed successfully"
+    # if $INTERACTIVE_CONFIG || (! $ASSUME_YES && ask_yes_no "Would you like to configure user-specific settings?" n); then
+    #     log_info "Starting interactive user configuration"
+    #     if run_interactive_config; then
+    #         log_info "User configuration completed successfully"
 
-            # Export configuration for use in Home Manager
-            export_user_config
-        else
-            log_warn "User configuration skipped or cancelled"
-        fi
-    fi
+    #         # Export configuration for use in Home Manager
+    #         export_user_config
+    #     else
+    #         log_warn "User configuration skipped or cancelled"
+    #     fi
+    # fi
 }

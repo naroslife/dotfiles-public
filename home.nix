@@ -38,12 +38,6 @@
     # - modules/dev/vscode.nix
 
     # Package manager configurations
-    # NPM configuration - user-level global packages
-    ".npmrc".text = ''
-      prefix=~/.npm-global
-      # Disable automatic updates
-      update-notifier=false
-    '';
 
     # Python pip configuration
     ".config/pip/pip.conf".text = ''
@@ -82,5 +76,5 @@
   };
 
   # News - notify about home-manager news
-  news.display = "notify";
+  news.display = "silent"
 }

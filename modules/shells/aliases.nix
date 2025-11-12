@@ -3,7 +3,7 @@ let
   # Common shell aliases shared across bash and zsh
   commonAliases = {
     # Home Manager
-    hm = "nix run home-manager/release-25.05 -- switch --flake . --impure";
+    hm = "nix run home-manager/master -- switch --flake . --impure";
 
     # Runtime history tool switching (consistent across shells)
     use-atuin = "switch_history atuin";

@@ -1,0 +1,8 @@
+# Serena Global Configuration Template
+# This file contains only the customized settings for this dotfiles repository.
+# All other settings use Serena defaults.
+# The projects list is managed by Serena and should NOT be version-controlled.
+
+web_dashboard_open_on_launch: false
+# Set to false to prevent auto-opening browser when Serena starts
+# You can still access the dashboard at http://localhost:24282/dashboard/
