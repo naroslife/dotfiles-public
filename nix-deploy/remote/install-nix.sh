@@ -16,6 +16,11 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 RESET='\033[0m'
 
+# Disable colors if NO_COLOR is set or output is not a terminal
+if [[ -n "${NO_COLOR:-}" ]] || [[ ! -t 1 ]]; then
+	RED='' GREEN='' YELLOW='' BLUE='' RESET=''
+fi
+
 echo_info() {
 	echo -e "${GREEN}[INFO]${RESET} $1"
 }

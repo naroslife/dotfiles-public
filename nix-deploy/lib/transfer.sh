@@ -107,7 +107,8 @@ transfer_to_remote() {
 	# Step 2: Detect remote platform
 	print_step "Detecting remote platform..."
 	local platform_info
-	platform_info=$(detect_remote_platform "$remote" "$ssh_opts")
+	# Preserve stderr for debug/error logging
+	platform_info=$(detect_remote_platform "$remote" "$ssh_opts" 2>&2)
 	if [[ -z "$platform_info" ]]; then
 		log_error "Failed to detect remote platform"
 		return 1
@@ -355,7 +356,7 @@ generate_metadata() {
 
 	# Create metadata JSON
 	local metadata=$(
-		cat         <<EOF
+		cat       <<EOF
 {
   "version": "2.0.0",
   "timestamp": "$(date -Iseconds)",

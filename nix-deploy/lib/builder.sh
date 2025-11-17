@@ -21,11 +21,12 @@ build_nix_environment() {
 			system="aarch64-linux"
 			;;
 		auto)
-			system="$(     detect_local_system)"
+			# Preserve stderr for error logging
+			system="$(detect_local_system 2>&2)"
 			;;
 		*)
-			log_error      "Unsupported architecture: $system"
-			return      1
+			log_error "Unsupported architecture: $system"
+			return 1
 			;;
 	esac
 
@@ -40,16 +41,16 @@ build_nix_environment() {
 	log_info "  System: $system"
 
 	if $DRY_RUN; then
-		print_info   "Would build: nix build $flake_ref --system $system"
-		echo   "/nix/store/dry-run-build-result"
-		return   0
+		print_info "Would build: nix build $flake_ref --system $system"
+		echo "/nix/store/dry-run-build-result"
+		return 0
 	fi
 
 	# Check if we're resuming and have a build result
 	if $RESUME && [[ -n "${RESUME_BUILD_RESULT:-}" ]] && [[ -e "$RESUME_BUILD_RESULT" ]]; then
-		log_info   "Using previous build result: $RESUME_BUILD_RESULT"
-		echo   "$RESUME_BUILD_RESULT"
-		return   0
+		log_info "Using previous build result: $RESUME_BUILD_RESULT"
+		echo "$RESUME_BUILD_RESULT"
+		return 0
 	fi
 
 	local out_link="$TEMP_DIR/build-result"
@@ -91,23 +92,24 @@ build_nix_environment() {
 
 	local build_status=$?
 	if [[ $build_status -eq 0 ]]; then
-		local   build_result=$(readlink -f "$out_link")
-		log_info   "Build successful: $build_result"
+		local build_result=$(readlink -f "$out_link")
+		log_info "Build successful: $build_result"
 
 		# Calculate and log closure size
-		local   closure_size
-		closure_size=$(  calculate_closure_size "$build_result")
-		log_info   "Closure size: $(human_size "$closure_size")"
+		local closure_size
+		# Preserve stderr for error logging
+		closure_size=$(calculate_closure_size "$build_result" 2>&2)
+		log_info "Closure size: $(human_size "$closure_size")"
 
 		# Save build result for potential resume
-		echo   "$build_result" >"$TEMP_DIR/build-result.path"
+		echo "$build_result" >"$TEMP_DIR/build-result.path"
 
 		# Only output: the store path (for command substitution capture)
-		echo   "$build_result"
-		return   0
+		echo "$build_result"
+		return 0
 	else
-		log_error   "Build failed. Check log: $build_log"
-		return   1
+		log_error "Build failed. Check log: $build_log"
+		return 1
 	fi
 }
 
@@ -117,14 +119,14 @@ detect_local_system() {
 
 	case "$arch" in
 		x86_64 | amd64)
-			echo      "x86_64-linux"
+			echo "x86_64-linux"
 			;;
 		aarch64 | arm64)
-			echo      "aarch64-linux"
+			echo "aarch64-linux"
 			;;
 		*)
-			log_error      "Unsupported local architecture: $arch"
-			echo      "x86_64-linux"  # Default fallback
+			log_error "Unsupported local architecture: $arch"
+			echo "x86_64-linux" # Default fallback
 			;;
 	esac
 }
@@ -134,9 +136,9 @@ calculate_closure_size() {
 	local store_path="$1"
 
 	if [[ ! -e "$store_path" ]]; then
-		log_error   "Store path does not exist: $store_path"
-		echo   "0"
-		return   1
+		log_error "Store path does not exist: $store_path"
+		echo "0"
+		return 1
 	fi
 
 	# Use nix path-info to get size
@@ -145,7 +147,7 @@ calculate_closure_size() {
 
 	if [[ -z "$size" ]]; then
 		# Fallback to du
-		size=$(  du -sb "$store_path" | awk '{print $1}')
+		size=$(du -sb "$store_path" | awk '{print $1}')
 	fi
 
 	echo "${size:-0}"
@@ -156,8 +158,8 @@ query_closure_paths() {
 	local store_path="$1"
 
 	if [[ ! -e "$store_path" ]]; then
-		log_error   "Store path does not exist: $store_path"
-		return   1
+		log_error "Store path does not exist: $store_path"
+		return 1
 	fi
 
 	# Query all dependencies
@@ -168,14 +170,15 @@ query_closure_paths() {
 check_cross_compilation() {
 	local target_system="$1"
 	local local_system
-	local_system=$(detect_local_system)
+	# Preserve stderr for error logging
+	local_system=$(detect_local_system 2>&2)
 
 	if [[ "$target_system" != "$local_system" ]]; then
-		log_info   "Cross-compilation required: $local_system -> $target_system"
-		return   0
+		log_info "Cross-compilation required: $local_system -> $target_system"
+		return 0
 	else
-		log_info   "Building for native system: $local_system"
-		return   1
+		log_info "Building for native system: $local_system"
+		return 1
 	fi
 }
 
@@ -184,19 +187,19 @@ verify_build_output() {
 	local build_result="$1"
 
 	if [[ ! -e "$build_result" ]]; then
-		log_error   "Build result does not exist: $build_result"
-		return   1
+		log_error "Build result does not exist: $build_result"
+		return 1
 	fi
 
 	# Check if it's a valid store path
 	if [[ ! "$build_result" =~ ^/nix/store/ ]]; then
-		log_error   "Invalid store path: $build_result"
-		return   1
+		log_error "Invalid store path: $build_result"
+		return 1
 	fi
 
 	# Check if it's an activation package
 	if [[ ! -x "$build_result/activate" ]]; then
-		log_warn   "Build result may not be an activation package (no activate script)"
+		log_warn "Build result may not be an activation package (no activate script)"
 	fi
 
 	log_info "Build output verified: $build_result"
@@ -211,18 +214,18 @@ build_nix_installer() {
 	log_info "Building offline Nix installer for version $nix_version"
 
 	if $DRY_RUN; then
-		print_info   "Would build Nix installer: $nix_version"
-		echo   "$installer_path"
-		return   0
+		print_info "Would build Nix installer: $nix_version"
+		echo "$installer_path"
+		return 0
 	fi
 
 	# Check if installer already exists in cache
 	local cached_installer="$CACHE_DIR/nix-installer-${nix_version}.tar.gz"
 	if [[ -f "$cached_installer" ]]; then
-		log_info   "Using cached Nix installer: $cached_installer"
-		cp   "$cached_installer" "$installer_path"
-		echo   "$installer_path"
-		return   0
+		log_info "Using cached Nix installer: $cached_installer"
+		cp "$cached_installer" "$installer_path"
+		echo "$installer_path"
+		return 0
 	fi
 
 	# Create installer package
@@ -235,8 +238,8 @@ build_nix_installer() {
 
 	log_info "Downloading Nix binary from: $nix_url"
 	if ! curl --insecure -L -o "$nix_tarball" "$nix_url"; then
-		log_error   "Failed to download Nix binary"
-		return   1
+		log_error "Failed to download Nix binary"
+		return 1
 	fi
 
 	# Create installer script

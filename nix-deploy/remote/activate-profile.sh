@@ -12,6 +12,11 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 RESET='\033[0m'
 
+# Disable colors if NO_COLOR is set or output is not a terminal
+if [[ -n "${NO_COLOR:-}" ]] || [[ ! -t 1 ]]; then
+	RED='' GREEN='' YELLOW='' BLUE='' RESET=''
+fi
+
 echo_info() {
 	echo -e "${GREEN}[INFO]${RESET} $1"
 }
@@ -98,9 +103,9 @@ if grep -qi microsoft /proc/version 2>/dev/null; then
 	# Fix permissions if needed
 	if [[ -d /nix/store ]]; then
 		# Check if we can write to /nix/var/nix/profiles
-		if   [[ ! -w /nix/var/nix/profiles/per-user/$(whoami) ]]; then
-			echo_warn      "Permission issue detected in /nix/var/nix/profiles"
-			echo_info      "You may need to run: sudo chown -R $(whoami) /nix/var/nix/profiles/per-user/$(whoami)"
+		if [[ ! -w /nix/var/nix/profiles/per-user/$(whoami) ]]; then
+			echo_warn    "Permission issue detected in /nix/var/nix/profiles"
+			echo_info    "You may need to run: sudo chown -R $(whoami) /nix/var/nix/profiles/per-user/$(whoami)"
 		fi
 	fi
 
@@ -159,7 +164,7 @@ if command -v home-manager >/dev/null 2>&1; then
 	home-manager packages | head -20
 	TOTAL_PACKAGES=$(home-manager packages | wc -l)
 	if [[ $TOTAL_PACKAGES -gt 20 ]]; then
-		echo_info   "... and $((TOTAL_PACKAGES - 20)) more packages"
+		echo_info "... and $((TOTAL_PACKAGES - 20)) more packages"
 	fi
 else
 	nix-env -q | head -20

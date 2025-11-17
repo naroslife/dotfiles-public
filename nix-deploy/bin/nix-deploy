@@ -49,6 +49,11 @@ CYAN='\033[0;36m'
 BOLD='\033[1m'
 RESET='\033[0m'
 
+# Disable colors if NO_COLOR is set or output is not a terminal
+if [[ -n "${NO_COLOR:-}" ]] || [[ ! -t 2 ]]; then
+	RED='' GREEN='' YELLOW='' BLUE='' PURPLE='' CYAN='' BOLD='' RESET=''
+fi
+
 # Print functions
 print_header() {
     echo -e "\n${BOLD}${BLUE}=== $1 ===${RESET}\n" >&2
@@ -325,12 +330,15 @@ main() {
     # Phase 1: Build
     print_header "Phase 1: Building Nix Environment"
     local build_result
-    build_result=$(build_nix_environment)
 
-    if [[ -z "$build_result" ]]; then
+    # Call function normally to preserve logging output
+    if ! build_nix_environment; then
         print_error "Build failed"
         exit 1
     fi
+
+    # Read result from temp file (written by build_nix_environment)
+    build_result=$(cat "$TEMP_DIR/build-result.path")
     print_info "Build successful: $build_result"
 
     # Phase 2: Transfer (using nix copy - no packaging needed!)
