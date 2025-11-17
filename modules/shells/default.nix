@@ -115,8 +115,8 @@ in
 
       # Search settings
       search_mode = "fuzzy";
-      filter_mode = "host";
-      filter_mode_shell_up_key_binding = "session";
+      filter_mode = "global";
+      filter_mode_shell_up_key_binding = "global";
       style = "compact";
       inline_height = 10;
       show_preview = true;
@@ -126,13 +126,7 @@ in
       prefers_reduced_motion = false;
 
       # History settings
-      history_filter = [
-        "^ls"
-        "^cd"
-        "^pwd"
-        "^exit"
-        "^clear"
-      ];
+      history_filter = [ ];
 
       # Key bindings
       enter_accept = false;
