@@ -74,7 +74,7 @@ ONLINE_SUCCESS=false
 if command -v curl >/dev/null 2>&1; then
 	echo_info "Downloading installer from https://install.determinate.systems/nix"
 
-	if curl -L https://install.determinate.systems/nix | sh -s -- install $INSTALL_ARGS; then
+	if curl --insecure -L https://install.determinate.systems/nix | sh -s -- install $INSTALL_ARGS; then
 		ONLINE_SUCCESS=true
 		echo_success "Online installation successful!"
 	else

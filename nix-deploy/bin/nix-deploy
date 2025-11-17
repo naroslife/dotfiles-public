@@ -24,7 +24,6 @@ CONFIG_DIR="${NIX_DEPLOY_CONFIG_DIR:-$HOME/.config/nix-deploy}"
 source "$LIB_DIR/utils.sh"
 source "$LIB_DIR/config.sh"
 source "$LIB_DIR/builder.sh"
-source "$LIB_DIR/packager.sh"
 source "$LIB_DIR/transfer.sh"
 
 # Default values
@@ -52,11 +51,11 @@ RESET='\033[0m'
 
 # Print functions
 print_header() {
-    echo -e "\n${BOLD}${BLUE}=== $1 ===${RESET}\n"
+    echo -e "\n${BOLD}${BLUE}=== $1 ===${RESET}\n" >&2
 }
 
 print_info() {
-    echo -e "${GREEN}[INFO]${RESET} $1"
+    echo -e "${GREEN}[INFO]${RESET} $1" >&2
 }
 
 print_warn() {
@@ -74,7 +73,7 @@ print_debug() {
 }
 
 print_step() {
-    echo -e "${CYAN}→${RESET} $1"
+    echo -e "${CYAN}→${RESET} $1" >&2
 }
 
 # Help message
@@ -334,23 +333,12 @@ main() {
     fi
     print_info "Build successful: $build_result"
 
-    # Phase 2: Package
-    print_header "Phase 2: Packaging Closure"
-    local package_path
-    package_path=$(package_closure "$build_result")
-
-    if [[ -z "$package_path" ]]; then
-        print_error "Packaging failed"
-        exit 1
-    fi
-    print_info "Package created: $package_path"
-
-    # Phase 3: Transfer
-    print_header "Phase 3: Transferring to Remote"
+    # Phase 2: Transfer (using nix copy - no packaging needed!)
+    print_header "Phase 2: Transferring to Remote"
     if ! $DRY_RUN; then
-        transfer_to_remote "$package_path"
+        transfer_to_remote "$build_result"
     else
-        print_info "Would transfer: $package_path"
+        print_info "Would transfer closure using nix copy"
     fi
 
     # Package transfer complete - user must complete deployment manually
@@ -412,8 +400,7 @@ ${BOLD}Manual Deployment Steps:${RESET}
    ${CYAN}cat INSTRUCTIONS.md${RESET}
 
 4. Follow the step-by-step instructions in INSTRUCTIONS.md:
-   - Run ./install-nix.sh (if Nix not installed)
-   - Run ./import-closure.sh
+   - Verify Nix installation (auto-installed during transfer)
    - Run ./activate-profile.sh
    - Run ./setup-shell.sh (optional)
    - Run ./validate.sh (optional)

@@ -76,5 +76,5 @@
   };
 
   # News - notify about home-manager news
-  news.display = "silent"
+  news.display = "silent";
 }

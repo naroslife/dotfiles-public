@@ -4,7 +4,9 @@
       "Read(//home/uif58593/.serena/**)",
       "Skill(backend-development:api-design-principles)",
       "mcp__serena__get_symbols_overview",
-      "mcp__serena__find_file"
+      "mcp__serena__find_file",
+      "WebFetch(domain:nix.dev)",
+      "WebFetch(domain:determinate.systems)"
     ],
     "deny": [],
     "ask": []
