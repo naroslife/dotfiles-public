@@ -101,8 +101,9 @@ create_target_config() {
 	# Detect current profile and flake reference
 	local detected_profile
 	local detected_flake
-	detected_profile=$(detect_current_profile)
-	detected_flake=$(detect_current_flake_ref)
+	# Preserve stderr for debug logging
+	detected_profile=$(detect_current_profile 2>&2)
+	detected_flake=$(detect_current_flake_ref 2>&2)
 
 	# Gather configuration interactively
 	local host=$(prompt "Remote host" "")
@@ -421,8 +422,9 @@ gather_interactive_config() {
 		# Detect current setup
 		local detected_profile
 		local detected_flake
-		detected_profile=$(detect_current_profile)
-		detected_flake=$(detect_current_flake_ref)
+		# Preserve stderr for debug logging
+		detected_profile=$(detect_current_profile 2>&2)
+		detected_flake=$(detect_current_flake_ref 2>&2)
 
 		# Get or use detected profile
 		local profile=$(get_config_value "deployment.home_manager.profile_name")
@@ -475,9 +477,9 @@ validate_all_configs() {
 			if [[ -f "$config" ]]; then
 				local target_name=$(basename "$config" .yaml)
 				if yq eval '.' "$config" >/dev/null 2>&1; then
-					print_info    "✓ Target configuration valid: $target_name"
+					print_info "✓ Target configuration valid: $target_name"
 				else
-					print_error    "✗ Target configuration invalid: $target_name"
+					print_error "✗ Target configuration invalid: $target_name"
 					all_valid=false
 				fi
 			fi
