@@ -3,8 +3,7 @@
   pkgs,
   lib,
   ...
-}:
-{
+}: {
   programs.bash = {
     enable = true;
     # shellAliases are configured in aliases.nix

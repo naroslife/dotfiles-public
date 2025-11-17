@@ -50,7 +50,7 @@
         ]
       }
     ],
-    "Notification":[
+    "Notification": [
       {
         "matcher": "",
         "hooks": [
@@ -107,6 +107,10 @@
           {
             "type": "command",
             "command": "bash -c 'FILE=$(jq -r .tool_input.file_path); if [[ \"$FILE\" =~ \\.nix$ ]]; then nixfmt \"$FILE\" 2>/dev/null || nixpkgs-fmt \"$FILE\" 2>/dev/null || true; fi'"
+          },
+          {
+            "type": "command",
+            "command": "bash -c 'FILE=$(jq -r .tool_input.file_path); if [[ \"$FILE\" =~ \\.nix$ ]]; then alejandra \"$FILE\" 2>/dev/null || true; fi'"
           }
         ]
       }
@@ -193,7 +197,8 @@
     "python-development@claude-code-workflows": true,
     "systems-programming@claude-code-workflows": true,
     "shell-scripting@claude-code-workflows": true,
-    "distributed-debugging@claude-code-workflows": true
+    "distributed-debugging@claude-code-workflows": true,
+    "developer-essentials@claude-code-workflows": true
   },
   "alwaysThinkingEnabled": true
 }

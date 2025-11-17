@@ -291,6 +291,7 @@ main() {
         fi
         print_warn "Configuration validation failed but continuing due to --force"
     }
+    log_warn "retek3"
 
     # Interactive configuration if needed
     if $INTERACTIVE && ! validate_required_config; then
@@ -372,15 +373,15 @@ show_deployment_plan() {
     target_config=$(get_target_config)
 
     cat << EOF
-${BOLD}Target:${RESET}         $(get_config_value "target.name")
-${BOLD}Host:${RESET}           $(get_config_value "connection.host")
-${BOLD}User:${RESET}           $(get_config_value "connection.user")
-${BOLD}Platform:${RESET}       $(get_config_value "platform.type")
-${BOLD}Architecture:${RESET}   $(get_config_value "platform.arch")
-${BOLD}Profile:${RESET}        ${PROFILE:-$(get_config_value "deployment.home_manager.profile_name")}
-${BOLD}Flake:${RESET}          ${FLAKE_REF:-$(get_config_value "deployment.home_manager.flake_ref")}
+$(echo -e "${BOLD}Target:${RESET}")         $(get_config_value "target.name")
+$(echo -e "${BOLD}Host:${RESET}")           $(get_config_value "connection.host")
+$(echo -e "${BOLD}User:${RESET}")           $(get_config_value "connection.user")
+$(echo -e "${BOLD}Platform:${RESET}")       $(get_config_value "platform.type")
+$(echo -e "${BOLD}Architecture:${RESET}")   $(get_config_value "platform.arch")
+$(echo -e "${BOLD}Profile:${RESET}")        ${PROFILE:-$(get_config_value "deployment.home_manager.profile_name")}
+$(echo -e "${BOLD}Flake:${RESET}")          ${FLAKE_REF:-$(get_config_value "deployment.home_manager.flake_ref")}
 
-${BOLD}Options:${RESET}
+$(echo -e "${BOLD}Options:${RESET}")
   - Nix Installation:    $(get_config_value "deployment.nix.install_if_missing")
   - Backup Existing:     $(get_config_value "deployment.options.backup_existing_profile")
   - Shell Integration:   $(get_config_value "deployment.options.setup_shell_integration")

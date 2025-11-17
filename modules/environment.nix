@@ -3,16 +3,14 @@
   pkgs,
   lib,
   ...
-}:
-let
+}: let
   # Path aliases for improved readability and maintainability
   homeDir = config.home.homeDirectory;
   xdgConfig = "${homeDir}/.config";
   xdgData = "${homeDir}/.local/share";
   xdgState = "${homeDir}/.local/state";
   xdgCache = "${homeDir}/.cache";
-in
-{
+in {
   # Session environment variables
   home.sessionVariables = {
     # === Editor and Pager ===
@@ -29,7 +27,9 @@ in
 
     # === Browser ===
     BROWSER =
-      if (builtins.pathExists /proc/sys/fs/binfmt_misc/WSLInterop) then "wslview" else "firefox";
+      if (builtins.pathExists /proc/sys/fs/binfmt_misc/WSLInterop)
+      then "wslview"
+      else "firefox";
 
     # === XDG Base Directory Specification ===
     XDG_CONFIG_HOME = xdgConfig;
@@ -191,7 +191,7 @@ in
   ];
 
   # Create necessary directories
-  home.activation.createEnvDirs = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+  home.activation.createEnvDirs = lib.hm.dag.entryAfter ["writeBoundary"] ''
     mkdir -p ${xdgCache}/less
     mkdir -p ${xdgConfig}/ripgrep
     mkdir -p ${xdgData}/zoxide

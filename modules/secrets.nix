@@ -3,9 +3,7 @@
   pkgs,
   lib,
   ...
-}:
-
-{
+}: {
   # sops-nix configuration for secrets management
   sops = {
     # Default sops file location
@@ -18,7 +16,7 @@
     age = {
       # Use SSH host key for age decryption (most convenient)
       # This will automatically derive age key from your SSH key
-      sshKeyPaths = [ "${config.home.homeDirectory}/.ssh/id_ed25519" ];
+      sshKeyPaths = ["${config.home.homeDirectory}/.ssh/id_ed25519"];
 
       # Alternatively, you can specify an age key file directly:
       # keyFile = "${config.home.homeDirectory}/.config/sops/age/keys.txt";

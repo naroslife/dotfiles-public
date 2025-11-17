@@ -2,15 +2,12 @@
 #
 # This module imports user-specific configuration from the interactive setup
 # and applies it to the Home Manager configuration.
-
 {
   config,
   lib,
   pkgs,
   ...
-}:
-
-let
+}: let
   # Try to import user configuration if it exists
   userConfigFile = "${config.home.homeDirectory}/.config/dotfiles/user.nix";
 
@@ -34,10 +31,11 @@ let
   };
 
   # Load user config if it exists, otherwise use defaults
-  userConfig = if builtins.pathExists userConfigFile then import userConfigFile else defaultConfig;
-
-in
-{
+  userConfig =
+    if builtins.pathExists userConfigFile
+    then import userConfigFile
+    else defaultConfig;
+in {
   # Apply user configuration
   config = {
     # Git configuration

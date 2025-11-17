@@ -3,8 +3,7 @@
   pkgs,
   lib,
   ...
-}:
-let
+}: let
   # Common shell aliases shared across bash and zsh
   commonAliases = {
     # Home Manager
@@ -115,8 +114,7 @@ let
     # Compile and test CUDA programs
     cuda-compile-test = "bash ${config.home.homeDirectory}/dotfiles-public/cuda-setup/compile-test.sh";
   };
-in
-{
+in {
   # Apply aliases to both bash and zsh
   programs.bash.shellAliases = commonAliases;
   programs.zsh.shellAliases = commonAliases;

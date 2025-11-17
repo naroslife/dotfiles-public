@@ -6,7 +6,9 @@
       "mcp__serena__get_symbols_overview",
       "mcp__serena__find_file",
       "WebFetch(domain:nix.dev)",
-      "WebFetch(domain:determinate.systems)"
+      "WebFetch(domain:determinate.systems)",
+      "mcp__Ref__ref_search_documentation",
+      "mcp__Ref__ref_read_url"
     ],
     "deny": [],
     "ask": []

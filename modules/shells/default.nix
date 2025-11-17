@@ -3,18 +3,16 @@
   pkgs,
   lib,
   ...
-}:
-let
+}: let
   # Import shell integration helpers
-  shellHelpers = import ../../lib/shell-helpers.nix { inherit lib; };
+  shellHelpers = import ../../lib/shell-helpers.nix {inherit lib;};
 
   # Default shells to integrate with
   defaultShells = [
     "bash"
     "zsh"
   ];
-in
-{
+in {
   imports = [
     ./bash.nix
     ./zsh.nix
@@ -126,13 +124,13 @@ in
       prefers_reduced_motion = false;
 
       # History settings
-      history_filter = [ ];
+      history_filter = [];
 
       # Key bindings
       enter_accept = false;
 
       # Stats settings
-      common_prefix = [ "sudo" ];
+      common_prefix = ["sudo"];
       common_subcommands = [
         "docker"
         "git"

@@ -3,10 +3,9 @@
   pkgs,
   lib,
   ...
-}:
-{
+}: {
   # Import all modules
-  imports = [ ./modules ];
+  imports = [./modules];
 
   # Home Manager configuration
   home.stateVersion = "25.05";

@@ -3,8 +3,7 @@
   pkgs,
   lib,
   ...
-}:
-{
+}: {
   home.packages = with pkgs; [
     # === Modern CLI Replacements ===
     bat # cat with syntax highlighting and Git integration

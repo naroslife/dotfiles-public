@@ -55,6 +55,10 @@ transfer_to_remote() {
 
 	log_debug "SSH options: $ssh_opts"
 
+	# SCP requires -P (uppercase) for port, while SSH uses -p (lowercase)
+	# Convert ssh_opts to scp_opts by replacing -p with -P
+	local scp_opts="${ssh_opts/-p /-P }"
+
 	# Full remote connection string
 	local remote="$user@$host"
 
@@ -139,13 +143,13 @@ transfer_to_remote() {
 
 		# Transfer installer script
 		print_step "Transferring Nix installer to remote..."
-		if ! scp $ssh_opts "$installer_path" "$remote:$remote_temp/nix-installer.sh"; then
+		if ! scp $scp_opts "$installer_path" "$remote:$remote_temp/nix-installer.sh"; then
 			log_error "Failed to transfer Nix installer"
 			return 1
 		fi
 
 		# Transfer install-nix.sh script
-		if ! scp $ssh_opts "$REMOTE_DIR/install-nix.sh" "$remote:$remote_temp/install-nix.sh"; then
+		if ! scp $scp_opts "$REMOTE_DIR/install-nix.sh" "$remote:$remote_temp/install-nix.sh"; then
 			log_error "Failed to transfer install-nix.sh"
 			return 1
 		fi
@@ -153,7 +157,8 @@ transfer_to_remote() {
 		# Install Nix on remote
 		print_step "Installing Nix on remote..."
 		log_info "This may take a few minutes..."
-		if ! ssh $ssh_opts "$remote" "cd $remote_temp && bash ./install-nix.sh"; then
+		# Use -t to allocate pseudo-TTY for sudo password prompt
+		if ! ssh -t $ssh_opts "$remote" "cd $remote_temp && bash ./install-nix.sh"; then
 			log_error "Failed to install Nix on remote"
 			return 1
 		fi
@@ -201,7 +206,7 @@ transfer_to_remote() {
 
 	for script in "${scripts[@]}"; do
 		if [[ -f "$script" ]]; then
-			if ! scp $ssh_opts "$script" "$remote:$remote_temp/$(basename "$script")"; then
+			if ! scp $scp_opts "$script" "$remote:$remote_temp/$(basename "$script")"; then
 				log_warn "Failed to transfer $(basename "$script") (non-fatal)"
 			fi
 		fi
@@ -356,7 +361,7 @@ generate_metadata() {
 
 	# Create metadata JSON
 	local metadata=$(
-		cat       <<EOF
+		cat <<EOF
 {
   "version": "2.0.0",
   "timestamp": "$(date -Iseconds)",

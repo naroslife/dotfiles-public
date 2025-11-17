@@ -3,8 +3,7 @@
   pkgs,
   lib,
   ...
-}:
-{
+}: {
   programs.vscode = {
     enable = true;
 
@@ -171,8 +170,7 @@
     };
 
     # VS Code extensions
-    profiles.default.extensions =
-      with pkgs.vscode-extensions;
+    profiles.default.extensions = with pkgs.vscode-extensions;
       [
         # General development
         editorconfig.editorconfig

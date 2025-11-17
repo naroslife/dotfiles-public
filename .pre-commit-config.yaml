@@ -1,0 +1,9 @@
+repos:
+  - repo: local
+    hooks:
+      - id: alejandra
+        name: Alejandra Nix Formatter
+        entry: nix fmt
+        language: system
+        files: \.nix$
+        pass_filenames: false
