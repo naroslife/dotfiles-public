@@ -3,7 +3,12 @@
 # This module imports user-specific configuration from the interactive setup
 # and applies it to the Home Manager configuration.
 
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
   # Try to import user configuration if it exists
@@ -29,10 +34,7 @@ let
   };
 
   # Load user config if it exists, otherwise use defaults
-  userConfig =
-    if builtins.pathExists userConfigFile
-    then import userConfigFile
-    else defaultConfig;
+  userConfig = if builtins.pathExists userConfigFile then import userConfigFile else defaultConfig;
 
 in
 {

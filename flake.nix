@@ -17,24 +17,42 @@
     };
   };
 
-  outputs = { self, nixpkgs, home-manager, nur, sops-nix, ... }:
+  outputs =
+    {
+      self,
+      nixpkgs,
+      home-manager,
+      nur,
+      sops-nix,
+      ...
+    }:
     let
-      system = "x86_64-linux";
+      systems = [
+        "x86_64-linux"
+        "aarch64-linux"
+        "x86_64-darwin"
+        "aarch64-darwin"
+      ];
+      forAllSystems = nixpkgs.lib.genAttrs systems;
 
-      pkgs = import nixpkgs {
-        inherit system;
-        config = {
-          allowUnfree = true;
-          allowUnfreePredicate = _: true;
+      # Function to create pkgs for a specific system
+      mkPkgs =
+        system:
+        import nixpkgs {
+          inherit system;
+          config = {
+            allowUnfree = true;
+            allowUnfreePredicate = _: true;
+          };
+          overlays = [
+            nur.overlays.default
+            # Custom overlays can be added here
+          ];
         };
-        overlays = [
-          nur.overlays.default
-          # Custom overlays can be added here
-        ];
-      };
 
       # Function to detect user info from environment
-      detectUserInfo = username:
+      detectUserInfo =
+        username:
         let
           # Try to get git config if available
           gitEmail = builtins.getEnv "GIT_EMAIL";
@@ -47,8 +65,8 @@
               fullName = "Robert Nagy";
             };
             uif58593 = {
-              email = "uif58593@gmail.com";
-              fullName = "User uif58593";
+              email = "robert.4.nagy@aumovio.com";
+              fullName = "Robert Nagy";
             };
           };
 
@@ -76,110 +94,146 @@
       };
 
       # Function to create a home-manager configuration for a user
-      mkHomeConfig = username: userInfo: {
-        "${username}" = home-manager.lib.homeManagerConfiguration {
-          inherit pkgs;
+      mkHomeConfig =
+        system: username: userInfo:
+        let
+          pkgs = mkPkgs system;
+        in
+        {
+          "${username}" = home-manager.lib.homeManagerConfiguration {
+            inherit pkgs;
 
-          modules = [
-            ./home.nix
-            sops-nix.homeManagerModules.sops
-            {
-              # User-specific configuration
-              home = {
-                username = username;
-                homeDirectory = "/home/${username}";
-              };
+            modules = [
+              ./home.nix
+              sops-nix.homeManagerModules.sops
+              {
+                # User-specific configuration
+                home = {
+                  username = username;
+                  homeDirectory = "/home/${username}";
+                };
 
-              # Git configuration from user info
-              programs.git = {
-                userEmail = userInfo.email;
-                userName = userInfo.fullName;
-              };
-            }
-          ];
+                # Git configuration from user info
+                programs.git = {
+                  userEmail = userInfo.email;
+                  userName = userInfo.fullName;
+                };
+              }
+            ];
 
-          extraSpecialArgs = {
-            inherit username;
-            inherit (userInfo) email fullName;
+            extraSpecialArgs = {
+              inherit username;
+              inherit (userInfo) email fullName;
+            };
           };
         };
-      };
 
       # Dynamically add current user if detected via environment variable
       currentUser = builtins.getEnv "CURRENT_USER";
       allUsers =
-        if currentUser != "" && !(builtins.hasAttr currentUser users)
-        then users // { "${currentUser}" = detectUserInfo currentUser; }
-        else users;
+        if currentUser != "" && !(builtins.hasAttr currentUser users) then
+          users // { "${currentUser}" = detectUserInfo currentUser; }
+        else
+          users;
+
+      # Default system for home configurations (Linux x86_64)
+      defaultSystem = "x86_64-linux";
     in
     {
-      # Generate home configurations for all users
-      homeConfigurations = builtins.foldl'
-        (acc: username: acc // mkHomeConfig username allUsers.${username})
-        { }
-        (builtins.attrNames allUsers);
+      # Add formatter for each system
+      formatter = forAllSystems (system: nixpkgs.legacyPackages.${system}.nixfmt-rfc-style);
+
+      # Generate home configurations for all users (using default system)
+      homeConfigurations = builtins.foldl' (
+        acc: username: acc // mkHomeConfig defaultSystem username allUsers.${username}
+      ) { } (builtins.attrNames allUsers);
 
       # Convenience aliases for common operations
-      apps.${system} = {
-        default = {
-          type = "app";
-          program = "${pkgs.writeShellScript "activate" ''
-            #!/usr/bin/env bash
-            set -e
+      apps = forAllSystems (
+        system:
+        let
+          pkgs = mkPkgs system;
+        in
+        {
+          default = {
+            type = "app";
+            program = "${pkgs.writeShellScript "activate" ''
+              #!/usr/bin/env bash
+              set -e
 
-            # Detect username
-            USERNAME="''${1:-$(whoami)}"
+              # Detect username
+              USERNAME="''${1:-$(whoami)}"
 
-            # Export current user for dynamic detection
-            export CURRENT_USER="$USERNAME"
+              # Export current user for dynamic detection
+              export CURRENT_USER="$USERNAME"
 
-            # Get git info if available
-            if command -v git &>/dev/null; then
-              export GIT_EMAIL=$(git config --global user.email 2>/dev/null || echo "")
-              export GIT_NAME=$(git config --global user.name 2>/dev/null || echo "")
-            fi
+              # Get git info if available
+              if command -v git &>/dev/null; then
+                export GIT_EMAIL=$(git config --global user.email 2>/dev/null || echo "")
+                export GIT_NAME=$(git config --global user.name 2>/dev/null || echo "")
+              fi
 
-            echo "Activating home-manager configuration for $USERNAME..."
-            nix run .#homeConfigurations.$USERNAME.activationPackage
-          ''}";
-        };
-      };
+              echo "Activating home-manager configuration for $USERNAME..."
+              nix run .#homeConfigurations.$USERNAME.activationPackage
+            ''}";
+          };
+        }
+      );
 
       # Development shell
-      devShells.${system}.default = pkgs.mkShell {
-        buildInputs = with pkgs; [
-          git
-          nixpkgs-fmt
-          nil
-        ];
+      devShells = forAllSystems (
+        system:
+        let
+          pkgs = mkPkgs system;
+        in
+        {
+          default = pkgs.mkShell {
+            buildInputs = with pkgs; [
+              git
+              nixfmt-rfc-style
+              nil
+            ];
 
-        shellHook = ''
-          echo "Dotfiles development shell"
-          echo "Available commands:"
-          echo "  home-manager switch --flake .#username"
-          echo "  nix flake check"
-          echo "  nix flake update"
-        '';
-      };
+            shellHook = ''
+              echo "Dotfiles development shell"
+              echo "Available commands:"
+              echo "  home-manager switch --flake .#username"
+              echo "  nix flake check"
+              echo "  nix flake update"
+              echo "  nix fmt  # Format all Nix files"
+            '';
+          };
+        }
+      );
 
       # Flake checks
-      checks.${system} = {
-        # Check nix formatting
-        format = pkgs.runCommand "check-format"
-          {
-            buildInputs = [ pkgs.nixpkgs-fmt ];
-          } ''
-          ${pkgs.nixpkgs-fmt}/bin/nixpkgs-fmt --check ${./.}
-          touch $out
-        '';
+      checks = forAllSystems (
+        system:
+        let
+          pkgs = mkPkgs system;
+        in
+        {
+          # Check nix formatting
+          format =
+            pkgs.runCommand "check-format"
+              {
+                buildInputs = [ pkgs.nixfmt-rfc-style ];
+              }
+              ''
+                ${pkgs.nixfmt-rfc-style}/bin/nixfmt --check ${./.}
+                touch $out
+              '';
 
-        # Validate all home configurations build
-        build-all = pkgs.runCommand "build-all-configs" { } ''
-          ${pkgs.lib.concatStringsSep "\n" (map (user: ''
-            echo "Building configuration for ${user}..."
-          '') (builtins.attrNames users))}
-          touch $out
-        '';
-      };
+          # Validate all home configurations build
+          build-all = pkgs.runCommand "build-all-configs" { } ''
+            ${pkgs.lib.concatStringsSep "\n" (
+              map (user: ''
+                echo "Building configuration for ${user}..."
+              '') (builtins.attrNames users)
+            )}
+            touch $out
+          '';
+        }
+      );
     };
 }

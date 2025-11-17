@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 {
   # Build-time validation assertions to catch configuration errors early
@@ -19,41 +24,38 @@
     # Validate tool integrations match enabled programs
     {
       assertion =
-        config.programs.starship.enable ->
-        (config.programs.starship.enableBashIntegration ||
-         config.programs.starship.enableZshIntegration);
+        config.programs.starship.enable
+        -> (
+          config.programs.starship.enableBashIntegration || config.programs.starship.enableZshIntegration
+        );
       message = "Starship is enabled but no shell integrations are active. Enable at least one shell integration.";
     }
 
     {
       assertion =
-        config.programs.zoxide.enable ->
-        (config.programs.zoxide.enableBashIntegration ||
-         config.programs.zoxide.enableZshIntegration);
+        config.programs.zoxide.enable
+        -> (config.programs.zoxide.enableBashIntegration || config.programs.zoxide.enableZshIntegration);
       message = "Zoxide is enabled but no shell integrations are active. Enable at least one shell integration.";
     }
 
     {
       assertion =
-        config.programs.atuin.enable ->
-        (config.programs.atuin.enableBashIntegration ||
-         config.programs.atuin.enableZshIntegration);
+        config.programs.atuin.enable
+        -> (config.programs.atuin.enableBashIntegration || config.programs.atuin.enableZshIntegration);
       message = "Atuin is enabled but no shell integrations are active. Enable at least one shell integration.";
     }
 
     {
       assertion =
-        config.programs.fzf.enable ->
-        (config.programs.fzf.enableBashIntegration ||
-         config.programs.fzf.enableZshIntegration);
+        config.programs.fzf.enable
+        -> (config.programs.fzf.enableBashIntegration || config.programs.fzf.enableZshIntegration);
       message = "FZF is enabled but no shell integrations are active. Enable at least one shell integration.";
     }
 
     {
       assertion =
-        config.programs.direnv.enable ->
-        (config.programs.direnv.enableBashIntegration ||
-         config.programs.direnv.enableZshIntegration);
+        config.programs.direnv.enable
+        -> (config.programs.direnv.enableBashIntegration || config.programs.direnv.enableZshIntegration);
       message = "Direnv is enabled but no shell integrations are active. Enable at least one shell integration.";
     }
 
@@ -133,15 +135,15 @@
   # Validation warnings (non-fatal, just informational)
   config.warnings = [
     # Warn if using deprecated packages or patterns
-    (lib.mkIf
-      (lib.any (p: p.name or "" == "thefuck") config.home.packages)
-      "Package 'thefuck' may be incompatible with Python 3.12+. Consider removing or using alternative.")
+    (lib.mkIf (lib.any (p: p.name or "" == "thefuck") config.home.packages)
+      "Package 'thefuck' may be incompatible with Python 3.12+. Consider removing or using alternative."
+    )
 
     # Warn about potential PATH ordering issues
-    (lib.mkIf
-      (lib.elem "${config.home.homeDirectory}/.local/bin" config.home.sessionPath &&
-       lib.elem "${config.home.homeDirectory}/bin" config.home.sessionPath &&
-       (lib.elemAt config.home.sessionPath 0) != "${config.home.homeDirectory}/bin")
-      "Personal bin directory (~/bin) should typically be first in PATH for user script precedence.")
+    (lib.mkIf (
+      lib.elem "${config.home.homeDirectory}/.local/bin" config.home.sessionPath
+      && lib.elem "${config.home.homeDirectory}/bin" config.home.sessionPath
+      && (lib.elemAt config.home.sessionPath 0) != "${config.home.homeDirectory}/bin"
+    ) "Personal bin directory (~/bin) should typically be first in PATH for user script precedence.")
   ];
 }

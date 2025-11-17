@@ -1,4 +1,9 @@
-{ config, pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 {
   programs.vscode = {
     enable = true;
@@ -13,7 +18,10 @@
       "editor.insertSpaces" = true;
       "editor.detectIndentation" = true;
       "editor.renderWhitespace" = "selection";
-      "editor.rulers" = [ 80 120 ];
+      "editor.rulers" = [
+        80
+        120
+      ];
       "editor.wordWrap" = "off";
       "editor.formatOnSave" = true;
       "editor.formatOnPaste" = false;
@@ -163,67 +171,71 @@
     };
 
     # VS Code extensions
-    profiles.default.extensions = with pkgs.vscode-extensions; [
-      # General development
-      editorconfig.editorconfig
-      streetsidesoftware.code-spell-checker
-      christian-kohler.path-intellisense
-      gruntfuggly.todo-tree
-      usernamehw.errorlens
+    profiles.default.extensions =
+      with pkgs.vscode-extensions;
+      [
+        # General development
+        editorconfig.editorconfig
+        streetsidesoftware.code-spell-checker
+        christian-kohler.path-intellisense
+        gruntfuggly.todo-tree
+        usernamehw.errorlens
 
-      # Git
-      eamodio.gitlens
-      donjayamanne.githistory
-      mhutchie.git-graph
+        # Git
+        eamodio.gitlens
+        donjayamanne.githistory
+        mhutchie.git-graph
 
-      # Themes and icons
-      pkief.material-icon-theme
+        # Themes and icons
+        pkief.material-icon-theme
 
-      # Language support
-      ms-python.python
-      ms-python.vscode-pylance
-      ms-python.black-formatter
-      rust-lang.rust-analyzer
-      golang.go
-      hashicorp.terraform
-      redhat.vscode-yaml
-      timonwong.shellcheck
-      foxundermoon.shell-format
+        # Language support
+        ms-python.python
+        ms-python.vscode-pylance
+        ms-python.black-formatter
+        rust-lang.rust-analyzer
+        golang.go
+        hashicorp.terraform
+        redhat.vscode-yaml
+        timonwong.shellcheck
+        foxundermoon.shell-format
 
-      # Nix
-      jnoortheen.nix-ide
-      kamadorueda.alejandra
+        # Nix
+        jnoortheen.nix-ide
+        kamadorueda.alejandra
 
-      # Containers
-      ms-azuretools.vscode-docker
-      ms-kubernetes-tools.vscode-kubernetes-tools
+        # Containers
+        ms-azuretools.vscode-docker
+        ms-kubernetes-tools.vscode-kubernetes-tools
 
-      # Remote development
-      ms-vscode-remote.remote-ssh
-      ms-vscode-remote.remote-containers
-      ms-vscode.remote-explorer
+        # Remote development
+        ms-vscode-remote.remote-ssh
+        ms-vscode-remote.remote-containers
+        ms-vscode.remote-explorer
 
-      # Formatters
-      esbenp.prettier-vscode
+        # Formatters
+        esbenp.prettier-vscode
 
-      # Markdown
-      yzhang.markdown-all-in-one
-      bierner.markdown-mermaid
+        # Markdown
+        yzhang.markdown-all-in-one
+        bierner.markdown-mermaid
 
-      # AI assistants (optional)
-      github.copilot
-      github.copilot-chat
+        # AI assistants (optional)
+        github.copilot
+        github.copilot-chat
 
-      # Additional productivity
-      vscodevim.vim
-      formulahendry.auto-rename-tag
-      naumovs.color-highlight
-    ] ++ pkgs.lib.optionals (pkgs.stdenv.isDarwin) [
-      # macOS-specific extensions
-    ] ++ pkgs.lib.optionals (pkgs.stdenv.isLinux) [
-      # Linux-specific extensions
-      ms-vscode.cpptools
-    ];
+        # Additional productivity
+        vscodevim.vim
+        formulahendry.auto-rename-tag
+        naumovs.color-highlight
+      ]
+      ++ pkgs.lib.optionals (pkgs.stdenv.isDarwin) [
+        # macOS-specific extensions
+      ]
+      ++ pkgs.lib.optionals (pkgs.stdenv.isLinux) [
+        # Linux-specific extensions
+        ms-vscode.cpptools
+      ];
 
     # Keybindings
     profiles.default.keybindings = [

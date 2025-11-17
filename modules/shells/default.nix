@@ -1,10 +1,18 @@
-{ config, pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 let
   # Import shell integration helpers
   shellHelpers = import ../../lib/shell-helpers.nix { inherit lib; };
 
   # Default shells to integrate with
-  defaultShells = [ "bash" "zsh" ];
+  defaultShells = [
+    "bash"
+    "zsh"
+  ];
 in
 {
   imports = [
@@ -121,7 +129,7 @@ in
       history_filter = [
         "^ls"
         "^cd"
-  "^pwd"
+        "^pwd"
         "^exit"
         "^clear"
       ];
@@ -131,7 +139,12 @@ in
 
       # Stats settings
       common_prefix = [ "sudo" ];
-      common_subcommands = [ "docker" "git" "npm" "cargo" ];
+      common_subcommands = [
+        "docker"
+        "git"
+        "npm"
+        "cargo"
+      ];
 
       # Sync settings
       key_path = "~/.local/share/atuin/key";

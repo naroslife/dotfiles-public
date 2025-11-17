@@ -50,13 +50,13 @@
         ]
       }
     ],
-    "Notification": [
+    "Notification":[
       {
         "matcher": "",
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'TOOL_NAME=$(jq -r \".tool_name // \\\"Unknown\\\"\"); if command -v notify-send >/dev/null 2>&1; then notify-send -u normal -i terminal \"Claude Code\" \"Tool: $TOOL_NAME completed\"; elif command -v powershell.exe >/dev/null 2>&1; then powershell.exe -Command \"New-BurntToastNotification -Text '\"'\"'Claude Code'\"'\"', '\"'\"'Tool: $TOOL_NAME completed'\"'\"'\"; fi'"
+            "command": "bash -c 'DATA=$(cat); TOOL_NAME=$(echo \"$DATA\" | jq -r \".tool // .tool_name // \\\"Tool\\\"\"); STATUS=$(echo \"$DATA\" | jq -r \".status // \\\"completed\\\"\"); if command -v notify-send >/dev/null 2>&1; then notify-send -u normal -i terminal \"Claude Code\" \"$TOOL_NAME $STATUS\"; elif command -v powershell.exe >/dev/null 2>&1; then powershell.exe -Command \"New-BurntToastNotification -Text '\"'\"'Claude Code'\"'\"', '\"'\"'$TOOL_NAME $STATUS'\"'\"'\"; fi'"
           }
         ]
       }

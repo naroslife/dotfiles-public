@@ -1,4 +1,9 @@
-{ config, pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 let
   # Path aliases for improved readability and maintainability
   homeDir = config.home.homeDirectory;
@@ -24,9 +29,7 @@ in
 
     # === Browser ===
     BROWSER =
-      if (builtins.pathExists /proc/sys/fs/binfmt_misc/WSLInterop)
-      then "wslview"
-      else "firefox";
+      if (builtins.pathExists /proc/sys/fs/binfmt_misc/WSLInterop) then "wslview" else "firefox";
 
     # === XDG Base Directory Specification ===
     XDG_CONFIG_HOME = xdgConfig;

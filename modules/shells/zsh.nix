@@ -1,4 +1,9 @@
-{ config, pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 {
   programs.zsh = {
     enable = true;
@@ -20,7 +25,10 @@
     ];
 
     # Performance optimizations
-    autosuggestion.strategy = [ "history" "completion" ];
+    autosuggestion.strategy = [
+      "history"
+      "completion"
+    ];
     historySubstringSearch.enable = true;
 
     # History settings for better performance

@@ -1,4 +1,9 @@
-{ config, pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 {
   home.packages = with pkgs; [
     elvish # Friendly interactive shell with structured data pipelines

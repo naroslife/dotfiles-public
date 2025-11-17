@@ -33,6 +33,12 @@ apply_home_manager() {
     # Export CURRENT_USER for dynamic user detection in flake.nix
     export CURRENT_USER="$TARGET_USER"
 
+    # Show what will be built (if not in quiet mode)
+    if [[ "${VERBOSE:-false}" == "true" ]]; then
+        log_info "Checking configuration target..."
+        nix build --impure --dry-run --no-link ".#homeConfigurations.$TARGET_USER.activationPackage" 2>&1 | head -n 20
+    fi
+
     local home_manager_cmd="nix run home-manager/release-25.05 -- switch --impure --flake \".#$TARGET_USER\""
 
     log_info "Executing: $home_manager_cmd"

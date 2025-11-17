@@ -1,4 +1,9 @@
-{ config, pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 {
   home.packages = with pkgs; [
     # === Development - Java ===
@@ -58,20 +63,24 @@
 
     # === Language-specific Package Managers ===
     # Python with common packages
-    (python3.withPackages (ps: with ps; [
-      # Code Quality & Formatting
-      pycodestyle # Python style checker
-      black # Uncompromising Python formatter
-      mypy # Static type checker
-            pytest # Testing framework
-      requests # HTTP library
-      textual # Modern TUI framework
-    ]))
+    (python3.withPackages (
+      ps: with ps; [
+        # Code Quality & Formatting
+        pycodestyle # Python style checker
+        black # Uncompromising Python formatter
+        mypy # Static type checker
+        pytest # Testing framework
+        requests # HTTP library
+        textual # Modern TUI framework
+      ]
+    ))
 
     # Ruby with tmuxinator
-    (ruby.withPackages (rbps: with rbps; [
-      tmuxinator # Manage tmux sessions easily
-    ]))
+    (ruby.withPackages (
+      rbps: with rbps; [
+        tmuxinator # Manage tmux sessions easily
+      ]
+    ))
   ];
 
   # Tool versions (for asdf/rtx compatibility)
