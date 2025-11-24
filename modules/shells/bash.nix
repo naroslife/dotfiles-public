@@ -62,6 +62,9 @@
       alias use-atuin='switch_history atuin'
       alias use-mcfly='switch_history mcfly'
       alias history-status='switch_history status'
+
+      [[ "$TERM_PROGRAM" == "vscode" ]] && . "$(code --locate-shell-integration-path bash)"
+      
       set +u
     '';
   };

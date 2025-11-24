@@ -44,13 +44,18 @@
     # Package manager configurations
 
     # Python pip configuration
-    ".config/pip/pip.conf".text = ''
-      [install]
-      user = true
+    # ".config/pip/pip.conf".text = ''
+    #   [install]
+    #   user = true
 
-      [list]
-      format = columns
-    '';
+    #   [ global ]
+    #   # Respect virtual environments
+    #   no-user-when-venv = true
+
+
+    #   [list]
+    #   format = columns
+    # '';
 
     # Create directory markers for package managers
     ".npm-global/.keep".text = "";

@@ -62,18 +62,18 @@
 
     # === Language-specific Package Managers ===
     # Python with common packages
-    (python3.withPackages (
-      ps:
-        with ps; [
-          # Code Quality & Formatting
-          pycodestyle # Python style checker
-          black # Uncompromising Python formatter
-          mypy # Static type checker
-          pytest # Testing framework
-          requests # HTTP library
-          textual # Modern TUI framework
-        ]
-    ))
+    # (python310.withPackages (
+    #   ps:
+    #     with ps; [
+    #       # Code Quality & Formatting
+    #       pycodestyle # Python style checker
+    #       black # Uncompromising Python formatter
+    #       mypy # Static type checker
+    #       pytest # Testing framework
+    #       requests # HTTP library
+    #       textual # Modern TUI framework
+    #     ]
+    # ))
 
     # Ruby with tmuxinator
     (ruby.withPackages (

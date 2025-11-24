@@ -26,7 +26,7 @@
   "terminal.integrated.fontSize": 14,
   "terminal.integrated.cursorStyle": "line",
   "terminal.integrated.cursorBlinking": true,
-  "terminal.integrated.defaultProfile.linux": "bash",
+  "terminal.integrated.defaultProfile.linux": "zsh",
   "terminal.integrated.persistentSessionReviveProcess": "never",
   "terminal.integrated.enableMultiLinePasteWarning": false,
 
@@ -174,30 +174,33 @@
     "**/.hg/store/**": true
   },
   "workbench.colorCustomizations": {
-    "activityBar.activeBackground": "#70bcd6",
-    "activityBar.background": "#70bcd6",
+    "activityBar.activeBackground": "#9ff237",
+    "activityBar.background": "#9ff237",
     "activityBar.foreground": "#15202b",
     "activityBar.inactiveForeground": "#15202b99",
-    "activityBarBadge.background": "#c639a2",
-    "activityBarBadge.foreground": "#e7e7e7",
+    "activityBarBadge.background": "#2e9af1",
+    "activityBarBadge.foreground": "#15202b",
     "commandCenter.border": "#15202b99",
-    "sash.hoverBorder": "#70bcd6",
-    "statusBar.background": "#48aacb",
+    "sash.hoverBorder": "#9ff237",
+    "statusBar.background": "#87e70f",
     "statusBar.foreground": "#15202b",
-    "statusBarItem.hoverBackground": "#328fae",
-    "statusBarItem.remoteBackground": "#48aacb",
+    "statusBarItem.hoverBackground": "#6bb70c",
+    "statusBarItem.remoteBackground": "#87e70f",
     "statusBarItem.remoteForeground": "#15202b",
-    "titleBar.activeBackground": "#48aacb",
+    "titleBar.activeBackground": "#87e70f",
     "titleBar.activeForeground": "#15202b",
-    "titleBar.inactiveBackground": "#48aacb99",
-    "titleBar.inactiveForeground": "#15202b99"
+    "titleBar.inactiveBackground": "#87e70f99",
+    "titleBar.inactiveForeground": "#15202b99",
+    "panel.border": "#9ff237"
   },
-  "peacock.remoteColor": "#48aacb",
+  "peacock.remoteColor": "#87e70f",
   "cSpell.words": [
     "ccline",
     "markitdown",
     "modelcontextprotocol",
     "sequentialthinking"
   ],
-  "cmake.cmakePath": "/home/uif58593/.nix-profile/bin/cmake"
+  "cmake.cmakePath": "/home/uif58593/.nix-profile/bin/cmake",
+  "terminal.integrated.shellIntegration.environmentReporting": true,
+  "terminal.integrated.suggest.enabled": true
 }

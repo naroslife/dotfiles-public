@@ -103,6 +103,12 @@ in {
 
   programs.zoxide = shellHelpers.enableWithShells defaultShells;
 
+  programs.navi = shellHelpers.withShells defaultShells {
+    settings = {
+      editor = "${pkgs.vim}/bin/vim";
+    };
+  };
+
   programs.atuin = shellHelpers.withShells defaultShells {
     settings = {
       # General settings
