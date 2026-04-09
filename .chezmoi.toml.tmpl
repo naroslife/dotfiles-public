@@ -1,0 +1,34 @@
+# chezmoi configuration template
+# Rendered once per machine into ~/.config/chezmoi/chezmoi.toml
+# Uses Go template syntax: https://chezmoi.io/reference/templates/
+
+[data]
+  # User identity
+  name    = "{{ .chezmoi.username }}"
+  email   = "{{ env "GIT_EMAIL" | default "user@example.com" }}"
+
+  # Machine profile
+  hostname = "{{ .chezmoi.hostname }}"
+  os       = "{{ .chezmoi.os }}"
+  arch     = "{{ .chezmoi.arch }}"
+
+  # Environment flags (set these in .chezmoidata/local.yaml on each machine)
+  is_wsl        = {{ env "WSL_DISTRO_NAME" | ne "" }}
+  is_enterprise = {{ eq .chezmoi.username "enterpriseuser" }}
+  is_personal   = {{ eq .chezmoi.username "naroslife" }}
+
+  # Dotfiles location
+  dotfiles_dir = "{{ .chezmoi.sourceDir | dir }}"
+
+[diff]
+  pager = "delta"
+
+[merge]
+  command = "nvim"
+  args    = ["-d", "{{ "{{" }} .Destination {{ "}}" }}", "{{ "{{" }} .Source {{ "}}" }}", "{{ "{{" }} .Target {{ "}}" }}"]
+
+[cd]
+  command = "zsh"
+
+[edit]
+  command = "nvim"

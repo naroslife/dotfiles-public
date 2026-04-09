@@ -1,0 +1,138 @@
+# mise-en-place global tool configuration
+# Docs: https://mise.jdx.dev/configuration.html
+#
+# This file is the global mise config managed by chezmoi.
+# Per-project overrides live in project-local .mise.toml files.
+#
+# Offline mode: set MISE_OFFLINE=1 or use `mise settings set offline true`
+# Lock files: run `mise lock` to pin exact download URLs for offline bundles
+
+[settings]
+  # Automatically activate tools when entering a directory
+  experimental = true
+
+  # Keep downloads cached for offline use
+  always_keep_download = true
+
+  # Set to true in restricted environments: MISE_OFFLINE=1
+  # offline = false
+
+  # Speed: use precompiled binaries when available
+  prefer_precompiled = true
+
+[tools]
+  # ─── Shell prompt & history ───────────────────────────────────────────────
+  "ubi:starship-rs/starship"     = "latest"
+  "ubi:atuinsh/atuin"            = "latest"
+
+  # ─── Completion & navigation ──────────────────────────────────────────────
+  "ubi:rsteube/carapace-bin"     = "latest"
+  fzf                            = "latest"
+  "ubi:ajeetdsouza/zoxide"       = "latest"
+  direnv                         = "latest"
+
+  # ─── Modern CLI replacements ──────────────────────────────────────────────
+  "ubi:sharkdp/bat"              = "latest"
+  "ubi:eza-community/eza"        = "latest"
+  "ubi:sharkdp/fd"               = "latest"
+  ripgrep                        = "latest"
+  "ubi:muesli/duf"               = "latest"
+  "ubi:bootandy/dust"            = "latest"
+  "ubi:dalance/procs"            = "latest"
+  "ubi:ClementTsang/bottom"      = "latest"   # binary: btm
+  "ubi:ducaale/xh"               = "latest"
+  "ubi:orf/gping"                = "latest"
+  "ubi:ogham/dog"                = "latest"
+
+  # ─── Data & text processing ───────────────────────────────────────────────
+  jq                             = "latest"
+  "ubi:mikefarah/yq"             = "latest"
+  "ubi:antonmedv/fx"             = "latest"
+  "ubi:johnkerl/miller"          = "latest"   # binary: mlr
+  "ubi:nicowillis/sad"           = "latest"
+  "ubi:sqshq/sampler"            = "latest"
+
+  # ─── Git tooling ──────────────────────────────────────────────────────────
+  "ubi:jesseduffield/lazygit"    = "latest"
+  "ubi:dandavison/delta"         = "latest"
+  "ubi:Wilfred/difftastic"       = "latest"   # binary: difft
+  "ubi:extrawurst/gitui"         = "latest"
+  "ubi:cli/cli"                  = "latest"   # GitHub CLI: gh
+  "ubi:gitleaks/gitleaks"        = "latest"
+  "pipx:git-filter-repo"         = "latest"
+  "pipx:pre-commit"              = "latest"
+  cargo:git-absorb               = "latest"
+
+  # ─── Editors & viewers ────────────────────────────────────────────────────
+  "ubi:neovim/neovim"            = "latest"
+  "ubi:helix-editor/helix"       = "latest"
+
+  # ─── Terminal multiplexer ─────────────────────────────────────────────────
+  "ubi:tmux/tmux"                = "latest"   # or apt tmux
+
+  # ─── Container & K8s tools ────────────────────────────────────────────────
+  "ubi:jesseduffield/lazydocker" = "latest"
+  "ubi:derailed/k9s"             = "latest"
+  "ubi:ahmetb/kubectx"           = "latest"
+  kubectl                        = "latest"
+  helm                           = "latest"
+
+  # ─── Code analysis ────────────────────────────────────────────────────────
+  "ubi:XAMPPRocky/tokei"         = "latest"
+  "ubi:boyter/scc"               = "latest"
+  "ubi:mozilla/sccache"          = "latest"
+
+  # ─── Productivity ─────────────────────────────────────────────────────────
+  "ubi:dbrgn/tealdeer"           = "latest"   # binary: tldr
+  "ubi:cheat/cheat"              = "latest"
+  "ubi:denisidoro/navi"          = "latest"
+  "ubi:Canop/broot"              = "latest"
+  "ubi:nicowillis/termscp"       = "latest"
+  "ubi:rclone/rclone"            = "latest"
+  "ubi:restic/restic"            = "latest"
+  "ubi:xo-uxdb/usql"             = "latest"
+  "pipx:visidata"                = "latest"   # binary: vd
+  "pipx:ranger-fm"               = "latest"   # binary: ranger
+  "pipx:httpie"                  = "latest"
+  cargo:rustscan                 = "latest"
+
+  # ─── Tier 3: Full-prefix toolchains ───────────────────────────────────────
+  java    = "temurin-17"
+  maven   = "latest"
+  gradle  = "latest"
+  go      = "latest"
+  node    = "lts"
+  rust    = "latest"
+  python  = "3.12"
+  cmake   = "latest"
+  ninja   = "latest"
+  "ubi:bazelbuild/bazel"         = "latest"
+  "pipx:meson"                   = "latest"
+
+  # ─── Monitoring / bandwidth ───────────────────────────────────────────────
+  "ubi:imsnif/bandwhich"         = "latest"
+  "ubi:nicowillis/sad"           = "latest"
+
+  # ─── Database clients ─────────────────────────────────────────────────────
+  "pipx:pgcli"                   = "latest"
+
+# ─── mise tasks (replaces custom shell scripts) ───────────────────────────
+[tasks.bootstrap]
+  description = "Bootstrap this machine: install chezmoi, apply dotfiles, install tools"
+  run         = "./bootstrap.sh"
+
+[tasks.apply]
+  description = "Apply chezmoi dotfiles"
+  run         = "chezmoi apply"
+
+[tasks.update]
+  description = "Update all mise tools"
+  run         = "mise upgrade"
+
+[tasks.offline-bundle]
+  description = "Create an offline bundle of all tool downloads"
+  run         = ["mise lock", "mise install --offline"]
+
+[tasks.test]
+  description = "Run the dotfiles test suite"
+  run         = "./tests/run_tests.sh"

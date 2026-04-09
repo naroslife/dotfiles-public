@@ -1,0 +1,175 @@
+# Tool inventory by tier and install method
+# Used by bootstrap.sh and mise configuration
+# Referenced in chezmoi templates for conditional installation
+
+# Tier 1: Standalone binaries — alias/PATH swap, installed via mise
+tier1_mise_ubi:
+  # Modern CLI replacements
+  - bat          # cat replacement
+  - eza          # ls replacement
+  - fd           # find replacement
+  - ripgrep      # grep replacement (binary: rg)
+  - zoxide       # cd replacement (binary: z)
+  - duf          # df replacement
+  - dust         # du replacement
+  - procs        # ps replacement
+  - bottom       # top/htop replacement (binary: btm)
+  - xh           # http/httpie replacement
+  - gping        # ping replacement
+  - dog          # dig replacement
+  - bandwhich    # network bandwidth monitor
+  # Data tools
+  - jq
+  - yq
+  - fx
+  - miller       # binary: mlr
+  - sad          # stream editor
+  - sampler      # terminal data visualization
+  # Git tools
+  - lazygit
+  - delta        # git diff pager
+  - difftastic   # structural diff (binary: difft)
+  - gitui
+  - gh           # GitHub CLI
+  - gitleaks     # secret scanner
+  # Container/K8s tools
+  - lazydocker
+  - k9s
+  - kubectx
+  - kubectl      # actually Tier 1 — works as standalone binary
+  - helm         # actually Tier 1 — works as standalone binary
+  # Code analysis
+  - tokei
+  - scc
+  - sccache
+  # Productivity
+  - tealdeer     # binary: tldr
+  - cheat
+  - navi
+  - broot
+  - termscp
+  - rclone
+  - restic
+  - usql
+  # Dev tools
+  - choose
+
+tier1_mise_pipx:
+  - httpie       # binary: http/https
+  - visidata     # binary: vd
+  - ranger
+  - git-filter-repo
+  - pre-commit
+
+tier1_mise_cargo:
+  - rustscan
+  - git-absorb
+
+tier1_apt:
+  - pv
+  - most
+  - stow
+  - git-crypt
+  - cloc
+  - cppcheck
+  - mosh
+  - autossh
+  - sshfs
+  - ssh-copy-id    # part of openssh-client
+  - hexdump        # part of bsdmainutils
+  - xxd            # standalone package
+
+# Tier 2: Binaries with config/data files — managed by chezmoi + mise
+tier2:
+  starship:
+    install: mise_ubi
+    config: dot_config/starship.toml
+  atuin:
+    install: mise_ubi
+    config: dot_config/atuin/config.toml
+  fzf:
+    install: mise_ubi
+    config: env_vars_in_rc
+  tmux:
+    install: mise_ubi_or_apt
+    config: dot_config/tmux/tmux.conf
+    plugin_manager: tpm
+  neovim:
+    install: mise_ubi
+    config: dot_config/nvim/
+    plugin_manager: lazy.nvim
+  helix:
+    install: mise_ubi
+    config: dot_config/helix/config.toml
+  carapace:
+    install: mise_ubi
+    config: dot_config/carapace/
+  direnv:
+    install: mise_ubi
+    config: dot_direnvrc
+  git:
+    install: apt
+    config: dot_gitconfig.tmpl  # template — varies per user
+  zsh:
+    install: apt
+    config: dot_zshrc.tmpl      # template — varies per machine
+
+# Tier 3: Complex toolchains — apt preferred, mise for JVM/Go/Node/Rust
+tier3_apt:
+  - gdb
+  - gcc
+  - g++
+  - build-essential
+  - clang-format
+  - clang-tidy
+  - valgrind
+  - lldb
+  - autoconf
+  - automake
+  - libtool
+  - strace
+  - ltrace
+  - linux-tools-generic   # perf — actual pkg: linux-tools-$(uname -r)
+
+tier3_mise_full_prefix:  # mise manages full toolchain prefix
+  - java@temurin-17
+  - maven
+  - gradle
+  - go
+  - node
+  - rust
+  - python
+  - cmake
+  - ninja
+
+tier3_apt_or_build:
+  - rr    # Record & Replay debugger — apt if available, else build from source
+
+tier3_mise_ubi:
+  - bazel
+
+tier3_mise_pipx:
+  - meson
+
+# Tier 4: Container/platform-managed — documented prerequisites
+tier4_prereqs:
+  - docker           # apt/snap system daemon
+  - docker-compose   # docker-compose-plugin
+  - wireshark        # apt — GUI + kernel module
+  - nmap             # apt — raw sockets
+  - cuda-toolkit     # NVIDIA repo — driver + kernel
+  - wslu             # apt — WSL utilities (wsl-only)
+  - nerd-fonts       # manual download or fc-cache script
+
+# Tools dropped (Nix-specific or replaced)
+dropped:
+  - nix-tree
+  - nix-diff
+  - nixpkgs-fmt
+  - nil              # Nix LSP
+  - nix-output-monitor
+  - alejandra        # Nix formatter
+  - nix-prefetch-git
+  - sops             # replaced by chezmoi age encryption
+  - ssh-to-age       # replaced by chezmoi age encryption
+  - elvish           # dropped per requirements

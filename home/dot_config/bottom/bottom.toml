@@ -1,0 +1,22 @@
+# bottom (btm) configuration
+# Managed by chezmoi — edit source at home/dot_config/bottom/bottom.toml
+
+[flags]
+  # Default widget
+  default_widget_type = "proc"
+  default_widget_count = 1
+
+  # Update rate (milliseconds)
+  rate = 500
+
+  # Color scheme
+  color = "default"
+
+  # Show average CPU
+  avg_cpu = true
+
+  # Group processes by name
+  group_processes = false
+
+  # Memory as percentage
+  mem_as_value = false

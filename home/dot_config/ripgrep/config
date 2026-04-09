@@ -1,0 +1,25 @@
+# ripgrep configuration
+# Managed by chezmoi — edit source at home/dot_config/ripgrep/config
+# Referenced via: RIPGREP_CONFIG_PATH=~/.config/ripgrep/config
+
+# Always show line numbers
+--line-number
+
+# Smart case (case-insensitive when all lowercase, else case-sensitive)
+--smart-case
+
+# Follow symbolic links
+--follow
+
+# Show filename in output
+--with-filename
+
+# Hidden files (include .dotfiles)
+--hidden
+
+# Glob patterns to ignore
+--glob=!.git/
+--glob=!node_modules/
+--glob=!.cache/
+--glob=!target/
+--glob=!dist/
