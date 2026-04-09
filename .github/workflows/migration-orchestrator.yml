@@ -56,7 +56,7 @@ jobs:
               31: [22, 26],     // DX features
               32: [25],         // Claude Code config
               33: [21, 22, 26], // CI/CD testing
-              34: [],           // Documentation (manual - depends on all)
+              34: [20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33], // Documentation (depends on all)
             };
 
             const epicLabel = 'epic:nix-migration';
@@ -70,14 +70,16 @@ jobs:
               per_page: 100,
             });
 
+            const epicIssues = issues.data.filter(i => !i.pull_request);
+
             const closedIssues = new Set(
-              issues.data
+              epicIssues
                 .filter(i => i.state === 'closed')
                 .map(i => i.number)
             );
 
             const openIssues = new Set(
-              issues.data
+              epicIssues
                 .filter(i => i.state === 'open')
                 .map(i => i.number)
             );
@@ -119,29 +121,25 @@ jobs:
             for (const num of toTrigger) {
               console.log(`\nProcessing issue #${num}...`);
 
-              // Check for existing @claude trigger comment
-              const comments = await github.rest.issues.listComments({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: num,
-                per_page: 50,
-              });
+              // Check all comments for an existing @claude trigger comment
+              const comments = await github.paginate(
+                github.rest.issues.listComments,
+                {
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: num,
+                  per_page: 100,
+                }
+              );
 
-              const alreadyTriggered = comments.data.some(c =>
-                c.body.includes('@claude') && c.body.includes('[orchestrator]')
+              const alreadyTriggered = comments.some(c =>
+                c.body && c.body.includes('@claude') && c.body.includes('[orchestrator]')
               );
 
               if (alreadyTriggered) {
                 console.log(`Issue #${num} already has an orchestrator trigger. Skipping.`);
                 continue;
               }
-
-              // Get issue details for context
-              const issue = await github.rest.issues.get({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: num,
-              });
 
               // Post @claude comment to trigger implementation
               const comment = `[orchestrator] @claude
