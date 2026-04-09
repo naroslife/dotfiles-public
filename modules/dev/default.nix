@@ -1,5 +1,8 @@
-{ config, pkgs, ... }:
 {
+  config,
+  pkgs,
+  ...
+}: {
   imports = [
     ./git.nix
     ./languages.nix
@@ -47,13 +50,13 @@
     terminal = "tmux-256color";
 
     # History
-    historyLimit = 10000;
+    historyLimit = 100000;
 
     # No delay for escape key
     escapeTime = 0;
 
     # Use vi keybindings
-    keyMode = "vi";
+    keyMode = "emacs";
 
     # Plugins
     plugins = with pkgs.tmuxPlugins; [
@@ -61,7 +64,6 @@
       yank
       resurrect
       continuum
-      vim-tmux-navigator
     ];
 
     extraConfig = ''
@@ -86,37 +88,12 @@
       bind k select-pane -U
       bind l select-pane -R
 
-      # Resize panes with vim keys (repeatable)
-      bind -r H resize-pane -L 5
-      bind -r J resize-pane -D 5
-      bind -r K resize-pane -U 5
-      bind -r L resize-pane -R 5
-
       # Copy mode bindings
       bind -T copy-mode-vi v send -X begin-selection
       bind -T copy-mode-vi y send -X copy-selection-and-cancel
 
       # Pane settings
       setw -g pane-base-index 1
-
-      # Automatic restoration
-      set -g @continuum-restore 'on'
-      set -g @continuum-save-interval '5'
-      set -g @continuum-boot 'on'
-
-      # Restore vim/nvim sessions
-      set -g @resurrect-strategy-vim 'session'
-      set -g @resurrect-strategy-nvim 'session'
-
-      # Restore pane contents
-      set -g @resurrect-capture-pane-contents 'on'
-
-      # Restore additional programs
-      set -g @resurrect-processes 'ssh psql mysql sqlite3 "git log" "~npm start" "~yarn start"'
-
-      # Quick session save/restore
-      bind-key C-s run-shell "tmux display-message 'Saving session...'; ~/.tmux/plugins/tmux-resurrect/scripts/save.sh"
-      bind-key C-r run-shell "tmux display-message 'Restoring session...'; ~/.tmux/plugins/tmux-resurrect/scripts/restore.sh"
 
       # Status bar styling
       set -g status on
@@ -129,9 +106,9 @@
       set -g status-left-length 30
       set -g status-left '#[bg=#3b4261,fg=#82aaff,bold] #S #[bg=#1e2030] '
 
-      # Status right - with continuum status indicator
-      set -g status-right-length 80
-      set -g status-right '#[bg=#3b4261,fg=#82aaff] #{continuum_status} | %Y-%m-%d %H:%M '
+      # Status right
+      set -g status-right-length 60
+      set -g status-right '#[bg=#3b4261,fg=#82aaff] %Y-%m-%d %H:%M '
 
       # Window status
       setw -g window-status-format '#[bg=#1e2030,fg=#828bb8] #I:#W '

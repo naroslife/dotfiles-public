@@ -5,19 +5,23 @@
 
 set -euo pipefail
 
-# Source common utilities
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Color output
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+BLUE='\033[0;34m'
+NC='\033[0m'
 
-if [[ -f "$SCRIPT_DIR/lib/common.sh" ]]; then
-    # shellcheck disable=SC1091
-    source "$SCRIPT_DIR/lib/common.sh"
-elif [[ -f "$SCRIPT_DIR/../lib/common.sh" ]]; then
-    # shellcheck disable=SC1091
-    source "$SCRIPT_DIR/../lib/common.sh"
-else
-    echo "Error: Could not find common.sh" >&2
-    exit 1
-fi
+log_info() {
+    echo -e "${BLUE}[INFO]${NC} $1"
+}
+
+log_success() {
+    echo -e "${GREEN}[SUCCESS]${NC} $1"
+}
+
+log_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+}
 
 # Check if CUDA is available
 if ! command -v nvcc &> /dev/null; then

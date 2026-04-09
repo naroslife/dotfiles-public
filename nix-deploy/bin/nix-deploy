@@ -24,7 +24,6 @@ CONFIG_DIR="${NIX_DEPLOY_CONFIG_DIR:-$HOME/.config/nix-deploy}"
 source "$LIB_DIR/utils.sh"
 source "$LIB_DIR/config.sh"
 source "$LIB_DIR/builder.sh"
-source "$LIB_DIR/packager.sh"
 source "$LIB_DIR/transfer.sh"
 
 # Default values
@@ -50,13 +49,18 @@ CYAN='\033[0;36m'
 BOLD='\033[1m'
 RESET='\033[0m'
 
+# Disable colors if NO_COLOR is set or output is not a terminal
+if [[ -n "${NO_COLOR:-}" ]] || [[ ! -t 2 ]]; then
+	RED='' GREEN='' YELLOW='' BLUE='' PURPLE='' CYAN='' BOLD='' RESET=''
+fi
+
 # Print functions
 print_header() {
-    echo -e "\n${BOLD}${BLUE}=== $1 ===${RESET}\n"
+    echo -e "\n${BOLD}${BLUE}=== $1 ===${RESET}\n" >&2
 }
 
 print_info() {
-    echo -e "${GREEN}[INFO]${RESET} $1"
+    echo -e "${GREEN}[INFO]${RESET} $1" >&2
 }
 
 print_warn() {
@@ -74,7 +78,7 @@ print_debug() {
 }
 
 print_step() {
-    echo -e "${CYAN}→${RESET} $1"
+    echo -e "${CYAN}→${RESET} $1" >&2
 }
 
 # Help message
@@ -287,6 +291,7 @@ main() {
         fi
         print_warn "Configuration validation failed but continuing due to --force"
     }
+    log_warn "retek3"
 
     # Interactive configuration if needed
     if $INTERACTIVE && ! validate_required_config; then
@@ -309,9 +314,13 @@ main() {
 
     # Handle special modes
     if $ROLLBACK; then
-        print_header "Rolling Back Deployment"
-        rollback_deployment
-        exit 0
+        print_error "Rollback functionality has been removed in the manual deployment mode."
+        print_info "To rollback, SSH to the remote and run:"
+        print_info "  home-manager switch --rollback"
+        print_info "Or manually switch to a previous generation:"
+        print_info "  nix-env --list-generations"
+        print_info "  nix-env --switch-generation <number>"
+        exit 1
     fi
 
     if $RESUME; then
@@ -322,51 +331,37 @@ main() {
     # Phase 1: Build
     print_header "Phase 1: Building Nix Environment"
     local build_result
-    build_result=$(build_nix_environment)
 
-    if [[ -z "$build_result" ]]; then
+    # Call function normally to preserve logging output
+    if ! build_nix_environment; then
         print_error "Build failed"
         exit 1
     fi
+
+    # Read result from temp file (written by build_nix_environment)
+    build_result=$(cat "$TEMP_DIR/build-result.path")
     print_info "Build successful: $build_result"
 
-    # Phase 2: Package
-    print_header "Phase 2: Packaging Closure"
-    local package_path
-    package_path=$(package_closure "$build_result")
-
-    if [[ -z "$package_path" ]]; then
-        print_error "Packaging failed"
-        exit 1
-    fi
-    print_info "Package created: $package_path"
-
-    # Phase 3: Transfer
-    print_header "Phase 3: Transferring to Remote"
+    # Phase 2: Transfer (using nix copy - no packaging needed!)
+    print_header "Phase 2: Transferring to Remote"
     if ! $DRY_RUN; then
-        transfer_to_remote "$package_path"
+        transfer_to_remote "$build_result"
     else
-        print_info "Would transfer: $package_path"
+        print_info "Would transfer closure using nix copy"
     fi
 
-    # Phase 4: Remote Installation
-    print_header "Phase 4: Remote Installation"
+    # Package transfer complete - user must complete deployment manually
     if ! $DRY_RUN; then
-        execute_remote_installation
+        print_header "Transfer Complete - Manual Deployment Required"
+        print_info "The deployment package has been transferred to the remote machine."
+        print_info "The automated phases have been removed in favor of manual execution."
+        print_info ""
+        print_info "Please see the instructions that were displayed above."
     else
-        print_info "Would execute remote installation"
+        print_header "Dry Run Complete"
+        print_info "In actual deployment, the package would be transferred and"
+        print_info "instructions would be generated on the remote machine."
     fi
-
-    # Phase 5: Validation
-    print_header "Phase 5: Post-Deployment Validation"
-    if ! $DRY_RUN; then
-        validate_deployment
-    else
-        print_info "Would validate deployment"
-    fi
-
-    print_header "Deployment Complete"
-    print_info "Successfully deployed to $TARGET"
 
     # Show post-deployment information
     show_post_deployment_info
@@ -378,15 +373,15 @@ show_deployment_plan() {
     target_config=$(get_target_config)
 
     cat << EOF
-${BOLD}Target:${RESET}         $(get_config_value "target.name")
-${BOLD}Host:${RESET}           $(get_config_value "connection.host")
-${BOLD}User:${RESET}           $(get_config_value "connection.user")
-${BOLD}Platform:${RESET}       $(get_config_value "platform.type")
-${BOLD}Architecture:${RESET}   $(get_config_value "platform.arch")
-${BOLD}Profile:${RESET}        ${PROFILE:-$(get_config_value "deployment.home_manager.profile_name")}
-${BOLD}Flake:${RESET}          ${FLAKE_REF:-$(get_config_value "deployment.home_manager.flake_ref")}
+$(echo -e "${BOLD}Target:${RESET}")         $(get_config_value "target.name")
+$(echo -e "${BOLD}Host:${RESET}")           $(get_config_value "connection.host")
+$(echo -e "${BOLD}User:${RESET}")           $(get_config_value "connection.user")
+$(echo -e "${BOLD}Platform:${RESET}")       $(get_config_value "platform.type")
+$(echo -e "${BOLD}Architecture:${RESET}")   $(get_config_value "platform.arch")
+$(echo -e "${BOLD}Profile:${RESET}")        ${PROFILE:-$(get_config_value "deployment.home_manager.profile_name")}
+$(echo -e "${BOLD}Flake:${RESET}")          ${FLAKE_REF:-$(get_config_value "deployment.home_manager.flake_ref")}
 
-${BOLD}Options:${RESET}
+$(echo -e "${BOLD}Options:${RESET}")
   - Nix Installation:    $(get_config_value "deployment.nix.install_if_missing")
   - Backup Existing:     $(get_config_value "deployment.options.backup_existing_profile")
   - Shell Integration:   $(get_config_value "deployment.options.setup_shell_integration")
@@ -396,28 +391,40 @@ EOF
 
 # Show post-deployment information
 show_post_deployment_info() {
+    local remote_temp=$(get_config_value "deployment.paths.temp_dir" "/tmp/nix-deploy")
+
     cat << EOF
 
-${BOLD}${GREEN}✓ Deployment Successful${RESET}
+${BOLD}${GREEN}✓ Package Transfer Complete${RESET}
 
-${BOLD}Next Steps:${RESET}
+${BOLD}Manual Deployment Steps:${RESET}
+
 1. SSH to the remote machine:
    ${CYAN}ssh $(get_config_value "connection.user")@$(get_config_value "connection.host")${RESET}
 
-2. Verify the deployment:
-   ${CYAN}nix-env --list-generations${RESET}
-   ${CYAN}home-manager generations${RESET}
+2. Navigate to the deployment directory:
+   ${CYAN}cd $remote_temp${RESET}
 
-3. Source your shell configuration:
+3. Read the deployment instructions:
+   ${CYAN}cat INSTRUCTIONS.md${RESET}
+
+4. Follow the step-by-step instructions in INSTRUCTIONS.md:
+   - Verify Nix installation (auto-installed during transfer)
+   - Run ./activate-profile.sh
+   - Run ./setup-shell.sh (optional)
+   - Run ./validate.sh (optional)
+
+5. After successful deployment, start a new shell or:
    ${CYAN}source ~/.bashrc${RESET}
-   Or start a new shell session
 
-${BOLD}Rollback (if needed):${RESET}
-   ${CYAN}nix-deploy --target $TARGET --rollback${RESET}
+${BOLD}Troubleshooting:${RESET}
+   - Each script has detailed error messages
+   - Check script output for specific issues
+   - See INSTRUCTIONS.md for troubleshooting section
 
 ${BOLD}Logs:${RESET}
    Local:  $CONFIG_DIR/logs/deploy-$(date +%Y%m%d-%H%M%S).log
-   Remote: /tmp/nix-deploy/deploy.log
+   Remote: $remote_temp/ (check script outputs)
 
 EOF
 }

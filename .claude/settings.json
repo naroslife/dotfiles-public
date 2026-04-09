@@ -56,7 +56,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'TOOL_NAME=$(jq -r \".tool_name // \\\"Unknown\\\"\"); if command -v notify-send >/dev/null 2>&1; then notify-send -u normal -i terminal \"Claude Code\" \"Tool: $TOOL_NAME completed\"; elif command -v powershell.exe >/dev/null 2>&1; then powershell.exe -Command \"New-BurntToastNotification -Text '\"'\"'Claude Code'\"'\"', '\"'\"'Tool: $TOOL_NAME completed'\"'\"'\"; fi'"
+            "command": "bash -c 'DATA=$(cat); TOOL_NAME=$(echo \"$DATA\" | jq -r \".tool // .tool_name // \\\"Tool\\\"\"); STATUS=$(echo \"$DATA\" | jq -r \".status // \\\"completed\\\"\"); if command -v notify-send >/dev/null 2>&1; then notify-send -u normal -i terminal \"Claude Code\" \"$TOOL_NAME $STATUS\"; elif command -v powershell.exe >/dev/null 2>&1; then powershell.exe -Command \"New-BurntToastNotification -Text '\"'\"'Claude Code'\"'\"', '\"'\"'$TOOL_NAME $STATUS'\"'\"'\"; fi'"
           }
         ]
       }
@@ -107,6 +107,10 @@
           {
             "type": "command",
             "command": "bash -c 'FILE=$(jq -r .tool_input.file_path); if [[ \"$FILE\" =~ \\.nix$ ]]; then nixfmt \"$FILE\" 2>/dev/null || nixpkgs-fmt \"$FILE\" 2>/dev/null || true; fi'"
+          },
+          {
+            "type": "command",
+            "command": "bash -c 'FILE=$(jq -r .tool_input.file_path); if [[ \"$FILE\" =~ \\.nix$ ]]; then alejandra \"$FILE\" 2>/dev/null || true; fi'"
           }
         ]
       }
@@ -168,32 +172,25 @@
     "padding": 0
   },
   "enabledPlugins": {
-    "code-documentation@claude-code-workflows": true,
-    "debugging-toolkit@claude-code-workflows": true,
-    "backend-development@claude-code-workflows": true,
-    "git-pr-workflows@claude-code-workflows": true,
-    "full-stack-orchestration@claude-code-workflows": true,
-    "tdd-workflows@claude-code-workflows": true,
-    "unit-testing@claude-code-workflows": true,
-    "code-review-ai@claude-code-workflows": true,
-    "comprehensive-review@claude-code-workflows": true,
-    "performance-testing-review@claude-code-workflows": true,
-    "code-refactoring@claude-code-workflows": true,
-    "dependency-management@claude-code-workflows": true,
-    "error-debugging@claude-code-workflows": true,
-    "error-diagnostics@claude-code-workflows": true,
-    "agent-orchestration@claude-code-workflows": true,
-    "context-management@claude-code-workflows": true,
-    "observability-monitoring@claude-code-workflows": true,
-    "application-performance@claude-code-workflows": true,
-    "framework-migration@claude-code-workflows": true,
-    "codebase-cleanup@claude-code-workflows": true,
-    "documentation-generation@claude-code-workflows": true,
-    "multi-platform-apps@claude-code-workflows": true,
-    "python-development@claude-code-workflows": true,
-    "systems-programming@claude-code-workflows": true,
-    "shell-scripting@claude-code-workflows": true,
-    "distributed-debugging@claude-code-workflows": true
+    "code-review-ai@claude-code-workflows": false,
+    "comprehensive-review@claude-code-workflows": false,
+    "code-refactoring@claude-code-workflows": false,
+    "error-debugging@claude-code-workflows": false,
+    "error-diagnostics@claude-code-workflows": false,
+    "context-management@claude-code-workflows": false,
+    "application-performance@claude-code-workflows": false,
+    "codebase-cleanup@claude-code-workflows": false,
+    "documentation-generation@claude-code-workflows": false,
+    "multi-platform-apps@claude-code-workflows": false,
+    "python-development@claude-code-workflows": false,
+    "systems-programming@claude-code-workflows": false,
+    "shell-scripting@claude-code-workflows": false,
+    "developer-essentials@claude-code-workflows": false,
+    "code-documentation@claude-code-workflows": false,
+    "debugging-toolkit@claude-code-workflows": false,
+    "git-pr-workflows@claude-code-workflows": false,
+    "backend-development@claude-code-workflows": false,
+    "arm-cortex-microcontrollers@claude-code-workflows": false
   },
   "alwaysThinkingEnabled": true
 }

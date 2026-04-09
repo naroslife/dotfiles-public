@@ -1,5 +1,9 @@
-{ config, pkgs, lib, ... }:
 {
+  config,
+  pkgs,
+  lib,
+  ...
+}: {
   programs.zsh = {
     enable = true;
     enableCompletion = true;
@@ -20,7 +24,10 @@
     ];
 
     # Performance optimizations
-    autosuggestion.strategy = [ "history" "completion" ];
+    autosuggestion.strategy = [
+      "history"
+      "completion"
+    ];
     historySubstringSearch.enable = true;
 
     # History settings for better performance
@@ -35,7 +42,8 @@
 
     # shellAliases are configured in aliases.nix
 
-    initContent = lib.mkMerge [
+    # Only modify zshrc when HM_MODIFY_SHELL is explicitly set to "true"
+    initContent = lib.mkIf (config.home.sessionVariables.HM_MODIFY_SHELL == "true") (lib.mkMerge [
       (lib.mkBefore ''
         # Performance: Skip system-wide compinit
         skip_global_compinit=1
@@ -103,71 +111,15 @@
         # Enable continuous completion trigger
         zstyle ':fzf-tab:*' continuous-trigger '/'
 
-        # === AI Agent Detection and Smart Aliases ===
-        # Source the agent detection library for context-aware command selection
-        if [ -f "$HOME/dotfiles-public/lib/agent-detection.sh" ]; then
-          source "$HOME/dotfiles-public/lib/agent-detection.sh"
-
-          # Create smart aliases that use POSIX tools for AI agents, modern tools for humans
-          # These functions check context at runtime, not at alias definition time
-
-          # Smart cat - bat for humans, cat for agents
-          function cat() {
-            _smart_alias "bat" "cat" "$@"
-          }
-
-          # Smart ls - eza for humans, ls for agents
-          function ls() {
-            _smart_alias "eza" "ls" "$@"
-          }
-
-          # Smart ll - eza -l for humans, ls -l for agents
-          function ll() {
-            if is_agent_context; then
-              command ls -l "$@"
-            else
-              if command -v eza >/dev/null 2>&1; then
-                eza -l "$@"
-              else
-                command ls -l "$@"
-              fi
-            fi
-          }
-
-          # Smart la - eza -la for humans, ls -la for agents
-          function la() {
-            if is_agent_context; then
-              command ls -la "$@"
-            else
-              if command -v eza >/dev/null 2>&1; then
-                eza -la "$@"
-              else
-                command ls -la "$@"
-              fi
-            fi
-          }
-
-          # Smart grep - ripgrep for humans, grep for agents
-          function grep() {
-            _smart_alias "rg" "grep" "$@"
-          }
-
-          # Smart find - fd for humans, find for agents
-          function find() {
-            _smart_alias "fd" "find" "$@"
-          }
-        fi
-        # === End AI Agent Detection ===
-
         # Initialize carapace completion for zsh
         if command -v carapace >/dev/null 2>&1; then
           source <(carapace _carapace zsh)
         fi
 
         # WSL-specific initialization
-        if [ -z "''${CLAUDE:-}" ] && [ -f "$HOME/dotfiles-public/wsl-init.sh" ]; then
-          source "$HOME/dotfiles-public/wsl-init.sh"
-        fi
+        # if [ -z "''${CLAUDE:-}" ] && [ -f "$HOME/dotfiles-public/wsl-init.sh" ]; then
+        #   source "$HOME/dotfiles-public/wsl-init.sh"
+        # fi
 
         # Lazy-load custom functions (only source if directory exists and has files)
         if [ -d "$HOME/dotfiles-public/scripts/functions" ] && [ -n "$(ls -A "$HOME/dotfiles-public/scripts/functions"/*.sh 2>/dev/null)" ]; then
@@ -185,8 +137,8 @@
 
         # Override cd function for zsh (similar to bash but with zsh syntax)
         function cd() {
+          show_reminder "cd" "br" "interactive directory navigation with broot"
           if [ -z "''${CLAUDE:-}" ]; then
-            show_reminder "cd" "br" "interactive directory navigation with broot"
             if command -v __zoxide_z >/dev/null 2>&1; then
               __zoxide_z "$@"
             else
@@ -197,15 +149,10 @@
           fi
         }
 
-        # Source mutable local configuration for ad-hoc changes
-        if [ -f ~/.rc.mutable.local ]; then
-          source ~/.rc.mutable.local
-        fi
-        # Source zsh-specific mutable local configuration for ad-hoc changes
-        if [ -f ~/.zshrc.mutable.local ]; then
-          source ~/.zshrc.mutable.local
-        fi
+        [[ "$TERM_PROGRAM" == "vscode" ]] && . "$(code --locate-shell-integration-path zsh)"
+
+        set +u
       ''
-    ];
+    ]);
   };
 }

@@ -4,14 +4,16 @@ Deploy locally compiled Nix environments to remote machines with limited or no i
 
 ## Features
 
+- ⚡ **Blazing Fast**: Uses `nix copy` for direct store-to-store transfer (4-10 min faster!)
+- 🔄 **Incremental Updates**: Only transfers missing store paths (50-90% bandwidth savings)
 - 🚀 **Offline Deployment**: Transfer complete Nix closures without internet access
 - 🔒 **Security-First**: Works within corporate firewall restrictions
+- 🎯 **Manual Control**: User inspects and executes deployment steps on remote
+- 🌐 **Online/Offline Installer**: Uses Determinate Nix installer with automatic fallback
 - 🐧 **Multi-Platform**: Supports WSL, Ubuntu, Debian, and other Linux distributions
-- 📦 **Complete Packages**: Includes all dependencies in a single transfer
-- 🔄 **Resumable Transfers**: Continue interrupted deployments
 - ⚙️ **Interactive Configuration**: Guided setup with sensible defaults
 - 🔧 **Platform Detection**: Automatically detects and handles platform differences
-- 💾 **Backup & Rollback**: Safe deployment with easy rollback options
+- 📋 **Comprehensive Instructions**: Generates step-by-step deployment guide on remote
 
 ## Quick Start
 
@@ -56,10 +58,11 @@ nix-deploy --target prod-server
 
 This will:
 1. Prompt for connection details if not configured
-2. Detect remote platform automatically
-3. Build your Nix environment locally
-4. Package everything for offline transfer
-5. Deploy and activate on the remote machine
+2. Build your Nix environment locally
+3. Install Nix on remote (if needed) using Determinate Nix installer
+4. Transfer closure using `nix copy` (direct store-to-store, super fast!)
+5. Generate comprehensive deployment instructions on remote
+6. Display next steps for manual execution on remote
 
 #### Create Target Configuration
 
@@ -88,36 +91,72 @@ The tool builds your Home Manager configuration locally:
 nix build .#homeConfigurations.enterpriseuser.activationPackage
 ```
 
-### Phase 2: Package Creation
+### Phase 2: Transfer (using `nix copy`)
 
-Creates a compressed archive containing:
-- Complete Nix store closure
-- Offline Nix installer (if needed)
-- Deployment scripts
-- Metadata for verification
+**NEW!** Uses modern `nix copy` for blazing fast transfers:
 
-### Phase 3: Transfer
+1. **Installs Nix on Remote** (if not already installed):
+   - Downloads Determinate Nix installer (cached locally)
+   - Transfers installer to remote
+   - Runs installation with online/offline fallback
+   - Configures for offline use (require-sigs = false)
+   - WSL-specific workarounds applied automatically
 
-Securely transfers the package via SSH:
-- Uses rsync for resumable transfers
-- Verifies checksums
-- Supports proxy jumps for bastion hosts
+2. **Transfers Closure with `nix copy`**:
+   - Direct store-to-store transfer via SSH
+   - Only transfers missing paths (incremental!)
+   - No export/compress/import steps needed
+   - Significantly faster than old method (4-10 minutes saved)
+   - More efficient on subsequent deployments
 
-### Phase 4: Remote Installation
+3. **Prepares Remote**:
+   - Transfers activation scripts to /tmp/nix-deploy/
+   - Generates metadata.json with deployment info
+   - Creates INSTRUCTIONS.md with step-by-step guide
+   - Supports proxy jumps for bastion hosts
 
-On the remote machine:
-1. Installs Nix if not present (offline installer)
-2. Imports the store closure
-3. Activates the Home Manager profile
-4. Sets up shell integration
+**What's Different from Old Method:**
 
-### Phase 5: Validation
+| Old Method (Export/Import) | New Method (nix copy) |
+|----------------------------|----------------------|
+| Export to NAR (2-5 min) | ✅ Skip - direct transfer |
+| Compress NAR | ✅ Skip - no intermediate file |
+| Transfer compressed file | ✅ Transfer only missing paths |
+| Decompress on remote (2-5 min) | ✅ Skip - direct to store |
+| Import into store | ✅ Skip - already in store |
+| **Total: 4-10 min overhead** | **Total: Transfer time only** |
 
-Verifies the deployment:
-- Checks Nix installation
-- Validates profile activation
-- Tests key packages
-- Ensures shell integration
+### Phase 3: Manual Deployment (You Execute on Remote)
+
+SSH to the remote machine and follow the instructions in INSTRUCTIONS.md:
+
+```bash
+ssh user@remote
+cd /tmp/nix-deploy
+cat INSTRUCTIONS.md
+```
+
+Then execute each step:
+
+1. **Verify Nix Installation**:
+   - Nix should already be installed (done during transfer)
+   - Check with: `nix --version`
+
+2. **Verify Closure Transfer**:
+   - Check store path exists: `ls /nix/store/...-home-manager-generation`
+   - Closure was transferred directly via `nix copy` (no import needed!)
+
+3. **Activate Profile**: `bash ./activate-profile.sh`
+   - Links new configuration
+   - Sets up environment
+
+4. **Setup Shell** (optional): `bash ./setup-shell.sh`
+   - Adds to shell profile
+   - Ensures persistence
+
+5. **Validate** (optional): `bash ./validate.sh`
+   - Checks installation
+   - Tests key packages
 
 ## Configuration
 
@@ -136,10 +175,10 @@ deployment:
   ssh:
     control_master: true  # SSH multiplexing
     control_persist: "10m"
+    vpn_check: true  # Prompt to confirm VPN connection before deployment
 
 defaults:
-  nix_install_type: "single-user"
-  backup_existing: true
+  shell: "bash"  # Default shell for prompts
 ```
 
 ### Target Configuration
@@ -167,11 +206,9 @@ deployment:
     flake_ref: ".#enterpriseuser"
     profile_name: "enterpriseuser"
   nix:
-    install_if_missing: true
-    install_type: "single-user"  # Recommended for WSL
-  options:
-    backup_existing_profile: true
-    setup_shell_integration: true
+    install_if_missing: true  # Determines Nix installer is downloaded
+  wsl:
+    fix_permissions: true  # WSL-specific /nix directory handling
 ```
 
 ## Advanced Usage
@@ -190,10 +227,23 @@ nix-deploy --target prod-server --dry-run
 nix-deploy --target prod-server --resume
 ```
 
-### Rollback Deployment
+### Rollback to Previous Generation
+
+Rollback is now manual (you have full control):
 
 ```bash
-nix-deploy --target prod-server --rollback
+# SSH to the remote
+ssh user@remote
+
+# List generations
+home-manager generations
+
+# Rollback to previous
+home-manager switch --rollback
+
+# Or switch to specific generation
+nix-env --list-generations
+nix-env --switch-generation <number>
 ```
 
 ### Deploy to Multiple Targets
@@ -266,14 +316,22 @@ nix-deploy --target server --resume
 # Edit config: transfer.chunk_size: "50MB"
 ```
 
-### Remote Installation Issues
+### Remote Deployment Issues
 
 ```bash
-# Check remote logs
-ssh user@host "cat /tmp/nix-deploy/deploy.log"
+# SSH to remote and check script output
+ssh user@host
+cd /tmp/nix-deploy
 
-# Manual validation
-ssh user@host "bash /tmp/nix-deploy/validate.sh"
+# Re-read instructions
+cat INSTRUCTIONS.md
+
+# Re-run specific steps manually
+bash ./install-nix.sh
+bash ./import-closure.sh
+bash ./activate-profile.sh
+
+# Check for errors in script output
 ```
 
 ### Permission Issues on WSL
@@ -305,15 +363,19 @@ chmod 755 ~/.nix-profile
 ### Remote Structure
 
 ```
-/tmp/nix-deploy/          # Temporary deployment directory
-├── closure.nar.zst       # Compressed Nix closure
-├── metadata.json         # Deployment metadata
-├── nix-installer.tar.gz  # Offline Nix installer
-├── *.sh                  # Deployment scripts
-└── deploy.log           # Deployment log
+/tmp/nix-deploy/              # Temporary deployment directory
+├── INSTRUCTIONS.md           # Step-by-step deployment guide
+├── closure.nar.zst           # Compressed Nix closure
+├── metadata.json             # Deployment metadata
+├── nix-installer.sh          # Determinate Nix installer (cached)
+├── install-nix.sh            # Installation script (online/offline fallback)
+├── import-closure.sh         # Closure import script
+├── activate-profile.sh       # Profile activation script
+├── setup-shell.sh            # Shell integration script
+└── validate.sh               # Validation script
 
-~/.nix-profile/          # Activated Nix profile
-~/.config/nix/           # Nix configuration
+~/.nix-profile/               # Activated Nix profile (after manual activation)
+~/.config/nix/                # Nix configuration
 ```
 
 ## Security Considerations
@@ -404,10 +466,13 @@ nix-deploy config COMMAND
 A: Yes! Everything needed is packaged locally and transferred via SSH.
 
 **Q: What if the remote machine doesn't have Nix?**
-A: The tool includes an offline Nix installer that works without internet.
+A: The tool includes Determinate Nix installer that tries online installation first, then falls back to the cached offline version.
 
 **Q: How large are the deployment packages?**
-A: Typically 100-500MB compressed, depending on your configuration.
+A: Typically 100-500MB compressed, depending on your configuration. The Determinate Nix installer is ~60MB.
+
+**Q: Why manual execution instead of automated deployment?**
+A: Manual execution gives you full control and visibility. You can inspect each script, pause between steps, and troubleshoot issues more easily on restricted machines.
 
 **Q: Can I deploy different profiles to the same machine?**
 A: Yes, each profile is independent and can be deployed separately.

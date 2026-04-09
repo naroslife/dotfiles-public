@@ -1,0 +1,155 @@
+debug1: OpenSSH_10.0p2, OpenSSL 3.4.3 30 Sep 2025
+debug3: Running on Linux 6.6.87.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Mon Apr 21 17:08:54 UTC 2025 x86_64
+debug3: Started with: ssh -vvv AWS
+debug1: Reading configuration data /home/uif58593/.ssh/config
+debug1: /home/uif58593/.ssh/config line 1: Applying options for *
+debug3: kex names ok: [curve25519-sha256,curve25519-sha256@libssh.org,diffie-hellman-group-exchange-sha256]
+debug1: /home/uif58593/.ssh/config line 24: Applying options for AWS
+debug1: Reading configuration data /etc/ssh/ssh_config
+debug1: /etc/ssh/ssh_config line 19: include /etc/ssh/ssh_config.d/*.conf matched no files
+debug1: /etc/ssh/ssh_config line 21: Applying options for *
+debug2: resolve_canonicalize: hostname 10.36.71.125 is address
+debug3: expanded UserKnownHostsFile '~/.ssh/known_hosts' -> '/home/uif58593/.ssh/known_hosts'
+debug1: Control socket "/home/uif58593/.ssh/master-uif58593@AWS:22" does not exist
+debug3: channel_clear_timeouts: clearing
+debug3: ssh_connect_direct: entering
+debug1: Connecting to 10.36.71.125 [10.36.71.125] port 22.
+debug3: set_sock_tos: set socket 3 IP_TOS 0x48
+debug2: fd 3 setting O_NONBLOCK
+debug1: fd 3 clearing O_NONBLOCK
+debug1: Connection established.
+debug3: timeout: 20000 ms remain after connect
+debug1: identity file /home/uif58593/.ssh/id_ed25519 type 3
+debug1: identity file /home/uif58593/.ssh/id_ed25519-cert type -1
+debug1: Local version string SSH-2.0-OpenSSH_10.0
+debug1: Remote protocol version 2.0, remote software version OpenSSH_8.9p1 Ubuntu-3ubuntu0.13
+debug1: compat_banner: match: OpenSSH_8.9p1 Ubuntu-3ubuntu0.13 pat OpenSSH* compat 0x04000000
+debug2: fd 3 setting O_NONBLOCK
+debug1: Authenticating to 10.36.71.125:22 as 'uif58593'
+debug3: record_hostkey: found key type ED25519 in file /home/uif58593/.ssh/known_hosts:9
+debug3: record_hostkey: found key type RSA in file /home/uif58593/.ssh/known_hosts:10
+debug3: record_hostkey: found key type ECDSA in file /home/uif58593/.ssh/known_hosts:11
+debug3: load_hostkeys_file: loaded 3 keys from 10.36.71.125
+debug1: load_hostkeys: fopen /etc/ssh/ssh_known_hosts: No such file or directory
+debug1: load_hostkeys: fopen /etc/ssh/ssh_known_hosts2: No such file or directory
+debug3: order_hostkeyalgs: have matching best-preference key type ssh-ed25519-cert-v01@openssh.com, using HostkeyAlgorithms verbatim
+debug3: send packet: type 20
+debug1: SSH2_MSG_KEXINIT sent
+debug3: receive packet: type 20
+debug1: SSH2_MSG_KEXINIT received
+debug2: local client KEXINIT proposal
+debug2: KEX algorithms: curve25519-sha256,curve25519-sha256@libssh.org,diffie-hellman-group-exchange-sha256,ext-info-c,kex-strict-c-v00@openssh.com
+debug2: host key algorithms: ssh-ed25519-cert-v01@openssh.com,ecdsa-sha2-nistp256-cert-v01@openssh.com,ecdsa-sha2-nistp384-cert-v01@openssh.com,ecdsa-sha2-nistp521-cert-v01@openssh.com,sk-ssh-ed25519-cert-v01@openssh.com,sk-ecdsa-sha2-nistp256-cert-v01@openssh.com,rsa-sha2-512-cert-v01@openssh.com,rsa-sha2-256-cert-v01@openssh.com,ssh-ed25519,ecdsa-sha2-nistp256,ecdsa-sha2-nistp384,ecdsa-sha2-nistp521,sk-ssh-ed25519@openssh.com,sk-ecdsa-sha2-nistp256@openssh.com,rsa-sha2-512,rsa-sha2-256
+debug2: ciphers ctos: chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr
+debug2: ciphers stoc: chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr
+debug2: MACs ctos: umac-64-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha1-etm@openssh.com,umac-64@openssh.com,umac-128@openssh.com,hmac-sha2-256,hmac-sha2-512,hmac-sha1,hmac-md5
+debug2: MACs stoc: umac-64-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha1-etm@openssh.com,umac-64@openssh.com,umac-128@openssh.com,hmac-sha2-256,hmac-sha2-512,hmac-sha1,hmac-md5
+debug2: compression ctos: zlib@openssh.com,none
+debug2: compression stoc: zlib@openssh.com,none
+debug2: languages ctos: 
+debug2: languages stoc: 
+debug2: first_kex_follows 0 
+debug2: reserved 0 
+debug2: peer server KEXINIT proposal
+debug2: KEX algorithms: curve25519-sha256,curve25519-sha256@libssh.org,ecdh-sha2-nistp256,ecdh-sha2-nistp384,ecdh-sha2-nistp521,sntrup761x25519-sha512@openssh.com,diffie-hellman-group-exchange-sha256,diffie-hellman-group16-sha512,diffie-hellman-group18-sha512,diffie-hellman-group14-sha256,kex-strict-s-v00@openssh.com
+debug2: host key algorithms: rsa-sha2-512,rsa-sha2-256,ecdsa-sha2-nistp256,ssh-ed25519
+debug2: ciphers ctos: chacha20-poly1305@openssh.com,aes128-ctr,aes192-ctr,aes256-ctr,aes128-gcm@openssh.com,aes256-gcm@openssh.com
+debug2: ciphers stoc: chacha20-poly1305@openssh.com,aes128-ctr,aes192-ctr,aes256-ctr,aes128-gcm@openssh.com,aes256-gcm@openssh.com
+debug2: MACs ctos: umac-64-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha1-etm@openssh.com,umac-64@openssh.com,umac-128@openssh.com,hmac-sha2-256,hmac-sha2-512,hmac-sha1
+debug2: MACs stoc: umac-64-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha1-etm@openssh.com,umac-64@openssh.com,umac-128@openssh.com,hmac-sha2-256,hmac-sha2-512,hmac-sha1
+debug2: compression ctos: none,zlib@openssh.com
+debug2: compression stoc: none,zlib@openssh.com
+debug2: languages ctos: 
+debug2: languages stoc: 
+debug2: first_kex_follows 0 
+debug2: reserved 0 
+debug3: kex_choose_conf: will use strict KEX ordering
+debug1: kex: algorithm: curve25519-sha256
+debug1: kex: host key algorithm: ssh-ed25519
+debug1: kex: server->client cipher: chacha20-poly1305@openssh.com MAC: <implicit> compression: zlib@openssh.com
+debug1: kex: client->server cipher: chacha20-poly1305@openssh.com MAC: <implicit> compression: zlib@openssh.com
+debug3: send packet: type 30
+debug1: expecting SSH2_MSG_KEX_ECDH_REPLY
+debug3: receive packet: type 31
+debug1: SSH2_MSG_KEX_ECDH_REPLY received
+debug1: Server host key: ssh-ed25519 SHA256:tcHdjf7NuLVZ13DgzwrSsU86rhqgBsrvAbXZR+BcieI
+debug3: record_hostkey: found key type ED25519 in file /home/uif58593/.ssh/known_hosts:9
+debug3: record_hostkey: found key type RSA in file /home/uif58593/.ssh/known_hosts:10
+debug3: record_hostkey: found key type ECDSA in file /home/uif58593/.ssh/known_hosts:11
+debug3: load_hostkeys_file: loaded 3 keys from 10.36.71.125
+debug1: load_hostkeys: fopen /etc/ssh/ssh_known_hosts: No such file or directory
+debug1: load_hostkeys: fopen /etc/ssh/ssh_known_hosts2: No such file or directory
+debug1: Host '10.36.71.125' is known and matches the ED25519 host key.
+debug1: Found key in /home/uif58593/.ssh/known_hosts:9
+debug3: send packet: type 21
+debug1: ssh_packet_send2_wrapped: resetting send seqnr 3
+debug2: ssh_set_newkeys: mode 1
+debug1: rekey out after 134217728 blocks
+debug1: SSH2_MSG_NEWKEYS sent
+debug1: expecting SSH2_MSG_NEWKEYS
+debug3: receive packet: type 21
+debug1: ssh_packet_read_poll2: resetting read seqnr 3
+debug1: SSH2_MSG_NEWKEYS received
+debug2: ssh_set_newkeys: mode 0
+debug1: rekey in after 134217728 blocks
+debug2: KEX algorithms: curve25519-sha256,curve25519-sha256@libssh.org,diffie-hellman-group-exchange-sha256,ext-info-c,kex-strict-c-v00@openssh.com
+debug2: host key algorithms: ssh-ed25519-cert-v01@openssh.com,ecdsa-sha2-nistp256-cert-v01@openssh.com,ecdsa-sha2-nistp384-cert-v01@openssh.com,ecdsa-sha2-nistp521-cert-v01@openssh.com,sk-ssh-ed25519-cert-v01@openssh.com,sk-ecdsa-sha2-nistp256-cert-v01@openssh.com,rsa-sha2-512-cert-v01@openssh.com,rsa-sha2-256-cert-v01@openssh.com,ssh-ed25519,ecdsa-sha2-nistp256,ecdsa-sha2-nistp384,ecdsa-sha2-nistp521,sk-ssh-ed25519@openssh.com,sk-ecdsa-sha2-nistp256@openssh.com,rsa-sha2-512,rsa-sha2-256
+debug2: ciphers ctos: chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr
+debug2: ciphers stoc: chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr
+debug2: MACs ctos: umac-64-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha1-etm@openssh.com,umac-64@openssh.com,umac-128@openssh.com,hmac-sha2-256,hmac-sha2-512,hmac-sha1,hmac-md5
+debug2: MACs stoc: umac-64-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha1-etm@openssh.com,umac-64@openssh.com,umac-128@openssh.com,hmac-sha2-256,hmac-sha2-512,hmac-sha1,hmac-md5
+debug2: compression ctos: zlib@openssh.com,none
+debug2: compression stoc: zlib@openssh.com,none
+debug2: languages ctos: 
+debug2: languages stoc: 
+debug2: first_kex_follows 0 
+debug2: reserved 0 
+debug3: send packet: type 5
+debug3: receive packet: type 7
+debug1: SSH2_MSG_EXT_INFO received
+debug3: kex_input_ext_info: extension server-sig-algs
+debug1: kex_ext_info_client_parse: server-sig-algs=<ssh-ed25519,sk-ssh-ed25519@openssh.com,ssh-rsa,rsa-sha2-256,rsa-sha2-512,ssh-dss,ecdsa-sha2-nistp256,ecdsa-sha2-nistp384,ecdsa-sha2-nistp521,sk-ecdsa-sha2-nistp256@openssh.com,webauthn-sk-ecdsa-sha2-nistp256@openssh.com>
+debug3: kex_input_ext_info: extension publickey-hostbound@openssh.com
+debug1: kex_ext_info_check_ver: publickey-hostbound@openssh.com=<0>
+debug3: receive packet: type 6
+debug2: service_accept: ssh-userauth
+debug1: SSH2_MSG_SERVICE_ACCEPT received
+debug3: send packet: type 50
+debug3: receive packet: type 51
+debug1: Authentications that can continue: publickey,keyboard-interactive
+debug3: start over, passed a different list publickey,keyboard-interactive
+debug3: preferred publickey,keyboard-interactive,password
+debug3: authmethod_lookup publickey
+debug3: remaining preferred: keyboard-interactive,password
+debug3: authmethod_is_enabled publickey
+debug1: Next authentication method: publickey
+debug3: ssh_get_authentication_socket_path: path '/run/user/1000/gnupg/S.gpg-agent.ssh'
+debug2: get_agent_identities: ssh_agent_bind_hostkey: agent refused operation
+debug1: get_agent_identities: ssh_fetch_identitylist: agent contains no identities
+debug1: Will attempt key: /home/uif58593/.ssh/id_ed25519 ED25519 SHA256:0FAkioT5KJBrQGMmCrsclNgJhqTPdVN2E0ahFbmKJV0 explicit
+debug2: pubkey_prepare: done
+debug1: Offering public key: /home/uif58593/.ssh/id_ed25519 ED25519 SHA256:0FAkioT5KJBrQGMmCrsclNgJhqTPdVN2E0ahFbmKJV0 explicit
+debug3: send packet: type 50
+debug2: we sent a publickey packet, wait for reply
+debug3: receive packet: type 51
+debug1: Authentications that can continue: publickey,keyboard-interactive
+debug2: we did not send a packet, disable method
+debug3: authmethod_lookup keyboard-interactive
+debug3: remaining preferred: password
+debug3: authmethod_is_enabled keyboard-interactive
+debug1: Next authentication method: keyboard-interactive
+debug2: userauth_kbdint
+debug3: send packet: type 50
+debug2: we sent a keyboard-interactive packet, wait for reply
+debug3: receive packet: type 60
+debug2: input_userauth_info_req: entering
+debug2: input_userauth_info_req: num_prompts 1
+debug3: send packet: type 61
+debug3: receive packet: type 51
+debug1: Authentications that can continue: publickey,keyboard-interactive
+debug2: userauth_kbdint
+debug3: send packet: type 50
+debug2: we sent a keyboard-interactive packet, wait for reply
+debug3: receive packet: type 60
+debug2: input_userauth_info_req: entering
+debug2: input_userauth_info_req: num_prompts 1

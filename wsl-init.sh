@@ -10,6 +10,9 @@ if [[ -f "$SCRIPT_DIR/lib/common.sh" ]]; then
 elif [[ -f "$SCRIPT_DIR/../lib/common.sh" ]]; then
     # shellcheck disable=SC1091
     source "$SCRIPT_DIR/../lib/common.sh"
+elif [[ -f "$HOME/dotfiles-public/lib/common.sh" ]]; then
+    # shellcheck disable=SC1091
+    source "$HOME/dotfiles-public/lib/common.sh"
 else
     echo "Error: Could not find common.sh" >&2
     exit 1

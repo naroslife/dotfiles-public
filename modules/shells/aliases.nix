@@ -1,9 +1,13 @@
-{ config, pkgs, lib, ... }:
-let
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}: let
   # Common shell aliases shared across bash and zsh
   commonAliases = {
     # Home Manager
-    hm = "nix run home-manager/release-25.05 -- switch --flake . --impure";
+    hm = "nix run home-manager/master -- switch --flake . --impure";
 
     # Runtime history tool switching (consistent across shells)
     use-atuin = "switch_history atuin";
@@ -110,8 +114,7 @@ let
     # Compile and test CUDA programs
     cuda-compile-test = "bash ${config.home.homeDirectory}/dotfiles-public/cuda-setup/compile-test.sh";
   };
-in
-{
+in {
   # Apply aliases to both bash and zsh
   programs.bash.shellAliases = commonAliases;
   programs.zsh.shellAliases = commonAliases;

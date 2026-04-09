@@ -1,5 +1,8 @@
-{ config, pkgs, ... }:
 {
+  config,
+  pkgs,
+  ...
+}: {
   home.packages = with pkgs; [
     # === Core System Utilities ===
     coreutils
@@ -61,6 +64,8 @@
     nix-tree
     nix-diff
     nixpkgs-fmt
+    alejandra # Nix formatter - fast and opinionated
     nil # Nix language server
+    nix-output-monitor # Better nix build output
   ];
 }

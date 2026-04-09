@@ -6,20 +6,28 @@
 
 set -euo pipefail
 
-# Source common utilities
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Color output
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m'
 
-if [[ -f "$SCRIPT_DIR/lib/common.sh" ]]; then
-    # shellcheck disable=SC1091
-    source "$SCRIPT_DIR/lib/common.sh"
-elif [[ -f "$SCRIPT_DIR/../lib/common.sh" ]]; then
-    # shellcheck disable=SC1091
-    source "$SCRIPT_DIR/../lib/common.sh"
-else
-    echo "Error: Could not find common.sh" >&2
-    exit 1
-fi
+log_info() {
+    echo -e "${BLUE}[INFO]${NC} $1"
+}
 
+log_success() {
+    echo -e "${GREEN}[✓]${NC} $1"
+}
+
+log_error() {
+    echo -e "${RED}[✗]${NC} $1"
+}
+
+log_warning() {
+    echo -e "${YELLOW}[!]${NC} $1"
+}
 
 failed=0
 
@@ -31,7 +39,7 @@ echo
 
 # Test 1: Check WSL2
 log_info "Checking WSL2..."
-if is_wsl2; then
+if [[ -f /proc/sys/fs/binfmt_misc/WSLInterop ]]; then
     log_success "Running on WSL2"
 else
     log_warning "Not running on WSL2"
