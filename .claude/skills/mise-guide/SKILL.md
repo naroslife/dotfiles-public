@@ -33,8 +33,8 @@ If the request spans multiple domains, read the relevant reference files.
 
 4. **Check before acting.** Run `mise ls` or `mise config ls` first to understand the current state before making changes.
 
-5. **Verify mise is available.** Before running any mise command, run `which mise` to check availability. If not found, install it:
+5. **Verify mise is available.** Before running any mise command, run `which mise` to check availability. If not found, inspect the installer first if possible, then install it with:
    ```bash
-   curl https://mise.run | sh
+   curl --proto '=https' --tlsv1.2 -sSf -L https://mise.run | sh
    ```
    Then verify with `mise --version` before proceeding.
