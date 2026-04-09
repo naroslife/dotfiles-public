@@ -1,0 +1,184 @@
+name: Migration Orchestrator
+
+# Chains the nix-migration epic issues in dependency order.
+# When a PR with the epic label is merged, triggers the next unblocked issue(s).
+# Can also be triggered manually to kick off or resume the chain.
+
+on:
+  pull_request:
+    types: [closed]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: 'Issue number to trigger (e.g., 20)'
+        required: false
+        type: string
+      trigger_all_unblocked:
+        description: 'Find and trigger all unblocked issues'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  orchestrate:
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.merged == true &&
+       contains(toJSON(github.event.pull_request.labels), 'epic:nix-migration'))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Trigger next issues in dependency chain
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            // Dependency graph: issue -> blocked by
+            const deps = {
+              20: [],           // Architecture & design (ROOT)
+              21: [20],         // Core bootstrap script
+              22: [20, 21],     // mise configuration
+              23: [20, 22],     // Tier 3 toolchains
+              24: [20],         // C/C++ build deps
+              25: [20, 21],     // Dotfile migration to chezmoi
+              26: [20, 22, 25], // Shell framework
+              27: [26],         // Agent detection
+              28: [20, 21],     // Credentials & secrets
+              29: [20, 21, 22, 23], // Offline deployment
+              30: [25, 26],     // WSL support
+              31: [22, 26],     // DX features
+              32: [25],         // Claude Code config
+              33: [21, 22, 26], // CI/CD testing
+              34: [],           // Documentation (manual - depends on all)
+            };
+
+            const epicLabel = 'epic:nix-migration';
+
+            // Get all epic issues and their state
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: epicLabel,
+              state: 'all',
+              per_page: 100,
+            });
+
+            const closedIssues = new Set(
+              issues.data
+                .filter(i => i.state === 'closed')
+                .map(i => i.number)
+            );
+
+            const openIssues = new Set(
+              issues.data
+                .filter(i => i.state === 'open')
+                .map(i => i.number)
+            );
+
+            console.log(`Closed issues: ${[...closedIssues].join(', ')}`);
+            console.log(`Open issues: ${[...openIssues].join(', ')}`);
+
+            // Find issues that are unblocked (all deps closed)
+            const unblocked = [];
+            for (const [issue, blockers] of Object.entries(deps)) {
+              const num = parseInt(issue);
+              if (!openIssues.has(num)) continue; // skip closed/unknown
+              const allDepsmet = blockers.every(b => closedIssues.has(b));
+              if (allDepsmet) {
+                unblocked.push(num);
+              }
+            }
+
+            console.log(`Unblocked issues ready for work: ${unblocked.join(', ')}`);
+
+            // Handle manual trigger of specific issue
+            const manualIssue = '${{ inputs.issue_number }}';
+            const triggerAll = '${{ inputs.trigger_all_unblocked }}' === 'true';
+
+            let toTrigger = [];
+
+            if (manualIssue) {
+              toTrigger = [parseInt(manualIssue)];
+            } else if (triggerAll || context.eventName === 'pull_request') {
+              toTrigger = unblocked;
+            }
+
+            if (toTrigger.length === 0) {
+              console.log('No issues to trigger. All blocked or completed.');
+              return;
+            }
+
+            // Check which issues already have a @claude comment to avoid duplicates
+            for (const num of toTrigger) {
+              console.log(`\nProcessing issue #${num}...`);
+
+              // Check for existing @claude trigger comment
+              const comments = await github.rest.issues.listComments({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: num,
+                per_page: 50,
+              });
+
+              const alreadyTriggered = comments.data.some(c =>
+                c.body.includes('@claude') && c.body.includes('[orchestrator]')
+              );
+
+              if (alreadyTriggered) {
+                console.log(`Issue #${num} already has an orchestrator trigger. Skipping.`);
+                continue;
+              }
+
+              // Get issue details for context
+              const issue = await github.rest.issues.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: num,
+              });
+
+              // Post @claude comment to trigger implementation
+              const comment = `[orchestrator] @claude
+
+            Implement this issue. Follow these steps:
+
+            1. Read the issue description and acceptance criteria carefully
+            2. Create a new branch from \`main\` named \`feat/migration-${num}\`
+            3. Implement all changes described in the issue
+            4. Commit with conventional commits format
+            5. Open a PR linking this issue (include "Closes #${num}" in the PR body)
+            6. Request review from \`copilot\` if available
+
+            **Context**: This is part of the "Migrate dotfiles from Nix/Home Manager to chezmoi+mise" epic. Check other closed PRs in this epic for context on decisions already made.
+
+            **Important**: Read \`CLAUDE.md\` and any architecture docs that exist before starting. Follow the tier classification and tool audit from issue #20.`;
+
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: num,
+                body: comment,
+              });
+
+              console.log(`Triggered Claude on issue #${num}`);
+
+              // Add 'in-progress' label
+              try {
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: num,
+                  labels: ['in-progress'],
+                });
+              } catch (e) {
+                console.log(`Could not add label: ${e.message}`);
+              }
+            }
+
+            console.log('\nOrchestration complete.');
