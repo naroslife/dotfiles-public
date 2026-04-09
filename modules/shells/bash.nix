@@ -8,7 +8,8 @@
     enable = true;
     # shellAliases are configured in aliases.nix
 
-    bashrcExtra = ''
+    # Only modify bashrc when HM_MODIFY_SHELL is explicitly set to "true"
+    bashrcExtra = lib.mkIf (config.home.sessionVariables.HM_MODIFY_SHELL == "true") ''
       # Source Nix
       if [ -e "$HOME/.nix-profile/etc/profile.d/nix-daemon.sh" ]; then
         source "$HOME/.nix-profile/etc/profile.d/nix-daemon.sh"
@@ -64,7 +65,7 @@
       alias history-status='switch_history status'
 
       [[ "$TERM_PROGRAM" == "vscode" ]] && . "$(code --locate-shell-integration-path bash)"
-      
+
       set +u
     '';
   };

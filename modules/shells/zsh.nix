@@ -42,7 +42,8 @@
 
     # shellAliases are configured in aliases.nix
 
-    initContent = lib.mkMerge [
+    # Only modify zshrc when HM_MODIFY_SHELL is explicitly set to "true"
+    initContent = lib.mkIf (config.home.sessionVariables.HM_MODIFY_SHELL == "true") (lib.mkMerge [
       (lib.mkBefore ''
         # Performance: Skip system-wide compinit
         skip_global_compinit=1
@@ -149,9 +150,9 @@
         }
 
         [[ "$TERM_PROGRAM" == "vscode" ]] && . "$(code --locate-shell-integration-path zsh)"
-        
+
         set +u
       ''
-    ];
+    ]);
   };
 }

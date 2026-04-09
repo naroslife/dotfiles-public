@@ -183,6 +183,7 @@ main() {
 	bootstrap_sops
 
 	select_user
+	select_shell_mode
 	apply_home_manager
 	# apply_wsl_optimizations
 

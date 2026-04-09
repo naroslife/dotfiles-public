@@ -50,13 +50,13 @@
     terminal = "tmux-256color";
 
     # History
-    historyLimit = 10000;
+    historyLimit = 100000;
 
     # No delay for escape key
     escapeTime = 0;
 
     # Use vi keybindings
-    keyMode = "vi";
+    keyMode = "emacs";
 
     # Plugins
     plugins = with pkgs.tmuxPlugins; [
@@ -64,7 +64,6 @@
       yank
       resurrect
       continuum
-      vim-tmux-navigator
     ];
 
     extraConfig = ''
@@ -88,12 +87,6 @@
       bind j select-pane -D
       bind k select-pane -U
       bind l select-pane -R
-
-      # Resize panes with vim keys (repeatable)
-      bind -r H resize-pane -L 5
-      bind -r J resize-pane -D 5
-      bind -r K resize-pane -U 5
-      bind -r L resize-pane -R 5
 
       # Copy mode bindings
       bind -T copy-mode-vi v send -X begin-selection

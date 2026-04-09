@@ -14,6 +14,13 @@
   # Let home-manager manage itself
   programs.home-manager.enable = true;
 
+# Control whether Home Manager modifies shell RC files
+# Set to "false" (default) to use dev shell mode (recommended)
+# Set to "true" for traditional Home Manager behavior that modifies RC files
+home.sessionVariables = lib.mkDefault {
+HM_MODIFY_SHELL = "false";
+};
+
   # Session variables and paths are now managed in modules/environment.nix
 
   # File management
@@ -28,6 +35,24 @@
 
     # Carapace configuration
     ".config/carapace".source = ./carapace;
+
+# Helper script to enter the Home Manager dev environment
+".local/bin/hm-dev-shell" = lib.mkIf (config.home.sessionVariables.HM_MODIFY_SHELL == "false") {
+text = ''
+        #!/usr/bin/env bash
+        # Enter Home Manager development shell
+        DOTFILES_DIR="''${DOTFILES_DIR:-$HOME/dotfiles-public}"
+
+        if [ -d "$DOTFILES_DIR" ]; then
+          cd "$DOTFILES_DIR" && nix develop .#hm-env
+        else
+          echo "Error: dotfiles-public directory not found at $DOTFILES_DIR"
+          echo "Set DOTFILES_DIR environment variable to the correct path"
+          exit 1
+        fi
+      '';
+executable = true;
+};
 
     # Note: starship, tmux, and atuin configurations are now managed
     # via Nix modules in modules/shells/default.nix and modules/dev/default.nix
