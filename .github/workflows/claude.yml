@@ -35,8 +35,7 @@ jobs:
       contents: write
       pull-requests: write
       issues: write
-      id-token: write
-      actions: read # Required for Claude to read CI results on PRs
+      actions: read
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
