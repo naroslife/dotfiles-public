@@ -62,11 +62,21 @@ jobs:
               "mcpServers": {
                 "context7": {
                   "command": "npx",
-                  "args": ["-y", "@upstash/context7-mcp@latest"]
+                  "args": ["-y", "@upstash/context7-mcp@latest"],
+                  "env": {
+                    "CONTEXT7_API_KEY": "${{ secrets.CONTEXT7_API_KEY }}"
+                  }
                 },
                 "sequential-thinking": {
                   "command": "npx",
                   "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"]
+                },
+                "exa": {
+                  "command": "npx",
+                  "args": ["-y", "exa-mcp-server"],
+                  "env": {
+                    "EXA_API_KEY": "${{ secrets.EXA_API_KEY }}"
+                  }
                 }
               }
             }
