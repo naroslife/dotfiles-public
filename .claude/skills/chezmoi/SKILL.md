@@ -1,6 +1,6 @@
 ---
 name: chezmoi
-description: Use whenever the user mentions "chezmoi" in any way. Manages dotfiles with chezmoi including tracking config files, comparing dotfiles, checking status, working with chezmoi templates, and handling local file changes. CRITICAL SAFETY RULES ENFORCED.
+description: Use whenever the user mentions chezmoi in any way. Manages dotfiles with chezmoi including tracking config files, comparing dotfiles, checking status, working with chezmoi templates, and handling local file changes. CRITICAL SAFETY RULES ENFORCED.
 ---
 
 # Chezmoi Dotfiles Management
