@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # scripts/install-apt-deps.sh
-# Install apt-managed dependencies for Tier 1/3/4 tools
+# Install apt-managed dependencies for Tier 1/3/4 tools and C/C++ libraries
 # Called by bootstrap.sh — safe to run multiple times
 #
 # Usage:
@@ -14,6 +14,10 @@ OFFLINE=false
 
 log_info()  { echo "[INFO]  $*"; }
 log_warn()  { echo "[WARN]  $*" >&2; }
+
+# Detect Ubuntu version for package availability differences
+UBUNTU_VERSION="$(. /etc/os-release 2>/dev/null && echo "${VERSION_ID:-unknown}" || echo "unknown")"
+log_info "Detected Ubuntu version: ${UBUNTU_VERSION}"
 
 if [[ "${EUID}" -ne 0 ]] && ! command -v sudo &>/dev/null; then
   log_warn "Not root and no sudo. Skipping apt installation."
@@ -64,9 +68,43 @@ APT_TIER3=(
   pkg-config
 )
 
+# ── C/C++ build libraries (Tier 3) ────────────────────────────────────────────
+# Derived from modules/dev/languages.nix — headers, .pc files, cmake configs
+# Note: libcatch2-dev is Ubuntu 24.04+ only (see version-conditional block below)
+APT_CPP_LIBS=(
+  # Core system headers
+  libc6-dev          # glibc.dev — C standard library headers
+  libssl-dev         # openssl — TLS/crypto headers
+  libncurses-dev     # ncurses.dev — terminal UI library
+  libcap-dev         # libcap.dev — POSIX capabilities
+  libsystemd-dev     # systemd.dev — systemd integration
+
+  # Widely-used C++ libraries
+  libboost-all-dev   # boost — comprehensive C++ utility library
+  libfmt-dev         # fmt — modern C++ formatting library
+  libspdlog-dev      # spdlog — fast C++ logging library
+
+  # Testing frameworks
+  libgtest-dev       # gtest — Google Test framework
+  libgmock-dev       # gtest — Google Mock (bundled with gtest)
+
+  # Math / data science
+  libeigen3-dev      # eigen — C++ template library for linear algebra
+
+  # Computer vision / graphics
+  libopencv-dev      # opencv — computer vision library
+  libgtk-4-dev       # gtk4 — GTK4 UI toolkit
+  libglfw3-dev       # glfw — OpenGL/Vulkan window and input
+  libglew-dev        # glew — OpenGL Extension Wrangler
+
+  # Vulkan
+  libvulkan-dev                # vulkan-headers + vulkan-loader
+  vulkan-validationlayers-dev  # Vulkan validation layers
+  mesa-vulkan-drivers          # Mesa Vulkan ICD (software + AMD/Intel)
+)
+
 # ── Tier 3 language support libraries ─────────────────────────────────────────
 APT_LANG_SUPPORT=(
-  libssl-dev
   libffi-dev
   python3-dev
   python3-pip
@@ -93,6 +131,7 @@ ALL_PKGS=(
   "${APT_TIER3[@]}"
   "${APT_TIER4[@]}"
   "${APT_LANG_SUPPORT[@]}"
+  "${APT_CPP_LIBS[@]}"
 )
 
 log_info "Installing ${#ALL_PKGS[@]} apt packages..."
@@ -103,6 +142,18 @@ ${SUDO} apt-get install -y --no-install-recommends "${ALL_PKGS[@]}" 2>/dev/null 
       || log_warn "  Skipped: ${pkg}"
   done
 }
+
+# ── Catch2 v3 (Ubuntu 24.04+ only) ───────────────────────────────────────────
+# Ubuntu 22.04 ships Catch2 v2 (libcatch2-dev is v2); Ubuntu 24.04 ships v3.
+# For 22.04, use CMake FetchContent or build from source.
+if [[ "${UBUNTU_VERSION}" == "24.04" ]]; then
+  log_info "Installing libcatch2-dev (Catch2 v3, Ubuntu 24.04)..."
+  ${SUDO} apt-get install -y --no-install-recommends libcatch2-dev 2>/dev/null \
+    || log_warn "libcatch2-dev not available — install Catch2 v3 via CMake FetchContent"
+else
+  log_warn "Ubuntu ${UBUNTU_VERSION}: libcatch2-dev in apt is Catch2 v2."
+  log_warn "  For Catch2 v3, use CMake FetchContent or build from source."
+fi
 
 # ── git-lfs post-install hook ─────────────────────────────────────────────────
 if command -v git-lfs &>/dev/null; then
