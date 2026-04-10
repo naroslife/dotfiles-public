@@ -1,0 +1,166 @@
+name: Stuck Check
+
+# Runs hourly to detect stalled PRs/issues in the migration epic.
+# Nudges agents forward if no activity for >2 hours.
+
+on:
+  schedule:
+    - cron: '0 * * * *'  # Every hour
+  workflow_dispatch: {}   # Manual trigger
+
+jobs:
+  check-stuck:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+
+    steps:
+      - name: Check for stuck work
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.ORCHESTRATOR_PAT }}
+          script: |
+            const STALE_HOURS = 2;
+            const now = new Date();
+            const staleThreshold = new Date(now - STALE_HOURS * 60 * 60 * 1000);
+
+            console.log(`Checking for items stale since ${staleThreshold.toISOString()}`);
+
+            // Check open PRs with review-round labels
+            const prs = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 20,
+            });
+
+            for (const pr of prs.data) {
+              const hasReviewLabel = pr.labels.some(l => l.name.startsWith('review-round-'));
+              const hasReadyLabel = pr.labels.some(l => l.name === 'ready-to-merge');
+
+              if (!hasReviewLabel && !hasReadyLabel) continue;
+
+              const updatedAt = new Date(pr.updated_at);
+              if (updatedAt > staleThreshold) continue;
+
+              const hoursSinceUpdate = Math.round((now - updatedAt) / (60 * 60 * 1000));
+
+              // Check if we already nudged recently
+              const comments = await github.rest.issues.listComments({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                per_page: 5,
+              });
+
+              const recentNudge = comments.data.some(c =>
+                c.body.includes('[stuck-check]') &&
+                new Date(c.created_at) > staleThreshold
+              );
+
+              if (recentNudge) {
+                console.log(`PR #${pr.number} already nudged recently. Skipping.`);
+                continue;
+              }
+
+              console.log(`PR #${pr.number} stale for ${hoursSinceUpdate}h`);
+
+              if (hasReadyLabel) {
+                // Should have been merged — nudge Claude
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: pr.number,
+                  body: `[stuck-check] @claude This PR has been marked \`ready-to-merge\` but hasn't been merged yet (${hoursSinceUpdate}h stale). Please merge it now: \`gh pr merge ${pr.number} --squash --delete-branch\``
+                });
+              } else {
+                // Review cycle stalled — figure out who's turn it is
+                const lastComment = comments.data[comments.data.length - 1];
+                const waitingFor = lastComment?.body?.includes('@copilot') ? '@copilot' : '@claude';
+
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: pr.number,
+                  body: `[stuck-check] ${waitingFor} This PR's review cycle has been inactive for ${hoursSinceUpdate} hours. Please continue — review or address the pending feedback.`
+                });
+              }
+            }
+
+            // Check issues with in-progress label but no PR
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'in-progress,epic:nix-migration',
+              state: 'open',
+              per_page: 20,
+            });
+
+            for (const issue of issues.data) {
+              if (issue.pull_request) continue; // skip PRs
+
+              const updatedAt = new Date(issue.updated_at);
+              if (updatedAt > staleThreshold) continue;
+
+              const hoursSinceUpdate = Math.round((now - updatedAt) / (60 * 60 * 1000));
+
+              const comments = await github.rest.issues.listComments({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                per_page: 5,
+              });
+
+              const recentNudge = comments.data.some(c =>
+                c.body.includes('[stuck-check]') &&
+                new Date(c.created_at) > staleThreshold
+              );
+
+              if (recentNudge) continue;
+
+              console.log(`Issue #${issue.number} in-progress but stale for ${hoursSinceUpdate}h`);
+
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: `[stuck-check] @claude This issue has been in-progress for ${hoursSinceUpdate} hours without a PR. Please continue implementation or report what's blocking you.`
+              });
+            }
+
+            // Check if orchestrator should trigger next issues
+            // (in case a PR was merged but orchestrator didn't fire)
+            const epicIssues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'epic:nix-migration',
+              state: 'open',
+              per_page: 50,
+            });
+
+            const openWithoutProgress = epicIssues.data.filter(i =>
+              !i.pull_request &&
+              !i.labels.some(l => l.name === 'in-progress')
+            );
+
+            if (openWithoutProgress.length > 0) {
+              console.log(`${openWithoutProgress.length} epic issues not yet started. Triggering orchestrator check...`);
+
+              // Trigger orchestrator via workflow_dispatch
+              try {
+                await github.rest.actions.createWorkflowDispatch({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  workflow_id: 'migration-orchestrator.yml',
+                  ref: 'main',
+                  inputs: { trigger_all_unblocked: 'true' },
+                });
+                console.log('Orchestrator triggered to check for unblocked issues');
+              } catch (e) {
+                console.log(`Could not trigger orchestrator: ${e.message}`);
+              }
+            }
+
+            console.log('Stuck check complete.');
