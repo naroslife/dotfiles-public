@@ -90,6 +90,24 @@ test_unknown_flag() {
   assert_true "[[ $exit_code -ne 0 ]]" "Unknown flag should exit non-zero"
 }
 
+test_user_flag_valid() {
+  echo "Testing --user flag with valid username..."
+
+  local exit_code=0
+  bash "$ROOT_DIR/bootstrap.sh" --user validuser --help >/dev/null 2>&1 || exit_code=$?
+  assert_equals "0" "$exit_code" "--user with valid name + --help should exit 0"
+}
+
+test_user_flag_invalid_chars() {
+  echo "Testing --user flag with invalid characters..."
+
+  local output exit_code=0
+  output=$(bash "$ROOT_DIR/bootstrap.sh" --user "bad user;rm -rf" 2>&1) || exit_code=$?
+  assert_true "[[ $exit_code -ne 0 ]]" "--user with shell metacharacters should exit non-zero"
+  assert_true "[[ '$output' == *'invalid characters'* ]]" \
+    "--user with invalid chars should print 'invalid characters'"
+}
+
 test_verbose_flag() {
   echo "Testing --verbose / -v flag..."
 
@@ -232,6 +250,8 @@ run_all_tests() {
 
   test_help_flag
   test_unknown_flag
+  test_user_flag_valid
+  test_user_flag_invalid_chars
   test_verbose_flag
   test_archive_implies_offline
   test_detect_arch_returns_valid

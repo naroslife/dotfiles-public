@@ -356,6 +356,9 @@ parse_arguments() {
       -u|--user)
         shift
         USERNAME="${1:?--user requires a value}"
+        if [[ ! "$USERNAME" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+          die "--user value contains invalid characters (allowed: a-z A-Z 0-9 _ -)"
+        fi
         ;;
       -v|--verbose)
         LOG_LEVEL=$LOG_LEVEL_DEBUG
@@ -535,7 +538,7 @@ step_apply_chezmoi() {
     for config in "${configs_to_backup[@]}"; do
       if [[ -f "$config" ]]; then
         backup_file "$config" ".pre-chezmoi"
-        ((backed_up++)) || true
+        backed_up=$((backed_up + 1))
       fi
     done
 
@@ -602,6 +605,7 @@ step_install_mise_tools() {
 # Install Zsh plugins via install-zsh-plugins.sh
 step_install_zsh_plugins() {
   if [[ "$SKIP_MISE" == true ]]; then
+    log_debug "Skipping Zsh plugins (--no-mise specified; plugins may depend on mise tools)"
     return 0
   fi
 
@@ -617,6 +621,7 @@ step_install_zsh_plugins() {
 # Install Nerd Fonts (skipped in offline mode)
 step_install_fonts() {
   if [[ "$SKIP_MISE" == true ]]; then
+    log_debug "Skipping font installation (--no-mise specified)"
     return 0
   fi
 
