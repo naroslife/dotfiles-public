@@ -115,10 +115,12 @@ tier2:
     config: dot_zshrc.tmpl      # template — varies per machine
   sampler:
     install: mise_aqua
-    config: dot_config/sampler/config.yaml  # required — nonfunctional without it
+    config: dot_config/sampler/config.yaml  # optional — config template not yet added
+    optional: true
   rclone:
     install: mise_aqua
-    config: dot_config/rclone/rclone.conf   # secrets-heavy — should be age-encrypted
+    config: dot_config/rclone/rclone.conf   # optional — age-encrypted config template not yet added
+    optional: true
 
 # Tier 3: Complex toolchains — apt preferred, mise for JVM/Go/Node/Rust
 tier3_apt:

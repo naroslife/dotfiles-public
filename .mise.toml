@@ -51,6 +51,7 @@
   "aqua:johnkerl/miller"         = "latest"   # binary: mlr
   "aqua:ms-jpq/sad"              = "latest"
   "aqua:sqshq/sampler"           = "latest"
+  "aqua:theryangeary/choose"     = "latest"
 
   # ─── Git tooling ──────────────────────────────────────────────────────────
   "aqua:jesseduffield/lazygit"   = "latest"
@@ -104,8 +105,8 @@
   node    = "lts"
   rust    = "latest"
   python  = "3.12"
-  cmake   = "latest"
-  ninja   = "latest"
+  # NOTE: cmake and ninja are managed by apt (scripts/install-apt-deps.sh).
+  # Do not add them here to avoid duplicate installs and PATH ambiguity.
   "aqua:bazelbuild/bazel"        = "latest"
   "pipx:meson"                   = "latest"
 

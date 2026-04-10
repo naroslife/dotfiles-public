@@ -35,6 +35,7 @@ APT_TIER1=(
   stow
   git-crypt
   cloc
+  cppcheck
   mosh
   autossh
   sshfs

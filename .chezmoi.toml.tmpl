@@ -2,10 +2,13 @@
 # Rendered once per machine into ~/.config/chezmoi/chezmoi.toml
 # Uses Go template syntax: https://chezmoi.io/reference/templates/
 
+{{- $user := env "DOTFILES_USER" | default .chezmoi.username -}}
+
 [data]
-  # User identity
-  name    = "{{ .chezmoi.username }}"
+  # User identity — override by setting DOTFILES_USER env var (or --user in bootstrap.sh)
+  name    = "{{ $user }}"
   email   = "{{ env "GIT_EMAIL" | default "user@example.com" }}"
+  dotfiles_user = "{{ $user }}"
 
   # Machine profile
   hostname = "{{ .chezmoi.hostname }}"
@@ -14,8 +17,8 @@
 
   # Environment flags (set these in .chezmoidata/local.yaml on each machine)
   is_wsl        = {{ env "WSL_DISTRO_NAME" | ne "" }}
-  is_enterprise = {{ eq .chezmoi.username "enterpriseuser" }}
-  is_personal   = {{ eq .chezmoi.username "naroslife" }}
+  is_enterprise = {{ eq $user "enterpriseuser" }}
+  is_personal   = {{ eq $user "naroslife" }}
 
   # Dotfiles location
   dotfiles_dir = "{{ .chezmoi.sourceDir }}"

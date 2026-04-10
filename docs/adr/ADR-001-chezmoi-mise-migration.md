@@ -138,7 +138,7 @@ tar -xzf mise-cache.tar.gz -C ~
 ### Scenario C: Restricted admin (no root)
 - mise installs everything to `~/.local/bin` — no root needed
 - chezmoi operates entirely in `~/`
-- Only apt dependencies need root; skip with `./bootstrap.sh --no-apt`
+- apt dependencies need root; skip with `./bootstrap.sh --no-apt`
 
 ## Migration Strategy
 

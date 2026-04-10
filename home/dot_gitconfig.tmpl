@@ -2,7 +2,7 @@
 # Machine: {{ .chezmoi.hostname }} | User: {{ .chezmoi.username }}
 
 [user]
-{{- $u := index .users .chezmoi.username | default (dict "full_name" .chezmoi.username "email" .email "git_signing_key" "") }}
+{{- $u := index .users (.dotfiles_user | default .chezmoi.username) | default (dict "full_name" .chezmoi.username "email" .email "git_signing_key" "") }}
   name  = {{ $u.full_name }}
   email = {{ $u.email }}
 {{ if $u.git_signing_key -}}
@@ -64,7 +64,9 @@
   save   = stash push -m
 
 [credential]
-  helper = store
+  # Do not set helper=store (plaintext on disk).
+  # Use a secure platform helper (libsecret/osxkeychain/manager-core)
+  # configured in machine-local ~/.gitconfig.d/credentials.inc.
 
 [url "git@github.com:"]
   insteadOf = https://github.com/
@@ -83,7 +85,4 @@
 [http]
   proxy = {{ env "HTTPS_PROXY" | default "" }}
   sslVerify = true
-
-[url "git@github.com:"]
-  insteadOf = https://github.com/
 {{ end -}}

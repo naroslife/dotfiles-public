@@ -9,7 +9,7 @@ Host *
 
   # Multiplexing for faster repeated connections
   ControlMaster     auto
-  ControlPath       ~/.ssh/control/%r@%h:%p
+  ControlPath       ~/.ssh/cm-%C
   ControlPersist    10m
 
   # Security

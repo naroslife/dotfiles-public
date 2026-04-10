@@ -5,7 +5,8 @@
 #   ./bootstrap.sh                  # Interactive, auto-detects environment
 #   ./bootstrap.sh --offline        # Offline mode (uses cached/bundled tools)
 #   ./bootstrap.sh --no-mise        # Skip mise tool installation
-#   ./bootstrap.sh --user <name>    # Specify username (default: whoami)
+#   ./bootstrap.sh --no-apt         # Skip apt package installation (no root needed)
+#   ./bootstrap.sh --user <name>    # Specify user profile (default: whoami)
 #
 # This script is idempotent — safe to run multiple times.
 
@@ -34,6 +35,7 @@ log_step()  { echo -e "\n${BOLD}${BLUE}==>${NC}${BOLD} $*${NC}"; }
 # ── Defaults ─────────────────────────────────────────────────────────────────
 OFFLINE=false
 SKIP_MISE=false
+SKIP_APT=false
 USERNAME="${USER:-$(whoami)}"
 
 # ── Argument parsing ─────────────────────────────────────────────────────────
@@ -41,9 +43,10 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --offline)    OFFLINE=true ;;
     --no-mise)    SKIP_MISE=true ;;
+    --no-apt)     SKIP_APT=true ;;
     --user)       shift; USERNAME="${1:?--user requires a value}" ;;
     --help|-h)
-      echo "Usage: $0 [--offline] [--no-mise] [--user <username>]"
+      echo "Usage: $0 [--offline] [--no-mise] [--no-apt] [--user <username>]"
       exit 0 ;;
     *) log_error "Unknown option: $1"; exit 1 ;;
   esac
@@ -95,6 +98,10 @@ log_step "Applying dotfiles with chezmoi"
 
 CHEZMOI_SOURCE="${SCRIPT_DIR}"
 
+# Pass selected user profile to chezmoi templates
+export DOTFILES_USER="${USERNAME}"
+log_info "Using profile: ${USERNAME}"
+
 if chezmoi data &>/dev/null; then
   log_info "chezmoi already initialized — running apply"
   chezmoi apply --source="${CHEZMOI_SOURCE}"
@@ -125,10 +132,18 @@ if [[ "${SKIP_MISE}" == false ]]; then
   log_step "Installing apt dependencies (Tier 1/3/4 from apt)"
 
   if [[ "${IS_LINUX}" == true ]] && command -v apt-get &>/dev/null; then
-    if [[ "${OFFLINE}" == false ]]; then
-      sudo apt-get update -qq
+    if [[ "${SKIP_APT}" == true ]]; then
+      log_warn "Skipping apt installation (--no-apt specified)"
+    else
+      if [[ "${OFFLINE}" == false ]]; then
+        sudo apt-get update -qq
+      fi
+      install_apt_deps_args=()
+      if [[ "${OFFLINE}" == true ]]; then
+        install_apt_deps_args+=(--offline)
+      fi
+      "${SCRIPT_DIR}/scripts/install-apt-deps.sh" "${install_apt_deps_args[@]}"
     fi
-    "${SCRIPT_DIR}/scripts/install-apt-deps.sh" ${OFFLINE:+--offline}
   else
     log_warn "apt-get not available — skipping apt dependencies"
   fi

@@ -14,9 +14,11 @@
 export DOTFILES_NO_ALIASES=1
 
 # Explicitly unalias all modern replacements in current session
+# Include both direct command overrides and session/listing aliases.
 _aliases=(
   cat find grep ls df du ps top htop ping dig http
   bat fd ripgrep eza duf dust procs bottom gping dog xh
+  l lt ltree la
 )
 
 for _alias in "${_aliases[@]}"; do
