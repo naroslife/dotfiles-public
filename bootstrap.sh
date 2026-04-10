@@ -35,7 +35,6 @@ if [[ -t 1 ]]; then
   COLOR_GREEN='\033[0;32m'
   COLOR_YELLOW='\033[1;33m'
   COLOR_BLUE='\033[0;34m'
-  COLOR_CYAN='\033[0;36m'
   COLOR_BOLD='\033[1m'
   COLOR_NC='\033[0m'
 else
@@ -43,7 +42,6 @@ else
   COLOR_GREEN=''
   COLOR_YELLOW=''
   COLOR_BLUE=''
-  COLOR_CYAN=''
   COLOR_BOLD=''
   COLOR_NC=''
 fi
@@ -56,7 +54,7 @@ SKIP_MISE=false
 SKIP_APT=false
 USERNAME="${USER:-$(whoami)}"
 ARCHIVE_PATH=""
-TEMP_FILES=""
+TEMP_FILES=()
 
 # Platform state (populated by step_detect_platform)
 IS_WSL=false
@@ -95,12 +93,11 @@ die() {
 
 cleanup_on_exit() {
   local exit_code=$?
-  if [[ -n "${TEMP_FILES:-}" ]]; then
+  if [[ "${#TEMP_FILES[@]}" -gt 0 ]]; then
     log_debug "Cleaning up temporary files"
-    # shellcheck disable=SC2086
-    rm -rf $TEMP_FILES 2>/dev/null || true
+    rm -rf "${TEMP_FILES[@]}" 2>/dev/null || true
   fi
-  tput sgr0 2>/dev/null || true
+  tput sgr0 >/dev/null 2>&1 || true
   exit "$exit_code"
 }
 
@@ -204,8 +201,8 @@ show_progress() {
   local empty=$((width - filled))
 
   printf "\r${COLOR_BLUE}[%s%s] %d%% - %s${COLOR_NC}" \
-    "$(printf '%*s' "$filled" | tr ' ' '=')" \
-    "$(printf '%*s' "$empty")" \
+    "$(printf '%*s' "$filled" "" | tr ' ' '=')" \
+    "$(printf '%*s' "$empty" "")" \
     "$percentage" \
     "$task"
 
@@ -304,7 +301,7 @@ detect_arch() {
     x86_64|amd64)  echo "x86_64" ;;
     aarch64|arm64) echo "aarch64" ;;
     armv7l)        echo "armv7l" ;;
-    *)             echo "$(uname -m)" ;;
+    *)             uname -m ;;
   esac
 }
 
@@ -471,6 +468,8 @@ step_install_chezmoi() {
   fi
 
   log_info "Downloading and installing chezmoi..."
+  # Note: This uses the official chezmoi installer over HTTPS. For maximum
+  # security, pin to a specific version and verify the checksum manually.
   sh -c "$(curl -fsSL "${CHEZMOI_INSTALL_URL}")" -- -b "${HOME}/.local/bin"
   log_info "chezmoi installed: $(chezmoi --version)"
 }
@@ -498,6 +497,8 @@ step_install_mise() {
   fi
 
   log_info "Downloading and installing mise..."
+  # Note: This uses the official mise installer over HTTPS. For maximum
+  # security, pin to a specific version and verify the checksum manually.
   curl -fsSL "${MISE_INSTALL_URL}" | sh
   export PATH="${HOME}/.local/bin:${PATH}"
   log_info "mise installed: $(mise --version)"
@@ -659,7 +660,7 @@ step_extract_archive() {
   log_info "Extracting: $ARCHIVE_PATH"
   local extract_dir
   extract_dir=$(mktemp -d)
-  TEMP_FILES="${TEMP_FILES:+$TEMP_FILES }${extract_dir}"
+  TEMP_FILES+=("$extract_dir")
 
   tar -xzf "$ARCHIVE_PATH" -C "$extract_dir"
 
@@ -759,4 +760,6 @@ main() {
   step_print_summary
 }
 
-main "$@"
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  main "$@"
+fi
