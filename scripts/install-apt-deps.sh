@@ -23,6 +23,14 @@ fi
 SUDO=""
 [[ "${EUID}" -ne 0 ]] && SUDO="sudo"
 
+# ── Detect Ubuntu version for package availability differences ─────────────────
+UBUNTU_VERSION="unknown"
+if [[ -f /etc/os-release ]]; then
+  # shellcheck disable=SC1091
+  source /etc/os-release
+  UBUNTU_VERSION="${VERSION_ID:-unknown}"
+fi
+
 if [[ "${OFFLINE}" == false ]]; then
   log_info "Updating apt package list..."
   ${SUDO} apt-get update -qq
@@ -66,12 +74,44 @@ APT_TIER3=(
 
 # ── Tier 3 language support libraries ─────────────────────────────────────────
 APT_LANG_SUPPORT=(
-  libssl-dev
+  libssl-dev   # openssl (also needed for C/C++ builds)
   libffi-dev
   python3-dev
   python3-pip
   python3-venv
 )
+
+# ── C/C++ library headers (mapped from modules/dev/languages.nix) ──────────────
+APT_CPP_LIBS=(
+  libc6-dev              # glibc.dev
+  libncurses-dev         # ncurses.dev
+  libcap-dev             # libcap.dev
+  libsystemd-dev         # systemd.dev
+  libboost-all-dev       # boost
+  libfmt-dev             # fmt
+  libspdlog-dev          # spdlog
+  libgtest-dev           # gtest
+  libgmock-dev           # gtest (mock framework)
+  libeigen3-dev          # eigen
+  libopencv-dev          # opencv
+  libgtk-4-dev           # gtk4
+  libglfw3-dev           # glfw
+  libglew-dev            # glew
+  libvulkan-dev          # vulkan-headers + vulkan-loader
+  vulkan-validationlayers-dev  # Vulkan validation layers
+  mesa-vulkan-drivers    # Vulkan ICD implementations
+  libcurl4-openssl-dev   # commonly needed for C/C++ projects
+  zlib1g-dev             # commonly needed for C/C++ projects
+  libprotobuf-dev        # commonly needed for C/C++ projects
+  protobuf-compiler      # commonly needed for C/C++ projects
+)
+
+# Ubuntu 24.04+ has Catch2 v3 in apt; earlier versions only have v2
+if [[ "${UBUNTU_VERSION}" == "24.04" ]]; then
+  APT_CPP_LIBS+=(libcatch2-dev)  # catch2 — Catch2 v3
+else
+  log_warn "libcatch2-dev (Catch2 v3) not in apt for Ubuntu ${UBUNTU_VERSION} — use CMake FetchContent instead"
+fi
 
 # ── Tier 4 prerequisites ──────────────────────────────────────────────────────
 APT_TIER4=(
@@ -93,6 +133,7 @@ ALL_PKGS=(
   "${APT_TIER3[@]}"
   "${APT_TIER4[@]}"
   "${APT_LANG_SUPPORT[@]}"
+  "${APT_CPP_LIBS[@]}"
 )
 
 log_info "Installing ${#ALL_PKGS[@]} apt packages..."
