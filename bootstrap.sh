@@ -102,7 +102,7 @@ CHEZMOI_SOURCE="${SCRIPT_DIR}"
 export DOTFILES_USER="${USERNAME}"
 log_info "Using profile: ${USERNAME}"
 
-if chezmoi data &>/dev/null; then
+if [[ -f "${HOME}/.config/chezmoi/chezmoi.toml" ]]; then
   log_info "chezmoi already initialized — running apply"
   chezmoi apply --source="${CHEZMOI_SOURCE}"
 else
@@ -112,7 +112,27 @@ fi
 
 log_info "Dotfiles applied successfully"
 
-# ── Step 3: Install mise ──────────────────────────────────────────────────────
+# ── Step 3: Install system apt dependencies (independent of mise) ─────────────
+log_step "Installing apt dependencies (Tier 1/3/4 from apt)"
+
+if [[ "${IS_LINUX}" == true ]] && command -v apt-get &>/dev/null; then
+  if [[ "${SKIP_APT}" == true ]]; then
+    log_warn "Skipping apt installation (--no-apt specified)"
+  else
+    if [[ "${OFFLINE}" == false ]]; then
+      sudo apt-get update -qq
+    fi
+    install_apt_deps_args=()
+    if [[ "${OFFLINE}" == true ]]; then
+      install_apt_deps_args+=(--offline)
+    fi
+    "${SCRIPT_DIR}/scripts/install-apt-deps.sh" "${install_apt_deps_args[@]}"
+  fi
+else
+  log_warn "apt-get not available — skipping apt dependencies"
+fi
+
+# ── Step 4: Install mise ──────────────────────────────────────────────────────
 if [[ "${SKIP_MISE}" == false ]]; then
   log_step "Installing mise-en-place"
 
@@ -126,26 +146,6 @@ if [[ "${SKIP_MISE}" == false ]]; then
     log_info "Downloading and installing mise..."
     curl -fsSL "${MISE_INSTALL_URL}" | sh
     export PATH="${HOME}/.local/bin:${PATH}"
-  fi
-
-  # ── Step 4: Install system apt dependencies ──────────────────────────────
-  log_step "Installing apt dependencies (Tier 1/3/4 from apt)"
-
-  if [[ "${IS_LINUX}" == true ]] && command -v apt-get &>/dev/null; then
-    if [[ "${SKIP_APT}" == true ]]; then
-      log_warn "Skipping apt installation (--no-apt specified)"
-    else
-      if [[ "${OFFLINE}" == false ]]; then
-        sudo apt-get update -qq
-      fi
-      install_apt_deps_args=()
-      if [[ "${OFFLINE}" == true ]]; then
-        install_apt_deps_args+=(--offline)
-      fi
-      "${SCRIPT_DIR}/scripts/install-apt-deps.sh" "${install_apt_deps_args[@]}"
-    fi
-  else
-    log_warn "apt-get not available — skipping apt dependencies"
   fi
 
   # ── Step 5: Install mise tools ───────────────────────────────────────────

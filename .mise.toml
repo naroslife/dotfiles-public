@@ -51,8 +51,7 @@
   "aqua:johnkerl/miller"         = "latest"   # binary: mlr
   "aqua:ms-jpq/sad"              = "latest"
   "aqua:sqshq/sampler"           = "latest"
-  "aqua:theryangeary/choose"     = "latest"
-
+  "github:theryangeary/choose"   = "latest"
   # ─── Git tooling ──────────────────────────────────────────────────────────
   "aqua:jesseduffield/lazygit"   = "latest"
   "aqua:dandavison/delta"        = "latest"

@@ -69,6 +69,9 @@
   # configured in machine-local ~/.gitconfig.d/credentials.inc.
 
 [url "git@github.com:"]
+  # NOTE: This rewrites ALL https://github.com/ URLs to SSH, including mise's
+  # binary downloads from GitHub releases. If mise install fails with auth errors,
+  # temporarily disable: git config --global --unset url."git@github.com:".insteadOf
   insteadOf = https://github.com/
 
 [lfs]

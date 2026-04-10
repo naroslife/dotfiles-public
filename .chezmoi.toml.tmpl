@@ -4,6 +4,8 @@
 
 {{- $user := env "DOTFILES_USER" | default .chezmoi.username -}}
 
+encryption = "age"
+
 [data]
   # User identity — override by setting DOTFILES_USER env var (or --user in bootstrap.sh)
   name    = "{{ $user }}"
@@ -25,7 +27,9 @@
 
 [age]
   identity   = "~/.config/chezmoi/key.txt"
-  # recipients = ["age1..."]  # populate after: chezmoi age generate-key > ~/.config/chezmoi/key.txt
+  # recipients = ["age1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"]
+  # Setup: age-keygen -o ~/.config/chezmoi/key.txt        # generate private key
+  #        age-keygen -y ~/.config/chezmoi/key.txt         # print public key → paste above
 
 [diff]
   pager = "delta"

@@ -34,7 +34,7 @@ The goal is to replace Nix + Home Manager with a stack that:
 | One-command apply | `chezmoi apply` | Manual | `stow .` |
 | Multi-user configs | `.chezmoidata/` + templates | Git branches | Separate dirs |
 
-chezmoi's template system directly replaces Nix's module pattern for machine-specific configuration (WSL vs native, naroslife vs enterpriseuser). Built-in age encryption replaces sops-nix. `run_onchange_` scripts handle plugin installation triggers.
+chezmoi's template system directly replaces Nix's module pattern for machine-specific configuration (WSL vs native, naroslife vs enterpriseuser). Built-in age encryption replaces sops-nix. Zsh plugins are managed via `.chezmoiexternal.toml` (chezmoi git-repo external sources).
 
 ### Tool/Runtime Management: mise-en-place
 
@@ -55,7 +55,7 @@ mise handles Tier 1 and Tier 2 tools. Its offline support (`mise lock` + `always
 
 No oh-my-zsh, zinit, or similar framework. Instead:
 - chezmoi templates for `.zshrc` / `.bashrc`
-- 3 Zsh plugins via git clone (managed by `run_onchange_` script):
+- 3 Zsh plugins managed by `.chezmoiexternal.toml` (chezmoi git-repo external sources):
   - `zsh-autosuggestions`
   - `zsh-syntax-highlighting`
   - `fzf-tab`
@@ -63,7 +63,7 @@ No oh-my-zsh, zinit, or similar framework. Instead:
 - Prompt: `starship` via mise
 - History: `atuin` via mise
 
-**Justification**: Only 3 Zsh plugins are needed. A framework adds startup overhead for no benefit. chezmoi manages plugin installation via `run_onchange_` scripts that clone repos.
+**Justification**: Only 3 Zsh plugins are needed. A framework adds startup overhead for no benefit. chezmoi manages plugin installation via `.chezmoiexternal.toml` that clones the repos as git externals.
 
 ### Containerized Approach: Hybrid
 
@@ -82,7 +82,7 @@ chezmoi has native support for age/gpg encryption:
 ## Tool Tier Classification
 
 ### Tier 1 — Standalone binaries (alias/PATH swap)
-Install via `mise ubi` (universal binary installer), `mise pipx`, or `mise cargo`.
+Install via `mise aqua` (preferred aqua registry backend), `mise pipx`, or `mise cargo`.
 No config files needed. Toggle via shell alias that can be killed by `kill-switch.sh`.
 
 Examples: bat, eza, fd, ripgrep, zoxide, duf, dust, procs, bottom, xh, gping, dog, jq, yq, lazygit, delta, gh, k9s, kubectl, helm

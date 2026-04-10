@@ -3,7 +3,7 @@
 # Referenced in chezmoi templates for conditional installation
 
 # Tier 1: Standalone binaries — alias/PATH swap, installed via mise
-tier1_mise_ubi:
+tier1_mise_aqua:
   # Modern CLI replacements
   - bat          # cat replacement
   - eza          # ls replacement
@@ -82,30 +82,30 @@ tier1_apt:
 # Tier 2: Binaries with config/data files — managed by chezmoi + mise
 tier2:
   starship:
-    install: mise_ubi
+    install: mise_aqua
     config: dot_config/starship.toml
   atuin:
-    install: mise_ubi
+    install: mise_aqua
     config: dot_config/atuin/config.toml
   fzf:
-    install: mise_ubi
+    install: mise_aqua
     config: env_vars_in_rc
   tmux:
     install: apt  # no precompiled binaries — source-only releases
     config: dot_config/tmux/tmux.conf
     plugin_manager: tpm
   neovim:
-    install: mise_ubi
+    install: mise_aqua
     config: dot_config/nvim/
     plugin_manager: lazy.nvim
   helix:
-    install: mise_ubi
+    install: mise_aqua
     config: dot_config/helix/config.toml
   carapace:
-    install: mise_ubi
+    install: mise_aqua
     config: dot_config/carapace/
   direnv:
-    install: mise_ubi
+    install: mise_aqua
     config: dot_direnvrc
   git:
     install: apt
@@ -153,7 +153,7 @@ tier3_mise_full_prefix:  # mise manages full toolchain prefix
 tier3_apt_or_build:
   - rr    # Record & Replay debugger — apt if available, else build from source
 
-tier3_mise_ubi:
+tier3_mise_aqua:
   - bazel
 
 tier3_mise_pipx:
