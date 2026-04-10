@@ -156,7 +156,9 @@ jobs:
 
             **Context**: This is part of the "Migrate dotfiles from Nix/Home Manager to chezmoi+mise" epic. Check other closed PRs in this epic for context on decisions already made.
 
-            **Important**: Read \`CLAUDE.md\` and any architecture docs that exist before starting. Follow the tier classification and tool audit from issue #20.`;
+            **Important**: Read \`CLAUDE.md\` and any architecture docs that exist before starting. Follow the tier classification and tool audit from issue #20.
+
+            **PR labels**: When you open the PR, add the \`epic:nix-migration\` label so the review cycle starts automatically.`;
 
               await github.rest.issues.createComment({
                 owner: context.repo.owner,

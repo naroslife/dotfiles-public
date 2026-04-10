@@ -1,0 +1,64 @@
+name: PR Review Cycle
+
+# Autonomous review cycle: Claude implements → Copilot reviews → Claude fixes →
+# Claude reviews → Copilot fixes → auto-merge. Agents tag each other via comments.
+# Uses ORCHESTRATOR_PAT so comments trigger other workflows.
+
+on:
+  pull_request:
+    types: [opened, ready_for_review]
+
+jobs:
+  start-review-cycle:
+    # Only run on epic PRs opened by Claude (the implementer)
+    if: |
+      contains(toJSON(github.event.pull_request.labels), 'epic:nix-migration') &&
+      (
+        github.event.pull_request.user.login == 'claude[bot]' ||
+        github.event.pull_request.user.login == 'github-actions[bot]'
+      ) &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+
+    steps:
+      - name: Start review cycle
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.ORCHESTRATOR_PAT }}
+          script: |
+            const pr = context.payload.pull_request;
+            const prNumber = pr.number;
+
+            console.log(`Starting review cycle for PR #${prNumber}`);
+
+            // Add tracking label
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              labels: ['review-round-1'],
+            });
+
+            // Tag Copilot to review
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              body: `[review-cycle:round-1] @copilot Please review this PR thoroughly. Check for:
+
+            1. Code quality, correctness, and completeness against the linked issue
+            2. Security concerns (hardcoded secrets, injection risks)
+            3. Missing edge cases or error handling
+            4. Consistency with the project's CLAUDE.md conventions
+            5. Whether acceptance criteria from the issue are fully met
+
+            If you find issues, list them clearly. If everything looks good, approve the PR.
+
+            After your review, tag \`@claude\` to address any findings.`
+            });
+
+            console.log('Tagged @copilot for round 1 review');
