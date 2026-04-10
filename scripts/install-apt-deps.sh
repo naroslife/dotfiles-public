@@ -16,6 +16,7 @@ log_info()  { echo "[INFO]  $*"; }
 log_warn()  { echo "[WARN]  $*" >&2; }
 
 # Detect Ubuntu version for package availability differences
+# shellcheck source=/dev/null
 UBUNTU_VERSION="$(. /etc/os-release 2>/dev/null && echo "${VERSION_ID:-unknown}" || echo "unknown")"
 log_info "Detected Ubuntu version: ${UBUNTU_VERSION}"
 
@@ -144,10 +145,11 @@ ${SUDO} apt-get install -y --no-install-recommends "${ALL_PKGS[@]}" 2>/dev/null 
 }
 
 # ── Catch2 v3 (Ubuntu 24.04+ only) ───────────────────────────────────────────
-# Ubuntu 22.04 ships Catch2 v2 (libcatch2-dev is v2); Ubuntu 24.04 ships v3.
+# Ubuntu 22.04 ships Catch2 v2 (libcatch2-dev is v2); Ubuntu 24.04+ ships v3.
 # For 22.04, use CMake FetchContent or build from source.
-if [[ "${UBUNTU_VERSION}" == "24.04" ]]; then
-  log_info "Installing libcatch2-dev (Catch2 v3, Ubuntu 24.04)..."
+# Uses awk numeric comparison (>=24.04) to handle 24.04, 24.10, 25.04, etc.
+if awk -v ver="${UBUNTU_VERSION}" 'BEGIN { exit !(ver != "unknown" && ver + 0 >= 24.04) }'; then
+  log_info "Installing libcatch2-dev (Catch2 v3, Ubuntu ${UBUNTU_VERSION})..."
   ${SUDO} apt-get install -y --no-install-recommends libcatch2-dev 2>/dev/null \
     || log_warn "libcatch2-dev not available — install Catch2 v3 via CMake FetchContent"
 else
