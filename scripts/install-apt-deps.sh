@@ -12,6 +12,12 @@ set -euo pipefail
 OFFLINE=false
 [[ "${1:-}" == "--offline" ]] && OFFLINE=true
 
+# Detect Ubuntu version for package availability differences
+UBUNTU_VERSION=""
+if [[ -f /etc/os-release ]]; then
+  UBUNTU_VERSION=$(. /etc/os-release && echo "${VERSION_ID:-}")
+fi
+
 log_info()  { echo "[INFO]  $*"; }
 log_warn()  { echo "[WARN]  $*" >&2; }
 
@@ -73,6 +79,33 @@ APT_LANG_SUPPORT=(
   python3-venv
 )
 
+# ── C/C++ build-time libraries and headers ────────────────────────────────────
+# These map to packages from modules/dev/languages.nix (not mise-managed)
+APT_CPP_LIBS=(
+  libc6-dev          # glibc.dev
+  libncurses-dev     # ncurses.dev
+  libcap-dev         # libcap.dev
+  libsystemd-dev     # systemd.dev
+  libboost-all-dev   # boost
+  libfmt-dev         # fmt
+  libspdlog-dev      # spdlog
+  libgtest-dev       # gtest
+  libgmock-dev       # gtest (mock component)
+  libeigen3-dev      # eigen
+  libopencv-dev      # opencv
+  libgtk-4-dev       # gtk4
+  libglfw3-dev       # glfw
+  libglew-dev        # glew
+  libvulkan-dev                  # vulkan-headers + vulkan-loader
+  vulkan-validationlayers-dev    # vulkan validation layers
+  mesa-vulkan-drivers            # mesa Vulkan ICD
+  # Commonly needed for builds (not in current Nix config but useful)
+  libcurl4-openssl-dev
+  zlib1g-dev
+  libprotobuf-dev
+  protobuf-compiler
+)
+
 # ── Tier 4 prerequisites ──────────────────────────────────────────────────────
 APT_TIER4=(
   git
@@ -93,6 +126,7 @@ ALL_PKGS=(
   "${APT_TIER3[@]}"
   "${APT_TIER4[@]}"
   "${APT_LANG_SUPPORT[@]}"
+  "${APT_CPP_LIBS[@]}"
 )
 
 log_info "Installing ${#ALL_PKGS[@]} apt packages..."
@@ -103,6 +137,17 @@ ${SUDO} apt-get install -y --no-install-recommends "${ALL_PKGS[@]}" 2>/dev/null 
       || log_warn "  Skipped: ${pkg}"
   done
 }
+
+# ── Catch2 (version-dependent) ───────────────────────────────────────────────
+# Ubuntu 24.04 ships Catch2 v3; Ubuntu 22.04 only has v2 (incompatible headers)
+if [[ "${UBUNTU_VERSION}" == "24.04" ]]; then
+  log_info "Installing Catch2 v3 (libcatch2-dev)..."
+  ${SUDO} apt-get install -y --no-install-recommends libcatch2-dev 2>/dev/null \
+    || log_warn "libcatch2-dev not available — install Catch2 v3 via CMake FetchContent"
+else
+  log_warn "Catch2 v3 not available via apt on Ubuntu ${UBUNTU_VERSION:-unknown}."
+  log_warn "Use CMake FetchContent or install from source: https://github.com/catchorg/Catch2"
+fi
 
 # ── git-lfs post-install hook ─────────────────────────────────────────────────
 if command -v git-lfs &>/dev/null; then
