@@ -92,6 +92,8 @@ package main
 
 import (
     "fmt"
+    "os"
+
     tea "github.com/charmbracelet/bubbletea"
     "github.com/charmbracelet/lipgloss"
 )
@@ -99,8 +101,9 @@ import (
 var highlight = lipgloss.NewStyle().Foreground(lipgloss.Color("212")).Bold(true)
 
 type model struct {
-    items  []string
-    cursor int
+    items    []string
+    cursor   int
+    selected string
 }
 
 func (m model) Init() tea.Cmd { return nil }
@@ -116,7 +119,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
         case "down", "j":
             if m.cursor < len(m.items)-1 { m.cursor++ }
         case "enter":
-            fmt.Printf("Selected: %s\n", m.items[m.cursor])
+            m.selected = m.items[m.cursor]
             return m, tea.Quit
         }
     }
@@ -137,7 +140,14 @@ func (m model) View() string {
 
 func main() {
     m := model{items: []string{"Option A", "Option B", "Option C"}}
-    tea.NewProgram(m).Run()
+    result, err := tea.NewProgram(m).Run()
+    if err != nil {
+        fmt.Fprintln(os.Stderr, err)
+        os.Exit(1)
+    }
+    if final, ok := result.(model); ok && final.selected != "" {
+        fmt.Printf("Selected: %s\n", final.selected)
+    }
 }
 ```
 
@@ -161,7 +171,7 @@ func main() {
 ## SSH Apps (Infrastructure)
 
 ```go
-s, _ := wish.NewServer(
+s, err := wish.NewServer(
     wish.WithAddress(":2222"),
     wish.WithHostKeyPath(".ssh/key"),
     wish.WithMiddleware(
@@ -169,7 +179,12 @@ s, _ := wish.NewServer(
         logging.Middleware(),
     ),
 )
-s.ListenAndServe()
+if err != nil {
+    log.Fatal("Could not start server", "error", err)
+}
+if err := s.ListenAndServe(); err != nil {
+    log.Fatal("Server error", "error", err)
+}
 ```
 
 Connect: `ssh localhost -p 2222`

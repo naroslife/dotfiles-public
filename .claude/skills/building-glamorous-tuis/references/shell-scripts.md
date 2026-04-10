@@ -29,8 +29,9 @@ Beautiful terminal UI for bash/shell scripts without writing Go.
 Gum provides all the UI primitives you need for shell scripts.
 
 ```bash
-# Install
-brew install gum
+# Install (preferred in this repo via mise/aqua)
+mise use -g aqua:charmbracelet/gum
+# or: brew install gum
 # or: go install github.com/charmbracelet/gum@latest
 ```
 

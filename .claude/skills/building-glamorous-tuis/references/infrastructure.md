@@ -37,6 +37,7 @@ import (
     "github.com/charmbracelet/wish/activeterm"
     "github.com/charmbracelet/wish/bubbletea"
     "github.com/charmbracelet/wish/logging"
+    "github.com/gliderlabs/ssh"
 )
 
 func main() {

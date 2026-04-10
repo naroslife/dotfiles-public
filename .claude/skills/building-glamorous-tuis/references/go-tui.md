@@ -48,8 +48,9 @@ var (
 )
 
 type model struct {
-    items  []string
-    cursor int
+    items    []string
+    cursor   int
+    selected string
 }
 
 func (m model) Init() tea.Cmd { return nil }
@@ -69,7 +70,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
                 m.cursor++
             }
         case "enter":
-            fmt.Printf("\nYou chose: %s\n", m.items[m.cursor])
+            m.selected = m.items[m.cursor]
             return m, tea.Quit
         }
     }
@@ -93,9 +94,13 @@ func (m model) View() string {
 
 func main() {
     m := model{items: []string{"Option A", "Option B", "Option C"}}
-    if _, err := tea.NewProgram(m).Run(); err != nil {
+    result, err := tea.NewProgram(m).Run()
+    if err != nil {
         fmt.Fprintln(os.Stderr, err)
         os.Exit(1)
+    }
+    if final, ok := result.(model); ok && final.selected != "" {
+        fmt.Printf("\nYou chose: %s\n", final.selected)
     }
 }
 ```
