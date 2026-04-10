@@ -15,6 +15,13 @@ OFFLINE=false
 log_info()  { echo "[INFO]  $*"; }
 log_warn()  { echo "[WARN]  $*" >&2; }
 
+# Returns true if $1 >= $2 (version comparison, e.g. ver_ge "24.10" "24.04")
+# Returns false for non-version strings like "unknown" or empty
+ver_ge() {
+  [[ "${1}" =~ ^[0-9] ]] && \
+  [[ "$(printf '%s\n%s\n' "$2" "$1" | sort -V | head -n1)" == "$2" ]]
+}
+
 if [[ "${EUID}" -ne 0 ]] && ! command -v sudo &>/dev/null; then
   log_warn "Not root and no sudo. Skipping apt installation."
   exit 0
@@ -26,9 +33,7 @@ SUDO=""
 # ── Detect Ubuntu version for package availability differences ─────────────────
 UBUNTU_VERSION="unknown"
 if [[ -f /etc/os-release ]]; then
-  # shellcheck disable=SC1091
-  source /etc/os-release
-  UBUNTU_VERSION="${VERSION_ID:-unknown}"
+  UBUNTU_VERSION=$(. /etc/os-release 2>/dev/null && printf '%s' "${VERSION_ID:-unknown}" || printf 'unknown')
 fi
 
 if [[ "${OFFLINE}" == false ]]; then
@@ -107,7 +112,7 @@ APT_CPP_LIBS=(
 )
 
 # Ubuntu 24.04+ has Catch2 v3 in apt; earlier versions only have v2
-if [[ "${UBUNTU_VERSION}" == "24.04" ]]; then
+if ver_ge "${UBUNTU_VERSION}" "24.04"; then
   APT_CPP_LIBS+=(libcatch2-dev)  # catch2 — Catch2 v3
 else
   log_warn "libcatch2-dev (Catch2 v3) not in apt for Ubuntu ${UBUNTU_VERSION} — use CMake FetchContent instead"
