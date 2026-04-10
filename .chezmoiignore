@@ -1,0 +1,81 @@
+# chezmoi ignore file
+# Patterns here are excluded from chezmoi management (not copied to ~/)
+# Supports Go template conditionals for per-machine exclusions
+
+# Always ignore — repo meta files
+README.md
+ARCHITECTURE.md
+CHANGELOG.md
+CLAUDE.md
+COMPLETION_CHANGES.md
+LICENSE
+*.patch
+*.txt
+
+# Nix/legacy files (still in repo during Phase 1 migration)
+flake.nix
+flake.lock
+home.nix
+shell.nix
+devenv.nix
+devenv.lock
+devenv.yaml
+modules/
+nix/
+nix-deploy/
+.sops.yaml
+.tool-versions
+
+# Scripts and tooling (not dotfiles, not deployed to ~/)
+apply.sh
+cleanup.sh
+bootstrap.sh
+deploy-remote.sh
+wsl-init.sh
+demo-interactive-config.sh
+scripts/
+tests/
+lib/
+docs/
+examples/
+LearnSuperClaude/
+.github/
+.claude/
+.mcp/
+.mcp.json
+.serena/
+.vscode/
+.pre-commit-config.yaml
+.gitattributes
+.gitmodules
+.editorconfig
+
+# Tool-specific config dirs managed separately
+nvim/
+tmux/
+tmuxinator/
+carapace/
+termscp/
+elvish/
+cuda-setup/
+wsl-fixes/
+secrets/
+
+# Build artifacts
+result
+result-*
+*.swp
+.direnv/
+zen.7z
+code
+changes.patch
+
+# WSL-only files (exclude on non-WSL machines)
+{{ if not .is_wsl }}
+dot_local/bin/wsl-*
+{{ end }}
+
+# Enterprise-only files (exclude on personal machines)
+{{ if not .is_enterprise }}
+dot_config/enterprise/
+{{ end }}

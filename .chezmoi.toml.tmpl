@@ -1,0 +1,45 @@
+# chezmoi configuration template
+# Rendered once per machine into ~/.config/chezmoi/chezmoi.toml
+# Uses Go template syntax: https://chezmoi.io/reference/templates/
+
+{{- $user := env "DOTFILES_USER" | default .chezmoi.username -}}
+
+encryption = "age"
+
+[data]
+  # User identity — override by setting DOTFILES_USER env var (or --user in bootstrap.sh)
+  name    = "{{ $user }}"
+  email   = "{{ env "GIT_EMAIL" | default "user@example.com" }}"
+  dotfiles_user = "{{ $user }}"
+
+  # Machine profile
+  hostname = "{{ .chezmoi.hostname }}"
+  os       = "{{ .chezmoi.os }}"
+  arch     = "{{ .chezmoi.arch }}"
+
+  # Environment flags (set these in .chezmoidata/local.yaml on each machine)
+  is_wsl        = {{ env "WSL_DISTRO_NAME" | ne "" }}
+  is_enterprise = {{ eq $user "enterpriseuser" }}
+  is_personal   = {{ eq $user "naroslife" }}
+
+  # Dotfiles location
+  dotfiles_dir = "{{ .chezmoi.sourceDir }}"
+
+[age]
+  identity   = "~/.config/chezmoi/key.txt"
+  # recipients = ["age1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"]
+  # Setup: age-keygen -o ~/.config/chezmoi/key.txt        # generate private key
+  #        age-keygen -y ~/.config/chezmoi/key.txt         # print public key → paste above
+
+[diff]
+  pager = "delta"
+
+[merge]
+  command = "nvim"
+  args    = ["-d", "{{ "{{" }} .Destination {{ "}}" }}", "{{ "{{" }} .Source {{ "}}" }}", "{{ "{{" }} .Target {{ "}}" }}"]
+
+[cd]
+  command = "zsh"
+
+[edit]
+  command = "nvim"

@@ -1,0 +1,142 @@
+# mise-en-place global tool configuration
+# Docs: https://mise.jdx.dev/configuration.html
+#
+# This file is the global mise config managed by chezmoi.
+# Per-project overrides live in project-local .mise.toml files.
+#
+# Offline mode: set MISE_OFFLINE=1 or use `mise settings set offline true`
+# Lock files: run `mise lock` to pin exact download URLs for offline bundles
+
+[settings]
+  # Required for aqua: backend support
+  experimental = true
+
+  # Keep downloads cached for offline use
+  always_keep_download = true
+
+  # Set to true in restricted environments: MISE_OFFLINE=1
+  # offline = false
+
+  # Speed: use precompiled binaries when available
+  prefer_precompiled = true
+
+[tools]
+  # ─── Shell prompt & history ───────────────────────────────────────────────
+  "aqua:starship-rs/starship"    = "latest"
+  "aqua:atuinsh/atuin"           = "latest"
+
+  # ─── Completion & navigation ──────────────────────────────────────────────
+  "aqua:rsteube/carapace-bin"    = "latest"
+  fzf                            = "latest"
+  "aqua:ajeetdsouza/zoxide"      = "latest"
+  direnv                         = "latest"
+
+  # ─── Modern CLI replacements ──────────────────────────────────────────────
+  "aqua:sharkdp/bat"             = "latest"
+  "aqua:eza-community/eza"       = "latest"
+  "aqua:sharkdp/fd"              = "latest"
+  ripgrep                        = "latest"
+  "aqua:muesli/duf"              = "latest"
+  "aqua:bootandy/dust"           = "latest"
+  "aqua:dalance/procs"           = "latest"
+  "aqua:ClementTsang/bottom"     = "latest"   # binary: btm
+  "aqua:ducaale/xh"              = "latest"
+  "aqua:orf/gping"               = "latest"
+  "aqua:ogham/dog"               = "latest"
+
+  # ─── Data & text processing ───────────────────────────────────────────────
+  jq                             = "latest"
+  "aqua:mikefarah/yq"            = "latest"
+  "aqua:antonmedv/fx"            = "latest"
+  "aqua:johnkerl/miller"         = "latest"   # binary: mlr
+  "aqua:ms-jpq/sad"              = "latest"
+  "aqua:sqshq/sampler"           = "latest"
+  "github:theryangeary/choose"   = "latest"
+  # ─── Git tooling ──────────────────────────────────────────────────────────
+  "aqua:jesseduffield/lazygit"   = "latest"
+  "aqua:dandavison/delta"        = "latest"
+  "aqua:Wilfred/difftastic"      = "latest"   # binary: difft
+  "github:extrawurst/gitui"      = "latest"
+  "aqua:cli/cli"                 = "latest"   # GitHub CLI: gh
+  "aqua:gitleaks/gitleaks"       = "latest"
+  "pipx:git-filter-repo"         = "latest"
+  "pipx:pre-commit"              = "latest"
+  cargo:git-absorb               = "latest"
+
+  # ─── Editors & viewers ────────────────────────────────────────────────────
+  "aqua:neovim/neovim"           = "latest"
+  "aqua:helix-editor/helix"      = "latest"
+
+  # ─── Terminal multiplexer ─────────────────────────────────────────────────
+  # tmux: no precompiled binaries — install via apt (see scripts/install-apt-deps.sh)
+
+  # ─── Container & K8s tools ────────────────────────────────────────────────
+  "aqua:jesseduffield/lazydocker" = "latest"
+  "aqua:derailed/k9s"            = "latest"
+  "aqua:ahmetb/kubectx"          = "latest"
+  kubectl                        = "latest"
+  helm                           = "latest"
+
+  # ─── Code analysis ────────────────────────────────────────────────────────
+  "aqua:XAMPPRocky/tokei"        = "latest"
+  "aqua:boyter/scc"              = "latest"
+  "aqua:mozilla/sccache"         = "latest"
+
+  # ─── Productivity ─────────────────────────────────────────────────────────
+  "aqua:tealdeer-rs/tealdeer"    = "latest"   # binary: tldr
+  "aqua:cheat/cheat"             = "latest"
+  "aqua:denisidoro/navi"         = "latest"
+  "github:Canop/broot"           = "latest"
+  "aqua:veeso/termscp"           = "latest"
+  "aqua:rclone/rclone"           = "latest"
+  "aqua:restic/restic"           = "latest"
+  "aqua:xo/usql"                 = "latest"
+  "pipx:visidata"                = "latest"   # binary: vd
+  "pipx:ranger-fm"               = "latest"   # binary: ranger
+  "pipx:httpie"                  = "latest"
+  cargo:rustscan                 = "latest"
+
+  # ─── Tier 3: Full-prefix toolchains ───────────────────────────────────────
+  java    = "temurin-17"
+  maven   = "latest"
+  gradle  = "latest"
+  go      = "latest"
+  node    = "lts"
+  rust    = "latest"
+  python  = "3.12"
+  # NOTE: cmake and ninja are managed by apt (scripts/install-apt-deps.sh).
+  # Do not add them here to avoid duplicate installs and PATH ambiguity.
+  "aqua:bazelbuild/bazel"        = "latest"
+  "pipx:meson"                   = "latest"
+
+  # ─── Monitoring / bandwidth ───────────────────────────────────────────────
+  "aqua:imsnif/bandwhich"        = "latest"
+
+  # ─── Database clients ─────────────────────────────────────────────────────
+  "pipx:pgcli"                   = "latest"
+
+# ─── mise tasks (replaces custom shell scripts) ───────────────────────────
+[tasks.bootstrap]
+  description = "Bootstrap this machine: install chezmoi, apply dotfiles, install tools"
+  run         = "./bootstrap.sh"
+
+[tasks.apply]
+  description = "Apply chezmoi dotfiles"
+  run         = "chezmoi apply"
+
+[tasks.update]
+  description = "Update all mise tools"
+  run         = "mise upgrade"
+
+[tasks.offline-bundle]
+  description = "Pre-download all tools for air-gapped deployment"
+  run = [
+    "mise lock",
+    "mise install",
+    "tar -czf mise-cache.tar.gz ~/.cache/mise",
+    "echo 'Transfer mise-cache.tar.gz to target, extract to ~/.cache/mise, then run: MISE_OFFLINE=1 mise install'"
+  ]
+
+[tasks.test]
+  description = "Run the dotfiles test suite"
+  run         = "./tests/run_tests.sh"

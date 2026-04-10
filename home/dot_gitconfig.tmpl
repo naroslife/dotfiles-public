@@ -1,0 +1,91 @@
+# ~/.gitconfig — managed by chezmoi
+# Machine: {{ .chezmoi.hostname }} | User: {{ .chezmoi.username }}
+
+[user]
+{{- $u := index .users (.dotfiles_user | default .chezmoi.username) | default (dict "full_name" .chezmoi.username "email" .email "git_signing_key" "") }}
+  name  = {{ $u.full_name }}
+  email = {{ $u.email }}
+{{ if $u.git_signing_key -}}
+  signingkey = {{ $u.git_signing_key }}
+{{ end -}}
+
+[core]
+  editor     = nvim
+  pager      = delta
+  autocrlf   = input
+  whitespace = fix,-indent-with-non-tab,trailing-space,cr-at-eol
+
+[init]
+  defaultBranch = main
+
+[pull]
+  rebase = false
+
+[push]
+  autoSetupRemote = true
+
+[merge]
+  tool = nvimdiff
+  conflictstyle = zdiff3
+
+[diff]
+  tool        = difftastic
+  algorithm   = histogram
+  colorMoved  = default
+
+[difftool "difftastic"]
+  cmd = difft "$LOCAL" "$REMOTE"
+
+[interactive]
+  diffFilter = delta --color-only
+
+[delta]
+  navigate         = true
+  light            = false
+  side-by-side     = true
+  line-numbers     = true
+  syntax-theme     = Catppuccin-mocha
+
+[alias]
+  # Useful shortcuts
+  st     = status
+  co     = checkout
+  br     = branch
+  lg     = log --graph --topo-order --pretty='%w(100,0,6)%C(yellow)%h%C(bold)%C(black)%d %C(cyan)%ar %C(green)%an%n%C(bold)%C(white)%s %N' --abbrev-commit
+  undo   = reset --soft HEAD~1
+  unstage = reset HEAD --
+  last   = log -1 HEAD
+  aliases = config --get-regexp alias
+  # absorb — automatically fixup staged changes
+  absorb = absorb
+  # Show files changed in last commit
+  changed = show --stat HEAD
+  # Stash with message
+  save   = stash push -m
+
+[credential]
+  # Do not set helper=store (plaintext on disk).
+  # Use a secure platform helper (libsecret/osxkeychain/manager-core)
+  # configured in machine-local ~/.gitconfig.d/credentials.inc.
+
+[url "git@github.com:"]
+  # NOTE: This rewrites ALL https://github.com/ URLs to SSH, including mise's
+  # binary downloads from GitHub releases. If mise install fails with auth errors,
+  # temporarily disable: git config --global --unset url."git@github.com:".insteadOf
+  insteadOf = https://github.com/
+
+[lfs]
+  enabled = true
+
+[filter "lfs"]
+  clean    = git-lfs clean -- %f
+  smudge   = git-lfs smudge -- %f
+  process  = git-lfs filter-process
+  required = true
+
+{{ if .is_enterprise -}}
+# ── Enterprise-specific configuration ─────────────────────────────────────────
+[http]
+  proxy = {{ env "HTTPS_PROXY" | default "" }}
+  sslVerify = true
+{{ end -}}

@@ -1,0 +1,41 @@
+# ~/.ssh/config — managed by chezmoi
+# Machine: {{ .chezmoi.hostname }} | User: {{ .chezmoi.username }}
+
+# ── Global defaults ───────────────────────────────────────────────────────────
+Host *
+  # Connection persistence
+  ServerAliveInterval 60
+  ServerAliveCountMax 3
+
+  # Multiplexing for faster repeated connections
+  ControlMaster     auto
+  ControlPath       ~/.ssh/cm-%C
+  ControlPersist    10m
+
+  # Security
+  HashKnownHosts    yes
+  IdentitiesOnly    yes
+
+  # Forward agent selectively (only on trusted hosts)
+  ForwardAgent      no
+
+# ── GitHub ────────────────────────────────────────────────────────────────────
+Host github.com
+  HostName        github.com
+  User            git
+  IdentityFile    ~/.ssh/id_ed25519
+  ForwardAgent    no
+
+{{ if .is_enterprise -}}
+# ── Enterprise hosts ──────────────────────────────────────────────────────────
+Host *.aumovio.com
+  User          {{ .chezmoi.username }}
+  IdentityFile  ~/.ssh/id_ed25519_enterprise
+  ForwardAgent  yes
+{{ end -}}
+
+{{ if .is_wsl -}}
+# ── WSL-specific: use Windows SSH agent ───────────────────────────────────────
+Host *
+  IdentityAgent  ~/.ssh/agent.sock
+{{ end -}}

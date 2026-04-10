@@ -1,0 +1,204 @@
+# ~/.zshrc — managed by chezmoi
+# Machine: {{ .chezmoi.hostname }} | User: {{ .chezmoi.username }}
+# Template rendered by chezmoi — edit source at home/dot_zshrc.tmpl
+
+# ── Performance: skip redundant compinit from system ─────────────────────────
+skip_global_compinit=1
+
+# ── mise activation (must be near top) ───────────────────────────────────────
+if command -v mise &>/dev/null; then
+  eval "$(mise activate zsh)"
+fi
+
+# ── Path additions ────────────────────────────────────────────────────────────
+typeset -U path  # deduplicate PATH
+path=(
+  "$HOME/.local/bin"
+  "$HOME/.cargo/bin"
+  "$HOME/.go/bin"
+  $path
+)
+
+# ── History ───────────────────────────────────────────────────────────────────
+HISTFILE="${HOME}/.cache/zsh/history"
+mkdir -p "$(dirname "${HISTFILE}")"
+HISTSIZE=50000
+SAVEHIST=50000
+setopt HIST_IGNORE_DUPS
+setopt HIST_IGNORE_SPACE
+setopt SHARE_HISTORY
+setopt EXTENDED_HISTORY
+
+# ── Completion system ─────────────────────────────────────────────────────────
+autoload -Uz compinit
+compinit -d "${HOME}/.cache/zsh/zcompdump-${ZSH_VERSION}"
+
+# carapace — universal completions
+if command -v carapace &>/dev/null; then
+  source <(carapace _carapace zsh)
+fi
+
+# ── Zsh plugins ───────────────────────────────────────────────────────────────
+ZSH_PLUGIN_DIR="${HOME}/.local/share/zsh/plugins"
+
+_load_plugin() {
+  local plugin_dir="${ZSH_PLUGIN_DIR}/$1"
+  local plugin_file="${plugin_dir}/$2"
+  [[ -f "${plugin_file}" ]] && source "${plugin_file}"
+}
+
+_load_plugin "zsh-autosuggestions"    "zsh-autosuggestions.zsh"
+_load_plugin "zsh-syntax-highlighting" "zsh-syntax-highlighting.zsh"
+_load_plugin "fzf-tab"                "fzf-tab.plugin.zsh"
+
+# ── fzf-tab configuration ─────────────────────────────────────────────────────
+zstyle ':completion:*:git-checkout:*' sort false
+zstyle ':completion:*:descriptions'  format '[%d]'
+zstyle ':completion:*'               list-colors "${(s.:.)LS_COLORS}"
+zstyle ':completion:*'               verbose yes
+zstyle ':completion:*'               group-name ''
+zstyle ':fzf-tab:complete:cd:*'      fzf-preview 'eza -1 --color=always $realpath'
+zstyle ':fzf-tab:*'                  switch-group ',' '.'
+{{ if .is_wsl -}}
+# WSL: disable tmux popup (not supported in all WSL terminals)
+zstyle ':fzf-tab:*'                  fzf-command fzf
+{{ else -}}
+zstyle ':fzf-tab:*'                  fzf-command ftb-tmux-popup
+{{ end -}}
+zstyle ':fzf-tab:*'                  continuous-trigger '/'
+
+# ── Prompt: starship ──────────────────────────────────────────────────────────
+if command -v starship &>/dev/null; then
+  eval "$(starship init zsh)"
+fi
+
+# ── History: atuin ────────────────────────────────────────────────────────────
+if command -v atuin &>/dev/null; then
+  eval "$(atuin init zsh)"
+fi
+
+# ── Navigation: zoxide ────────────────────────────────────────────────────────
+if command -v zoxide &>/dev/null; then
+  eval "$(zoxide init zsh)"
+fi
+
+# ── Directory env: direnv ────────────────────────────────────────────────────
+if command -v direnv &>/dev/null; then
+  eval "$(direnv hook zsh)"
+fi
+
+# ── FZF ───────────────────────────────────────────────────────────────────────
+if command -v fzf &>/dev/null; then
+  source <(fzf --zsh)
+fi
+export FZF_DEFAULT_COMMAND='fd --type f --hidden --follow --exclude .git'
+export FZF_DEFAULT_OPTS='--height 40% --layout=reverse --border --info=inline'
+
+# ── Key bindings ──────────────────────────────────────────────────────────────
+bindkey '^a'    beginning-of-line
+bindkey '^e'    end-of-line
+bindkey '^w'    autosuggest-execute
+bindkey '^k'    up-line-or-search
+bindkey '^j'    down-line-or-search
+bindkey '^W'    backward-kill-word
+bindkey '^[[H'  beginning-of-line    # Home
+bindkey '^[[1~' beginning-of-line    # Home (alt)
+bindkey '^[[F'  end-of-line          # End
+bindkey '^[[4~' end-of-line          # End (alt)
+bindkey '^[[1;5C' forward-word       # Ctrl+Right
+bindkey '^[[1;5D' backward-word      # Ctrl+Left
+
+# ── Aliases ───────────────────────────────────────────────────────────────────
+# Modern CLI replacements (with kill-switch awareness — see scripts/kill-switch.sh)
+if [[ -z "${DOTFILES_NO_ALIASES:-}" ]]; then
+  alias cat='bat'
+  alias ls='eza'
+  alias l='eza -l --icons --git -a'
+  alias lt='eza --tree --level=2 --long --icons --git'
+  alias ltree='eza --tree --level=2 --icons --git'
+  alias la='eza --tree --icons --git'
+  alias find='fd'
+  alias grep='rg'
+  alias df='duf'
+  alias du='dust'
+  alias ps='procs'
+  alias top='btm'
+  alias htop='btm'
+  alias ping='gping'
+  alias dig='dog'
+  alias http='xh'
+fi
+
+# Git aliases
+alias gc='git commit -m'
+alias gca='git commit -a -m'
+alias gp='git push origin HEAD'
+alias gpu='git pull origin'
+alias gst='git status'
+alias glog='git log --graph --topo-order --pretty="%w(100,0,6)%C(yellow)%h%C(bold)%C(black)%d %C(cyan)%ar %C(green)%an%n%C(bold)%C(white)%s %N" --abbrev-commit'
+alias gdiff='git diff'
+alias gco='git checkout'
+alias gb='git branch'
+alias gba='git branch -a'
+alias gadd='git add'
+alias ga='git add -p'
+alias gr='git remote'
+alias gre='git reset'
+alias gd='git diff'
+
+# Docker
+alias dco='docker compose'
+alias dps='docker ps'
+alias dpa='docker ps -a'
+alias dl='docker ps -l -q'
+alias dx='docker exec -it'
+
+# Kubernetes
+alias k='kubectl'
+alias ka='kubectl apply -f'
+alias kg='kubectl get'
+alias kd='kubectl describe'
+alias kdel='kubectl delete'
+alias kl='kubectl logs -f'
+alias kgpo='kubectl get pod'
+alias kgd='kubectl get deployments'
+alias kc='kubectx'
+alias ke='kubectl exec -it'
+
+# Navigation
+alias ..='cd ..'
+alias ...='cd ../..'
+alias ....='cd ../../..'
+alias cl='clear'
+alias v='nvim'
+alias rr='ranger'
+
+# ── VSCode shell integration ───────────────────────────────────────────────────
+[[ "$TERM_PROGRAM" == "vscode" ]] && . "$(code --locate-shell-integration-path zsh 2>/dev/null)" 2>/dev/null || true
+
+{{ if .is_wsl -}}
+# ── WSL-specific configuration ────────────────────────────────────────────────
+export BROWSER='wslview'
+export DISPLAY="${DISPLAY:-$(ip route | awk '/^default/{print $3}'):0}"
+alias pbcopy='clip.exe'
+alias pbpaste='powershell.exe -command "Get-Clipboard"'
+{{ end -}}
+
+# ── KUBECONFIG ────────────────────────────────────────────────────────────────
+export KUBECONFIG="${HOME}/.kube/config"
+
+# ── Local bin and custom functions ────────────────────────────────────────────
+if [[ -d "${HOME}/.local/bin" ]]; then
+  export PATH="${HOME}/.local/bin:${PATH}"
+fi
+
+# Load custom function files
+_dotfiles_dir="${HOME}/.local/share/dotfiles"
+if [[ -d "${_dotfiles_dir}/functions" ]]; then
+  for _func_file in "${_dotfiles_dir}/functions"/*.sh; do
+    [[ -f "${_func_file}" ]] && source "${_func_file}"
+  done
+fi
+unset _dotfiles_dir _func_file
+
+set +u
