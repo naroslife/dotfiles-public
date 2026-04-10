@@ -469,7 +469,9 @@ step_install_chezmoi() {
 
   log_info "Downloading and installing chezmoi..."
   # Note: This uses the official chezmoi installer over HTTPS. For maximum
-  # security, pin to a specific version and verify the checksum manually.
+  # security in sensitive environments, use --archive with a pre-verified bundle
+  # or pin to a specific version and verify the release checksum manually at
+  # https://github.com/twpayne/chezmoi/releases
   sh -c "$(curl -fsSL "${CHEZMOI_INSTALL_URL}")" -- -b "${HOME}/.local/bin"
   log_info "chezmoi installed: $(chezmoi --version)"
 }
@@ -498,7 +500,9 @@ step_install_mise() {
 
   log_info "Downloading and installing mise..."
   # Note: This uses the official mise installer over HTTPS. For maximum
-  # security, pin to a specific version and verify the checksum manually.
+  # security in sensitive environments, use --archive with a pre-verified bundle
+  # or pin to a specific version and verify the release checksum manually at
+  # https://github.com/jdx/mise/releases
   curl -fsSL "${MISE_INSTALL_URL}" | sh
   export PATH="${HOME}/.local/bin:${PATH}"
   log_info "mise installed: $(mise --version)"
