@@ -106,7 +106,7 @@ Self-hosted Git with TUI.
 
 ```bash
 # Install
-brew install soft-serve
+brew install charmbracelet/tap/soft-serve
 
 # Start
 soft serve
@@ -186,11 +186,13 @@ smtp:
 
 ## Skate: Key-Value Store
 
-Simple encrypted storage.
+Simple encrypted local storage.
+
+> **Note:** Charm Cloud was sunset on 2024-11-29. As of Skate v1.0.0 (March 2025), cross-machine sync is no longer available. Skate now operates as a local-only store.
 
 ```bash
 # Install
-brew install skate
+brew install charmbracelet/tap/skate
 
 # Set/Get
 skate set api_key "sk-1234567890"
@@ -203,9 +205,6 @@ skate list config.
 
 # Delete
 skate delete api_key
-
-# Sync across machines
-skate sync
 ```
 
 ### In Scripts
@@ -239,7 +238,7 @@ keys, _ := db.List("config.")
 
 ```bash
 # Install
-brew install melt
+brew install charmbracelet/tap/melt
 
 # Backup (creates encrypted file)
 melt backup
@@ -260,7 +259,7 @@ melt backup -o keys.melt
 # Transfer keys.melt securely
 
 # On new machine
-brew install melt
+brew install charmbracelet/tap/melt
 melt restore -i keys.melt
 ```
 
@@ -412,8 +411,8 @@ go get github.com/charmbracelet/x/term@latest
 ## Quick Install
 
 ```bash
-# Infrastructure tools
-brew install soft-serve pop skate melt
+# Infrastructure tools (charmbracelet tap required for most)
+brew install charmbracelet/tap/soft-serve pop charmbracelet/tap/skate charmbracelet/tap/melt
 
 # Go libraries
 go get github.com/charmbracelet/wish@latest \
