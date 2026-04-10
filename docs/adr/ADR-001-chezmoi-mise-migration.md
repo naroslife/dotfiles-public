@@ -124,15 +124,15 @@ mise and chezmoi work through proxies natively.
 ### Scenario B: Fully air-gapped machine (must pre-bundle)
 From an internet-connected machine:
 ```bash
-mise lock                              # Pin all download URLs
-mise install --download-only          # Download to cache
+mise lock                              # Pin all download URLs + checksums
+mise install                          # Download + install (cached by always_keep_download)
 tar -czf mise-cache.tar.gz ~/.cache/mise
 scp mise-cache.tar.gz user@target:~
 ```
 On the air-gapped machine:
 ```bash
 tar -xzf mise-cache.tar.gz -C ~
-./bootstrap.sh --offline
+./bootstrap.sh --offline              # Sets MISE_OFFLINE=1; installs from cache
 ```
 
 ### Scenario C: Restricted admin (no root)

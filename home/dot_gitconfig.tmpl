@@ -2,10 +2,11 @@
 # Machine: {{ .chezmoi.hostname }} | User: {{ .chezmoi.username }}
 
 [user]
-  name  = {{ (index .users .chezmoi.username).full_name }}
-  email = {{ (index .users .chezmoi.username).email }}
-{{ if (index .users .chezmoi.username).git_signing_key -}}
-  signingkey = {{ (index .users .chezmoi.username).git_signing_key }}
+{{- $u := index .users .chezmoi.username | default (dict "full_name" .chezmoi.username "email" .email "git_signing_key" "") }}
+  name  = {{ $u.full_name }}
+  email = {{ $u.email }}
+{{ if $u.git_signing_key -}}
+  signingkey = {{ $u.git_signing_key }}
 {{ end -}}
 
 [core]

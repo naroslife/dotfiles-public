@@ -136,13 +136,12 @@ if [[ "${SKIP_MISE}" == false ]]; then
   # ── Step 5: Install mise tools ───────────────────────────────────────────
   log_step "Installing mise tools (Tier 1/2)"
 
-  MISE_OPTS=""
   if [[ "${OFFLINE}" == true ]]; then
-    MISE_OPTS="--offline"
     log_info "Offline mode: using cached downloads"
+    MISE_OFFLINE=1 mise install
+  else
+    mise install
   fi
-
-  mise install ${MISE_OPTS}
   log_info "mise tools installed"
 
   # ── Step 6: Install Zsh plugins ─────────────────────────────────────────

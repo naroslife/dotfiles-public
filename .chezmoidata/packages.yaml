@@ -24,7 +24,6 @@ tier1_mise_ubi:
   - fx
   - miller       # binary: mlr
   - sad          # stream editor
-  - sampler      # terminal data visualization
   # Git tools
   - lazygit
   - delta        # git diff pager
@@ -36,8 +35,6 @@ tier1_mise_ubi:
   - lazydocker
   - k9s
   - kubectx
-  - kubectl      # actually Tier 1 — works as standalone binary
-  - helm         # actually Tier 1 — works as standalone binary
   # Code analysis
   - tokei
   - scc
@@ -48,11 +45,14 @@ tier1_mise_ubi:
   - navi
   - broot
   - termscp
-  - rclone
   - restic
   - usql
   # Dev tools
   - choose
+
+tier1_mise_native:  # mise built-in backends (no ubi/aqua prefix needed)
+  - kubectl      # mise native backend
+  - helm         # mise native backend
 
 tier1_mise_pipx:
   - httpie       # binary: http/https
@@ -91,7 +91,7 @@ tier2:
     install: mise_ubi
     config: env_vars_in_rc
   tmux:
-    install: mise_ubi_or_apt
+    install: apt  # no precompiled binaries — source-only releases
     config: dot_config/tmux/tmux.conf
     plugin_manager: tpm
   neovim:
@@ -113,6 +113,12 @@ tier2:
   zsh:
     install: apt
     config: dot_zshrc.tmpl      # template — varies per machine
+  sampler:
+    install: mise_aqua
+    config: dot_config/sampler/config.yaml  # required — nonfunctional without it
+  rclone:
+    install: mise_aqua
+    config: dot_config/rclone/rclone.conf   # secrets-heavy — should be age-encrypted
 
 # Tier 3: Complex toolchains — apt preferred, mise for JVM/Go/Node/Rust
 tier3_apt:

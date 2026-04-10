@@ -18,7 +18,11 @@
   is_personal   = {{ eq .chezmoi.username "naroslife" }}
 
   # Dotfiles location
-  dotfiles_dir = "{{ .chezmoi.sourceDir | dir }}"
+  dotfiles_dir = "{{ .chezmoi.sourceDir }}"
+
+[age]
+  identity   = "~/.config/chezmoi/key.txt"
+  # recipients = ["age1..."]  # populate after: chezmoi age generate-key > ~/.config/chezmoi/key.txt
 
 [diff]
   pager = "delta"

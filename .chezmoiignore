@@ -11,7 +11,6 @@ COMPLETION_CHANGES.md
 LICENSE
 *.patch
 *.txt
-asd
 
 # Nix/legacy files (still in repo during Phase 1 migration)
 flake.nix
