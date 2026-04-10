@@ -101,9 +101,12 @@ test_user_flag_valid() {
 test_user_flag_invalid_chars() {
   echo "Testing --user flag with invalid characters..."
 
-  local output exit_code=0
+  local output
+  local exit_code=0
   output=$(bash "$ROOT_DIR/bootstrap.sh" --user "bad user;rm -rf" 2>&1) || exit_code=$?
   assert_true "[[ $exit_code -ne 0 ]]" "--user with shell metacharacters should exit non-zero"
+  # Check output contains the expected message (note: $output expands at call-site inside double quotes,
+  # then single-quotes it for safe eval inside assert_true)
   assert_true "[[ '$output' == *'invalid characters'* ]]" \
     "--user with invalid chars should print 'invalid characters'"
 }
