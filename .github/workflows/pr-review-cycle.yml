@@ -12,9 +12,12 @@ jobs:
   start-review-cycle:
     # Only run on epic PRs opened by Claude (the implementer)
     if: |
-      contains(toJSON(github.event.pull_request.labels), 'epic:nix-migration') ||
-      github.event.pull_request.user.login == 'claude[bot]' ||
-      github.event.pull_request.user.login == 'github-actions[bot]'
+      contains(toJSON(github.event.pull_request.labels), 'epic:nix-migration') &&
+      (
+        github.event.pull_request.user.login == 'claude[bot]' ||
+        github.event.pull_request.user.login == 'github-actions[bot]'
+      ) &&
+      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     permissions:
       contents: read

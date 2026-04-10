@@ -22,10 +22,11 @@ jobs:
   handoff:
     # Only on epic PRs that are in an active review cycle
     if: |
-      (github.event_name == 'pull_request' &&
+      ((github.event_name == 'pull_request' &&
        contains(toJSON(github.event.pull_request.labels), 'review-round-')) ||
       (github.event_name == 'pull_request_review' &&
-       contains(toJSON(github.event.pull_request.labels), 'review-round-'))
+       contains(toJSON(github.event.pull_request.labels), 'review-round-'))) &&
+      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -74,8 +75,20 @@ jobs:
                   pull_number: prNumber,
                 });
 
-                const approvals = reviews.data.filter(r => r.state === 'APPROVED');
-                const uniqueApprovers = new Set(approvals.map(r => r.user.login));
+                // Get latest review state per reviewer (sort descending by submitted_at)
+                const latestPerReviewer = new Map();
+                for (const r of reviews.data.sort((a, b) =>
+                  new Date(b.submitted_at) - new Date(a.submitted_at)
+                )) {
+                  if (!latestPerReviewer.has(r.user.login)) {
+                    latestPerReviewer.set(r.user.login, r.state);
+                  }
+                }
+                const uniqueApprovers = new Set(
+                  [...latestPerReviewer.entries()]
+                    .filter(([, state]) => state === 'APPROVED')
+                    .map(([login]) => login)
+                );
 
                 if (uniqueApprovers.size >= 1 && currentRound >= 2) {
                   // Enough rounds + approval → auto-merge
@@ -187,7 +200,7 @@ jobs:
             // Handle synchronize (new commits pushed — someone fixed something)
             if (context.eventName === 'pull_request') {
               // New commits pushed — tag the other agent to re-review
-              const pusher = pr.user.login;
+              const pusher = context.payload.sender?.login || context.actor || pr.user.login;
               const reviewer = pusher.includes('copilot') ? '@claude' : '@copilot';
 
               // Check if this was triggered by review fixes (not initial PR creation)
@@ -199,15 +212,21 @@ jobs:
                 }
 
                 // Don't duplicate if we already commented for this round
-                const comments = await github.rest.issues.listComments({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: prNumber,
-                  per_page: 10,
-                });
+                const allComments = await github.paginate(
+                  github.rest.issues.listComments,
+                  {
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: prNumber,
+                    per_page: 100,
+                  }
+                );
 
-                const lastComment = comments.data[comments.data.length - 1];
-                if (lastComment && lastComment.body.includes(`review-cycle:round-${nextRound}`)) {
+                const roundAlreadyTriggered = allComments.some(c =>
+                  typeof c.body === 'string' &&
+                  c.body.includes(`review-cycle:round-${nextRound}`)
+                );
+                if (roundAlreadyTriggered) {
                   console.log(`Round ${nextRound} already triggered. Skipping.`);
                   return;
                 }

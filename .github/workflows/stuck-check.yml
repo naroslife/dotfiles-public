@@ -47,12 +47,13 @@ jobs:
 
               const hoursSinceUpdate = Math.round((now - updatedAt) / (60 * 60 * 1000));
 
-              // Check if we already nudged recently
+              // Check if we already nudged recently (use since: to get only recent comments)
               const comments = await github.rest.issues.listComments({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: pr.number,
-                per_page: 5,
+                since: staleThreshold.toISOString(),
+                per_page: 20,
               });
 
               const recentNudge = comments.data.some(c =>
@@ -76,9 +77,10 @@ jobs:
                   body: `[stuck-check] @claude This PR has been marked \`ready-to-merge\` but hasn't been merged yet (${hoursSinceUpdate}h stale). Please merge it now: \`gh pr merge ${pr.number} --squash --delete-branch\``
                 });
               } else {
-                // Review cycle stalled — figure out who's turn it is
-                const lastComment = comments.data[comments.data.length - 1];
-                const waitingFor = lastComment?.body?.includes('@copilot') ? '@copilot' : '@claude';
+                // Review cycle stalled — derive who's turn from round label (odd=copilot, even=claude)
+                const currentRoundLabel = pr.labels.find(l => l.name.startsWith('review-round-'));
+                const roundNum = currentRoundLabel ? parseInt(currentRoundLabel.name.split('-')[2]) : 1;
+                const waitingFor = roundNum % 2 === 1 ? '@copilot' : '@claude';
 
                 await github.rest.issues.createComment({
                   owner: context.repo.owner,
@@ -110,7 +112,8 @@ jobs:
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: issue.number,
-                per_page: 5,
+                since: staleThreshold.toISOString(),
+                per_page: 20,
               });
 
               const recentNudge = comments.data.some(c =>
@@ -140,26 +143,41 @@ jobs:
               per_page: 50,
             });
 
-            const openWithoutProgress = epicIssues.data.filter(i =>
-              !i.pull_request &&
-              !i.labels.some(l => l.name === 'in-progress')
-            );
+            const dispatchCandidates = epicIssues.data.filter(i => {
+              if (i.pull_request) return false;
+              const labelNames = i.labels.map(l => l.name);
+              return !labelNames.includes('in-progress') && !labelNames.includes('blocked');
+            });
 
-            if (openWithoutProgress.length > 0) {
-              console.log(`${openWithoutProgress.length} epic issues not yet started. Triggering orchestrator check...`);
+            if (dispatchCandidates.length > 0) {
+              const orchestratorRuns = await github.rest.actions.listWorkflowRuns({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                workflow_id: 'migration-orchestrator.yml',
+                per_page: 10,
+              });
 
-              // Trigger orchestrator via workflow_dispatch
-              try {
-                await github.rest.actions.createWorkflowDispatch({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  workflow_id: 'migration-orchestrator.yml',
-                  ref: 'main',
-                  inputs: { trigger_all_unblocked: 'true' },
-                });
-                console.log('Orchestrator triggered to check for unblocked issues');
-              } catch (e) {
-                console.log(`Could not trigger orchestrator: ${e.message}`);
+              const recentDispatchThreshold = new Date(now.getTime() - 60 * 60 * 1000);
+              const recentOrchestratorRun = orchestratorRuns.data.workflow_runs.some(run =>
+                new Date(run.created_at) > recentDispatchThreshold
+              );
+
+              if (recentOrchestratorRun) {
+                console.log('Skipping orchestrator dispatch — already ran within the last hour.');
+              } else {
+                console.log(`${dispatchCandidates.length} actionable epic issues. Triggering orchestrator...`);
+                try {
+                  await github.rest.actions.createWorkflowDispatch({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    workflow_id: 'migration-orchestrator.yml',
+                    ref: 'main',
+                    inputs: { trigger_all_unblocked: 'true' },
+                  });
+                  console.log('Orchestrator triggered to check for unblocked issues');
+                } catch (e) {
+                  console.log(`Could not trigger orchestrator: ${e.message}`);
+                }
               }
             }
 
