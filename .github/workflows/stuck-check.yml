@@ -182,7 +182,7 @@ jobs:
               // Note: do NOT skip here on staleness. Approvals must be acted on
               // immediately, and round-advance comments are de-duplicated by
               // `nextRoundTriggered` below. Staleness only gates the "nudge an
-              // already-triggered round" branch (line ~330).
+              // already-triggered round" branch in the `nextRoundTriggered` logic.
 
               // Gather all comments (issue_comments) and formal reviews and commits.
               const comments = await github.paginate(
@@ -329,7 +329,11 @@ jobs:
                 // otherwise we'd post a nudge every 15 min while the agent is
                 // still working.
                 if (isFresh) {
-                  console.log(`Round ${nextRound} already triggered and PR is fresh (${ageMin}m). No nudge needed.`);
+                  const updatedAgeMin = Math.round((Date.now() - Date.parse(pr.updated_at)) / 60000);
+                  console.log(
+                    `Round ${nextRound} already triggered and PR is fresh ` +
+                    `(${updatedAgeMin}m since updated_at; ${ageMin}m since last meaningful event). No nudge needed.`
+                  );
                   continue;
                 }
                 const nudgeAgent = (nextRound % 2 === 1) ? '@copilot' : '@claude';
