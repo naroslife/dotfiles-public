@@ -27,7 +27,7 @@ check_binary() {
   if command -v "${binary}" &>/dev/null; then
     if [[ "${VERBOSE}" == true ]]; then
       local version
-      version=$(${binary} --version 2>&1 | head -1 || echo "unknown")
+      version=$("${binary}" --version 2>&1 | head -1 || echo "unknown")
       log_pass "${name}: ${version}"
     else
       log_pass "${name}"
@@ -36,18 +36,6 @@ check_binary() {
   else
     log_fail "${name}: not found (run: mise install)"
     return 1
-  fi
-}
-
-check_mise_tool() {
-  local name="$1"
-  local binary="${2:-$1}"
-  if mise which "${binary}" &>/dev/null 2>&1; then
-    log_pass "${name}"
-  elif command -v "${binary}" &>/dev/null; then
-    log_warn "${name}: found in PATH but not managed by mise"
-  else
-    log_fail "${name}: not installed (run: mise install ${name})"
   fi
 }
 
@@ -101,6 +89,7 @@ check_binary "fx"
 check_binary "miller" "mlr"
 check_binary "choose"
 check_binary "sad"
+check_binary "sampler"
 
 log_info ""
 log_info "── Tier 1: Git tools ──"
@@ -160,6 +149,8 @@ check_binary "rust" "rustc"
 check_binary "java"
 check_binary "maven" "mvn"
 check_binary "gradle"
+check_binary "bazel"
+check_binary "meson"
 
 log_info ""
 log_info "── Tier 3: Editors ──"

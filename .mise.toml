@@ -147,5 +147,5 @@
   run         = "./scripts/doctor.sh"
 
 [tasks.kill-switch]
-  description = "Disable all modern CLI aliases (revert to system defaults)"
-  run         = "source ./scripts/kill-switch.sh"
+  description = "Print kill-switch instructions (source the script directly for current-session effect)"
+  run         = "./scripts/kill-switch.sh"
