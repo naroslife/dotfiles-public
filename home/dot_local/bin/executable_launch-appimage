@@ -1,0 +1,94 @@
+#!/usr/bin/env bash
+#
+# AppImage Launcher for WSL2
+# Fixes common Electron/AppImage issues on WSL2
+# Managed by chezmoi — edit source at home/dot_local/bin/executable_launch-appimage
+#
+# Usage: launch-appimage <path-to-appimage> [args...]
+#
+
+set -euo pipefail
+
+if [[ $# -eq 0 ]]; then
+  echo "Usage: $(basename "$0") <path-to-appimage> [args...]"
+  exit 1
+fi
+
+APPIMAGE="$1"
+shift
+
+if [[ ! -f "$APPIMAGE" ]]; then
+  echo "Error: AppImage not found: $APPIMAGE"
+  exit 1
+fi
+
+if [[ ! -x "$APPIMAGE" ]]; then
+  echo "Error: AppImage is not executable: $APPIMAGE"
+  echo "Run: chmod +x $APPIMAGE"
+  exit 1
+fi
+
+# Ensure DBus session exists
+if [[ -z "${DBUS_SESSION_BUS_ADDRESS:-}" ]]; then
+  if [[ -f ~/.dbus-session ]]; then
+    source ~/.dbus-session
+  fi
+
+  if [[ -z "${DBUS_SESSION_BUS_ADDRESS:-}" ]]; then
+    eval "$(dbus-launch --sh-syntax)"
+    echo "export DBUS_SESSION_BUS_ADDRESS='$DBUS_SESSION_BUS_ADDRESS'" > ~/.dbus-session
+    echo "export DBUS_SESSION_BUS_PID='$DBUS_SESSION_BUS_PID'" >> ~/.dbus-session
+  fi
+fi
+
+export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+export DISPLAY="${DISPLAY:-:0}"
+
+# Disable VA-API to prevent libva errors
+export LIBVA_DRIVER_NAME=none
+
+# GPU rendering configuration for WSL2/WSLg
+export MESA_LOADER_DRIVER_OVERRIDE=d3d12
+export MESA_D3D12_DEFAULT_ADAPTER_NAME=NVIDIA
+
+# Electron flags optimized for WSL2/WSLg performance (software rendering for max compatibility)
+# To enable GPU: change --disable-gpu to --disable-gpu-sandbox --enable-features=VulkanFromANGLE
+export ELECTRON_EXTRA_LAUNCH_ARGS="--no-sandbox --disable-dev-shm-usage --disable-gpu --in-process-gpu --disable-software-rasterizer"
+
+# Use X11 instead of Wayland for better compatibility
+export GDK_BACKEND=x11
+
+echo "Starting AppImage with WSL2 fixes..."
+echo "  DISPLAY: $DISPLAY"
+echo "  DBUS: $DBUS_SESSION_BUS_ADDRESS"
+echo "  XDG_RUNTIME_DIR: $XDG_RUNTIME_DIR"
+echo
+
+# Extract app name from AppImage filename for config directory detection
+APPIMAGE_BASENAME="$(basename "$APPIMAGE")"
+APP_NAME="$(echo "$APPIMAGE_BASENAME" | sed -E 's/-[0-9]+\.[0-9]+\.[0-9]+\.AppImage$//')"
+
+CONFIG_DIR="$HOME/.config/$APP_NAME"
+if [[ -d "$CONFIG_DIR" ]]; then
+  cd "$CONFIG_DIR"
+  echo "Working directory: $CONFIG_DIR"
+  echo
+fi
+
+# Launch with clean environment to avoid slow Electron startup.
+# Keeping total vars under ~15 prevents the 60+ second startup delay.
+# See wsl-fixes/ELECTRON_ENV_INVESTIGATION.md for full analysis.
+exec env -i \
+  HOME="$HOME" \
+  USER="$USER" \
+  SHELL="$SHELL" \
+  DISPLAY="$DISPLAY" \
+  DBUS_SESSION_BUS_ADDRESS="$DBUS_SESSION_BUS_ADDRESS" \
+  XDG_RUNTIME_DIR="$XDG_RUNTIME_DIR" \
+  LIBVA_DRIVER_NAME="$LIBVA_DRIVER_NAME" \
+  GDK_BACKEND="$GDK_BACKEND" \
+  ELECTRON_EXTRA_LAUNCH_ARGS="$ELECTRON_EXTRA_LAUNCH_ARGS" \
+  MESA_LOADER_DRIVER_OVERRIDE="$MESA_LOADER_DRIVER_OVERRIDE" \
+  MESA_D3D12_DEFAULT_ADAPTER_NAME="$MESA_D3D12_DEFAULT_ADAPTER_NAME" \
+  PATH="/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/sbin" \
+  "$APPIMAGE" "$@"
