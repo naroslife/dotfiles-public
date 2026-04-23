@@ -131,9 +131,9 @@
     "**/.git/subtree-cache/**": true,
     "**/node_modules/**": true,
     "**/.hg/store/**": true
-  }{{ if .is_enterprise }},
+  }{{ if and .is_enterprise (env "HTTPS_PROXY") }},
 
-  "http.proxy": "{{ env "HTTPS_PROXY" | default "" }}",
+  "http.proxy": "{{ env "HTTPS_PROXY" }}",
   "http.proxyStrictSSL": true
 {{ end }}
 }

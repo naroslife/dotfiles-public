@@ -173,6 +173,9 @@ alias cl='clear'
 alias v='nvim'
 alias rr='ranger'
 
+# ── Shared aliases (sourced from ~/.config/shell/aliases.sh) ─────────────────
+[[ -f "${HOME}/.config/shell/aliases.sh" ]] && source "${HOME}/.config/shell/aliases.sh"
+
 # ── VSCode shell integration ───────────────────────────────────────────────────
 [[ "$TERM_PROGRAM" == "vscode" ]] && . "$(code --locate-shell-integration-path zsh 2>/dev/null)" 2>/dev/null || true
 

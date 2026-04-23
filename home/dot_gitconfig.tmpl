@@ -87,6 +87,8 @@
 {{ if .is_enterprise -}}
 # ── Enterprise-specific configuration ─────────────────────────────────────────
 [http]
-  proxy = {{ env "HTTPS_PROXY" | default "" }}
+{{ if env "HTTPS_PROXY" -}}
+  proxy = {{ env "HTTPS_PROXY" }}
+{{ end -}}
   sslVerify = true
 {{ end -}}

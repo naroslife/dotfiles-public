@@ -1,4 +1,12 @@
 #!/bin/bash
+# cal.sh — tmux calendar/meeting status widget
+# Requires: icalBuddy (macOS only — brew install ical-buddy)
+# On non-macOS or when icalBuddy is unavailable, prints a no-op placeholder.
+
+if [[ "$(uname)" != "Darwin" ]] || ! command -v icalBuddy &>/dev/null; then
+  echo "󱁕 "
+  exit 0
+fi
 
 ALERT_IF_IN_NEXT_MINUTES=10
 ALERT_POPUP_BEFORE_SECONDS=10
