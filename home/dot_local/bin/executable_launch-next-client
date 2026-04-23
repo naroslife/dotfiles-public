@@ -26,10 +26,12 @@ if [[ ! -f "$APPIMAGE" ]]; then
 fi
 
 # Set up DBus session
+# shellcheck source=/dev/null
 source "${HOME}/.local/bin/fix-dbus-wsl"
 
 export DISPLAY=:0
-export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+XDG_RUNTIME_DIR="/run/user/$(id -u)"
+export XDG_RUNTIME_DIR
 
 mkdir -p "$HOME/.config/Next-Client"
 
@@ -68,7 +70,7 @@ if [[ ! -f "$PREFERENCE_FILE" ]]; then
   fi
   echo ""
 else
-  PREFERENCE="$(cat "$PREFERENCE_FILE" | tr -d '[:space:]')"
+  PREFERENCE="$(tr -d '[:space:]' < "$PREFERENCE_FILE")"
   [[ "$PREFERENCE" == "software" ]] && USE_HW_ACCEL="no" || USE_HW_ACCEL="yes"
 fi
 

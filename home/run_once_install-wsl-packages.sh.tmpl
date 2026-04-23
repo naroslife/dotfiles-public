@@ -2,6 +2,7 @@
 # run_once_install-wsl-packages.sh — Install WSL-specific packages
 # Managed by chezmoi — edit source at home/run_once_install-wsl-packages.sh.tmpl
 # Runs once per machine on first apply (re-runs if this file changes).
+# shellcheck disable=SC1054,SC1073,SC1072,SC1009,SC1083
 {{ if .is_wsl }}
 set -euo pipefail
 

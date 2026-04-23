@@ -1,7 +1,8 @@
-#!/usr/bin/env bash
 # ~/.config/shell/wsl-fixes.sh — WSL session startup fixes
 # Managed by chezmoi — edit source at home/dot_config/shell/wsl-fixes.sh
 # Sourced by .zshrc and .bashrc when is_wsl is true
+# NOTE: This file is sourced, not executed — no shebang by design
+# shellcheck shell=bash
 
 # umask for Windows filesystem compatibility
 umask 022
@@ -12,6 +13,7 @@ umask 022
 # ── DBus session setup ────────────────────────────────────────────────────────
 # Source the fix-dbus-wsl script to ensure a valid DBus session
 if [[ -x "${HOME}/.local/bin/fix-dbus-wsl" ]]; then
+  # shellcheck source=/dev/null
   source "${HOME}/.local/bin/fix-dbus-wsl" 2>/dev/null || true
 fi
 
