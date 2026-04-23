@@ -37,8 +37,8 @@ if [[ -z "${DBUS_SESSION_BUS_ADDRESS:-}" ]]; then
 
   if [[ -z "${DBUS_SESSION_BUS_ADDRESS:-}" ]]; then
     eval "$(dbus-launch --sh-syntax)"
-    echo "export DBUS_SESSION_BUS_ADDRESS='$DBUS_SESSION_BUS_ADDRESS'" > ~/.dbus-session
-    echo "export DBUS_SESSION_BUS_PID='$DBUS_SESSION_BUS_PID'" >> ~/.dbus-session
+    echo "export DBUS_SESSION_BUS_ADDRESS='$DBUS_SESSION_BUS_ADDRESS'" >~/.dbus-session
+    echo "export DBUS_SESSION_BUS_PID='$DBUS_SESSION_BUS_PID'" >>~/.dbus-session
   fi
 fi
 
