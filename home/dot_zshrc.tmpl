@@ -184,6 +184,19 @@ alias pbcopy='clip.exe'
 alias pbpaste='powershell.exe -command "Get-Clipboard"'
 {{ end -}}
 
+# ── GPG & SSH agent ───────────────────────────────────────────────────────────
+export GPG_TTY="$(tty)"
+export GNUPGHOME="${HOME}/.gnupg"
+if [[ -z "${SSH_AUTH_SOCK:-}" ]] && command -v gpgconf &>/dev/null; then
+  export SSH_AUTH_SOCK="$(gpgconf --list-dirs agent-ssh-socket 2>/dev/null || true)"
+fi
+
+# ── API keys (chezmoi-managed encrypted files) ────────────────────────────────
+# Files are decrypted by `chezmoi apply` into ~/.config/api-keys/
+# To add a new key: chezmoi add --encrypt ~/.config/api-keys/<name>
+[[ -f "${HOME}/.config/api-keys/tavily" ]] && export TAVILY_API_KEY="$(< "${HOME}/.config/api-keys/tavily")"
+[[ -f "${HOME}/.config/api-keys/morph"  ]] && export MORPH_API_KEY="$(< "${HOME}/.config/api-keys/morph")"
+
 # ── KUBECONFIG ────────────────────────────────────────────────────────────────
 export KUBECONFIG="${HOME}/.kube/config"
 

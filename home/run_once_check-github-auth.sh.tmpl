@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# run_once_check-github-auth.sh — GitHub CLI authentication check
+# Managed by chezmoi. Edit source at home/run_once_check-github-auth.sh.tmpl
+# Runs once per machine (re-runs if this file changes).
+#
+# This script does NOT force authentication — it only warns if gh is unauthenticated,
+# so bootstrap remains non-interactive.
+
+set -euo pipefail
+
+if ! command -v gh &>/dev/null; then
+  echo "==> GitHub CLI (gh) not found — skipping auth check"
+  echo "    Install via mise: mise install gh"
+  exit 0
+fi
+
+if gh auth status &>/dev/null 2>&1; then
+  echo "GitHub CLI: authenticated"
+  gh auth status
+else
+  echo ""
+  echo "==> GitHub CLI is not authenticated."
+  echo "    Run the following to authenticate:"
+  echo ""
+  echo "      gh auth login"
+  echo ""
+  echo "    Or for SSH key-based auth:"
+  echo ""
+  echo "      gh auth login --git-protocol ssh"
+  echo ""
+fi
