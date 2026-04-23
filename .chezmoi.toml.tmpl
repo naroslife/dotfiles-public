@@ -28,14 +28,14 @@ encryption = "age"
 {{- $u := index .users ($user) | default dict -}}
 [age]
   identity = "~/.config/chezmoi/key.txt"
-  {{ if (index $u "age_recipient") -}}
+{{- if (index $u "age_recipient") }}
   recipients = ["{{ index $u "age_recipient" }}"]
-  {{- else -}}
+{{- else }}
   # recipients not configured — run the following to set up encryption:
   #   age-keygen -o ~/.config/chezmoi/key.txt        # generate private key (once per machine)
   #   age-keygen -y ~/.config/chezmoi/key.txt         # print public key
   # Then add age_recipient to .chezmoidata/users.yaml under your username
-  {{ end -}}
+{{- end }}
 
 [diff]
   pager = "delta"
