@@ -173,6 +173,9 @@ alias cl='clear'
 alias v='nvim'
 alias rr='ranger'
 
+# ── Shared aliases (sourced from ~/.config/shell/aliases.sh) ─────────────────
+[[ -f "${HOME}/.config/shell/aliases.sh" ]] && source "${HOME}/.config/shell/aliases.sh"
+
 # ── VSCode shell integration ───────────────────────────────────────────────────
 [[ "$TERM_PROGRAM" == "vscode" ]] && . "$(code --locate-shell-integration-path zsh 2>/dev/null)" 2>/dev/null || true
 
@@ -184,6 +187,19 @@ alias pbcopy='clip.exe'
 alias pbpaste='powershell.exe -command "Get-Clipboard"'
 {{ end -}}
 
+# ── GPG & SSH agent ───────────────────────────────────────────────────────────
+export GPG_TTY="${GPG_TTY:-$(tty 2>/dev/null)}"
+export GNUPGHOME="${HOME}/.gnupg"
+if [[ -z "${SSH_AUTH_SOCK:-}" ]] && command -v gpgconf &>/dev/null; then
+  export SSH_AUTH_SOCK="$(gpgconf --list-dirs agent-ssh-socket 2>/dev/null || true)"
+fi
+
+# ── API keys (chezmoi-managed encrypted files) ────────────────────────────────
+# Files are decrypted by `chezmoi apply` into ~/.config/api-keys/
+# To add a new key: chezmoi add --encrypt ~/.config/api-keys/<name>
+[[ -f "${HOME}/.config/api-keys/tavily" ]] && export TAVILY_API_KEY="$(< "${HOME}/.config/api-keys/tavily")"
+[[ -f "${HOME}/.config/api-keys/morph"  ]] && export MORPH_API_KEY="$(< "${HOME}/.config/api-keys/morph")"
+
 # ── KUBECONFIG ────────────────────────────────────────────────────────────────
 export KUBECONFIG="${HOME}/.kube/config"
 
@@ -192,13 +208,13 @@ if [[ -d "${HOME}/.local/bin" ]]; then
   export PATH="${HOME}/.local/bin:${PATH}"
 fi
 
-# Load custom function files
-_dotfiles_dir="${HOME}/.local/share/dotfiles"
-if [[ -d "${_dotfiles_dir}/functions" ]]; then
-  for _func_file in "${_dotfiles_dir}/functions"/*.sh; do
+# Load shell function files (managed by chezmoi, installed to ~/.local/share/shell-functions/)
+_shell_func_dir="${HOME}/.local/share/shell-functions"
+if [[ -d "${_shell_func_dir}" ]]; then
+  for _func_file in "${_shell_func_dir}"/*.sh; do
     [[ -f "${_func_file}" ]] && source "${_func_file}"
   done
 fi
-unset _dotfiles_dir _func_file
+unset _shell_func_dir _func_file
 
 set +u

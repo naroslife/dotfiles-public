@@ -98,6 +98,12 @@ jobs:
               return;
             }
 
+            // Escape hatch — if a human has been pulled in, pause automation.
+            if (labels.includes('needs-human-review')) {
+              console.log('PR flagged for human review. Skipping handoff.');
+              return;
+            }
+
             // ---- Helpers ----------------------------------------------------
 
             const COPILOT_LOGINS = new Set(['Copilot', 'copilot-swe-agent', 'copilot[bot]']);
@@ -146,7 +152,21 @@ jobs:
               });
             };
 
+            const flagForHumanReview = async () => {
+              try {
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: prNumber,
+                  labels: ['needs-human-review'],
+                });
+              } catch (e) {
+                console.log(`Could not add needs-human-review label: ${e.message}`);
+              }
+            };
+
             const markReadyToMerge = async () => {
+              let labeled = false;
               try {
                 await github.rest.issues.addLabels({
                   owner: context.repo.owner,
@@ -154,8 +174,40 @@ jobs:
                   issue_number: prNumber,
                   labels: ['ready-to-merge'],
                 });
+                labeled = true;
               } catch (e) {
                 console.log(`Could not add ready-to-merge label: ${e.message}`);
+                // Re-check: maybe the label was already present (e.g. prior
+                // handoff). If so, we still want stuck-check to run.
+                try {
+                  const cur = (await github.rest.issues.get({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: prNumber,
+                  })).data;
+                  labeled = cur.labels.some(l => (l.name || l) === 'ready-to-merge');
+                } catch (e2) {
+                  console.log(`Could not re-check labels: ${e2.message}`);
+                }
+              }
+
+              if (!labeled) {
+                console.log('ready-to-merge not applied — skipping stuck-check dispatch.');
+                return;
+              }
+
+              // Dispatch stuck-check immediately so the merge fires in seconds,
+              // not up to 15 min later on the next scheduled tick.
+              try {
+                await github.rest.actions.createWorkflowDispatch({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  workflow_id: 'stuck-check.yml',
+                  ref: 'main',
+                });
+                console.log('Dispatched stuck-check to merge ready-to-merge PR immediately.');
+              } catch (e) {
+                console.log(`Could not dispatch stuck-check: ${e.message}`);
               }
             };
 
@@ -191,12 +243,14 @@ jobs:
                 // Copilot finished a review but cycle still has rounds: tag Claude.
                 const nextRound = currentRound + 1;
                 if (nextRound > MAX_ROUNDS) {
-                  console.log('Max rounds reached. Marking ready-to-merge with tech debt.');
-                  await markReadyToMerge();
+                  console.log('Max rounds reached without approval. Flagging for human review.');
+                  await flagForHumanReview();
                   await postComment(
-                    `[review-cycle:max-rounds] Max review rounds (${MAX_ROUNDS}) reached. ` +
-                    `Marking \`ready-to-merge\`; stuck-check will merge on its next tick. ` +
-                    `Any unresolved findings should be tracked as follow-up \`tech-debt\` issues.`
+                    `[review-cycle:max-rounds] @${context.repo.owner} Max review rounds (${MAX_ROUNDS}) reached without approval. ` +
+                    `The automated Claude↔Copilot cycle could not converge. Please review manually and either:\n\n` +
+                    `1. Merge if acceptable (optionally file \`tech-debt\` follow-ups), or\n` +
+                    `2. Post further feedback and remove \`needs-human-review\` to resume the automated cycle, or\n` +
+                    `3. Close this PR.`
                   );
                   return;
                 }
@@ -264,10 +318,11 @@ jobs:
                 const nextRound = currentRound + 1;
 
                 if (nextRound > MAX_ROUNDS) {
-                  await markReadyToMerge();
+                  console.log('Max rounds reached on CHANGES_REQUESTED. Flagging for human review.');
+                  await flagForHumanReview();
                   await postComment(
-                    `[review-cycle:max-rounds] Max review rounds (${MAX_ROUNDS}) reached. ` +
-                    `Marking \`ready-to-merge\`; stuck-check will merge on its next tick.`
+                    `[review-cycle:max-rounds] @${context.repo.owner} Max review rounds (${MAX_ROUNDS}) reached with changes still requested. ` +
+                    `Human review needed — the agents couldn't converge.`
                   );
                   return;
                 }

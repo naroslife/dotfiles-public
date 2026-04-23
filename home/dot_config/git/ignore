@@ -1,0 +1,55 @@
+# Global git ignore — managed by chezmoi
+# Edit source at home/dot_config/git/ignore
+
+# ── OS generated ──────────────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ── Editor directories ────────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.netrwhist
+.history
+
+# ── Language specific ─────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+node_modules/
+*.log
+.env
+.env.local
+
+# ── Build outputs ─────────────────────────────────────────────────────────────
+dist/
+build/
+target/
+out/
+*.o
+*.so
+*.exe
+*.dll
+
+# ── Temporary files ───────────────────────────────────────────────────────────
+*.tmp
+*.bak
+*.backup
+.cache/
+
+# ── Secrets (never commit these) ──────────────────────────────────────────────
+*.pem
+*.key
+*.crt
+*.p12
+.env*
+secrets/
+*-secret*
+*-private*

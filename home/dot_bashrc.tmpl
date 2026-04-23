@@ -1,0 +1,176 @@
+# ~/.bashrc — managed by chezmoi
+# Machine: {{ .chezmoi.hostname }} | User: {{ .chezmoi.username }}
+# Template rendered by chezmoi — edit source at home/dot_bashrc.tmpl
+
+# Return early for non-interactive shells
+[[ $- != *i* ]] && return
+
+# ── mise activation (must be near top) ───────────────────────────────────────
+if command -v mise &>/dev/null; then
+  eval "$(mise activate bash)"
+fi
+
+# ── Path additions ────────────────────────────────────────────────────────────
+export PATH="${HOME}/.local/bin:${HOME}/.cargo/bin:${HOME}/.go/bin:${PATH}"
+
+# ── History ───────────────────────────────────────────────────────────────────
+HISTFILE="${HOME}/.bash_history"
+HISTSIZE=50000
+HISTFILESIZE=100000
+HISTCONTROL=ignoreboth:erasedups
+HISTIGNORE="ls:cd:cd -:pwd:exit:date:* --help:man *:history:clear:fg"
+HISTTIMEFORMAT="%F %T "
+shopt -s histappend
+shopt -s cmdhist
+
+# ── Shell options ─────────────────────────────────────────────────────────────
+shopt -s checkwinsize
+shopt -s globstar
+shopt -s nocaseglob
+shopt -s cdspell
+
+# ── Completion ────────────────────────────────────────────────────────────────
+if ! shopt -oq posix; then
+  if [ -f /usr/share/bash-completion/bash_completion ]; then
+    . /usr/share/bash-completion/bash_completion
+  elif [ -f /etc/bash_completion ]; then
+    . /etc/bash_completion
+  fi
+fi
+
+# carapace — universal completions
+if command -v carapace &>/dev/null; then
+  source <(carapace _carapace)
+fi
+
+# ── Prompt: starship ──────────────────────────────────────────────────────────
+if command -v starship &>/dev/null; then
+  eval "$(starship init bash)"
+fi
+
+# ── History: atuin ────────────────────────────────────────────────────────────
+if command -v atuin &>/dev/null; then
+  eval "$(atuin init bash)"
+fi
+
+# ── Navigation: zoxide ────────────────────────────────────────────────────────
+if command -v zoxide &>/dev/null; then
+  eval "$(zoxide init bash)"
+fi
+
+# ── Directory env: direnv ────────────────────────────────────────────────────
+if command -v direnv &>/dev/null; then
+  eval "$(direnv hook bash)"
+fi
+
+# ── FZF ───────────────────────────────────────────────────────────────────────
+if command -v fzf &>/dev/null; then
+  eval "$(fzf --bash)"
+fi
+export FZF_DEFAULT_COMMAND='fd --type f --hidden --follow --exclude .git'
+export FZF_DEFAULT_OPTS='--height 40% --layout=reverse --border --info=inline'
+
+# ── Aliases ───────────────────────────────────────────────────────────────────
+if [[ -z "${DOTFILES_NO_ALIASES:-}" ]]; then
+  alias cat='bat'
+  alias ls='eza'
+  alias l='eza -l --icons --git -a'
+  alias lt='eza --tree --level=2 --long --icons --git'
+  alias ltree='eza --tree --level=2 --icons --git'
+  alias la='eza --tree --icons --git'
+  alias find='fd'
+  alias grep='rg'
+  alias df='duf'
+  alias du='dust'
+  alias ps='procs'
+  alias top='btm'
+  alias htop='btm'
+  alias ping='gping'
+  alias dig='dog'
+  alias http='xh'
+fi
+
+# Git aliases
+alias gc='git commit -m'
+alias gca='git commit -a -m'
+alias gp='git push origin HEAD'
+alias gpu='git pull origin'
+alias gst='git status'
+alias glog='git log --graph --topo-order --pretty="%w(100,0,6)%C(yellow)%h%C(bold)%C(black)%d %C(cyan)%ar %C(green)%an%n%C(bold)%C(white)%s %N" --abbrev-commit'
+alias gdiff='git diff'
+alias gco='git checkout'
+alias gb='git branch'
+alias gba='git branch -a'
+alias gadd='git add'
+alias ga='git add -p'
+alias gr='git remote'
+alias gre='git reset'
+alias gd='git diff'
+
+# Docker
+alias dco='docker compose'
+alias dps='docker ps'
+alias dpa='docker ps -a'
+alias dl='docker ps -l -q'
+alias dx='docker exec -it'
+
+# Kubernetes
+alias k='kubectl'
+alias ka='kubectl apply -f'
+alias kg='kubectl get'
+alias kd='kubectl describe'
+alias kdel='kubectl delete'
+alias kl='kubectl logs -f'
+alias kgpo='kubectl get pod'
+alias kgd='kubectl get deployments'
+alias kc='kubectx'
+alias ke='kubectl exec -it'
+
+# Navigation
+alias ..='cd ..'
+alias ...='cd ../..'
+alias ....='cd ../../..'
+alias cl='clear'
+alias v='nvim'
+alias rr='ranger'
+
+# ── Shared aliases (sourced from ~/.config/shell/aliases.sh) ─────────────────
+[[ -f "${HOME}/.config/shell/aliases.sh" ]] && source "${HOME}/.config/shell/aliases.sh"
+
+# ── VSCode shell integration ───────────────────────────────────────────────────
+[[ "$TERM_PROGRAM" == "vscode" ]] && . "$(code --locate-shell-integration-path bash 2>/dev/null)" 2>/dev/null || true
+
+{{ if .is_wsl -}}
+# ── WSL-specific configuration ────────────────────────────────────────────────
+export BROWSER='wslview'
+export DISPLAY="${DISPLAY:-$(ip route | awk '/^default/{print $3}'):0}"
+alias pbcopy='clip.exe'
+alias pbpaste='powershell.exe -command "Get-Clipboard"'
+{{ end -}}
+
+# ── KUBECONFIG ────────────────────────────────────────────────────────────────
+export KUBECONFIG="${HOME}/.kube/config"
+
+# ── Environment variables ─────────────────────────────────────────────────────
+export EDITOR="nvim"
+export VISUAL="nvim"
+export PAGER="less"
+export LESS="-FRXi"
+export RIPGREP_CONFIG_PATH="${HOME}/.config/ripgrep/config"
+export DOCKER_BUILDKIT=1
+export BUILDKIT_PROGRESS=plain
+export GOPATH="${HOME}/go"
+export GOBIN="${HOME}/go/bin"
+export CARGO_HOME="${HOME}/.cargo"
+export GPG_TTY="$(tty)"
+
+# ── Local bin and custom functions ────────────────────────────────────────────
+_shell_func_dir="${HOME}/.local/share/shell-functions"
+if [[ -d "${_shell_func_dir}" ]]; then
+  for _func_file in "${_shell_func_dir}"/*.sh; do
+    [[ -f "${_func_file}" ]] && source "${_func_file}"
+  done
+fi
+unset _shell_func_dir _func_file
+
+set +u

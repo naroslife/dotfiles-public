@@ -2,6 +2,9 @@
 # Patterns here are excluded from chezmoi management (not copied to ~/)
 # Supports Go template conditionals for per-machine exclusions
 
+# chezmoi source directory (managed separately via --source=home/)
+home/
+
 # Always ignore — repo meta files
 README.md
 ARCHITECTURE.md

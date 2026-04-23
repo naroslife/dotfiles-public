@@ -2,18 +2,30 @@
 # Machine: {{ .chezmoi.hostname }} | User: {{ .chezmoi.username }}
 
 [user]
-{{- $u := index .users (.dotfiles_user | default .chezmoi.username) | default (dict "full_name" .chezmoi.username "email" .email "git_signing_key" "") }}
+{{- $u := index .users (.dotfiles_user | default .chezmoi.username) | default (dict "full_name" .chezmoi.username "email" .email "git_signing_key" "" "gpg_sign" false) }}
   name  = {{ $u.full_name }}
   email = {{ $u.email }}
 {{ if $u.git_signing_key -}}
   signingkey = {{ $u.git_signing_key }}
 {{ end -}}
 
+{{ if and $u.git_signing_key (index $u "gpg_sign") -}}
+[commit]
+  gpgsign = true
+
+[tag]
+  gpgsign = true
+
+[gpg]
+  program = gpg
+{{ end -}}
+
 [core]
-  editor     = nvim
-  pager      = delta
-  autocrlf   = input
-  whitespace = fix,-indent-with-non-tab,trailing-space,cr-at-eol
+  editor       = nvim
+  pager        = delta
+  autocrlf     = input
+  whitespace   = fix,-indent-with-non-tab,trailing-space,cr-at-eol
+  excludesFile = ~/.config/git/ignore
 
 [init]
   defaultBranch = main
@@ -86,6 +98,8 @@
 {{ if .is_enterprise -}}
 # ── Enterprise-specific configuration ─────────────────────────────────────────
 [http]
-  proxy = {{ env "HTTPS_PROXY" | default "" }}
+{{ if env "HTTPS_PROXY" -}}
+  proxy = {{ env "HTTPS_PROXY" }}
+{{ end -}}
   sslVerify = true
 {{ end -}}

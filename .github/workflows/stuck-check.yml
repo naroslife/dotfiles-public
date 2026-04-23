@@ -27,6 +27,15 @@ on:
     - cron: '*/15 * * * *'  # Every 15 minutes
   workflow_dispatch: {}
 
+# Serialize runs so the new immediate-dispatch (from review-handoff) can't
+# race the scheduled tick: two overlapping runs on the same PR would have
+# the loser hit an "already merged" error and post a spurious failure
+# comment. cancel-in-progress:false means queued runs wait rather than
+# clobber an in-progress merge.
+concurrency:
+  group: stuck-check
+  cancel-in-progress: false
+
 jobs:
   drive-cycle:
     runs-on: ubuntu-latest
@@ -59,6 +68,120 @@ jobs:
 
             console.log(`Tick @ ${now.toISOString()} — staleness threshold ${STALE_MINUTES}m`);
 
+            // Perform the actual merge + cleanup for a PR that's ready-to-merge.
+            // Used by both (a) the ready-to-merge-label branch at loop top and
+            // (b) the approval/max-rounds branches below, so the merge fires in
+            // the SAME tick as state transition (no 15-min gap).
+            //
+            // Returns 'merged' | 'deferred' | 'conflicts' | 'failed'.
+            async function performMerge(pr) {
+              const prNumber = pr.number;
+
+              if (pr.mergeable === null) {
+                console.log(`PR #${prNumber}: mergeability still computing. Will retry next tick.`);
+                return 'deferred';
+              }
+
+              if (pr.mergeable === false) {
+                console.log(`PR #${prNumber}: not mergeable (conflicts?). Posting fix-it comment.`);
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: prNumber,
+                  body: `[stuck-check] @claude This PR is marked \`ready-to-merge\` but has merge conflicts. ` +
+                        `Please rebase against \`main\` and resolve conflicts.`,
+                });
+                return 'conflicts';
+              }
+
+              try {
+                await github.rest.pulls.merge({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  pull_number: prNumber,
+                  merge_method: 'squash',
+                });
+                console.log(`Merged PR #${prNumber}.`);
+
+                // Delete the source branch (best-effort).
+                try {
+                  await github.rest.git.deleteRef({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    ref: `heads/${pr.head.ref}`,
+                  });
+                } catch (e) {
+                  console.log(`Could not delete branch: ${e.message}`);
+                }
+
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: prNumber,
+                  labels: ['auto-merged'],
+                }).catch((e) => {
+                  console.log(`Could not add auto-merged label to PR #${prNumber}: ${e.message}`);
+                });
+
+                await github.rest.issues.removeLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: prNumber,
+                  name: 'ready-to-merge',
+                }).catch((e) => {
+                  console.log(`Could not remove ready-to-merge label from PR #${prNumber}: ${e.message}`);
+                });
+
+                // Fan out to next unblocked issues.
+                await github.rest.actions.createWorkflowDispatch({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  workflow_id: 'migration-orchestrator.yml',
+                  ref: 'main',
+                  inputs: { trigger_all_unblocked: 'true' },
+                });
+                console.log(`Dispatched migration-orchestrator after merging #${prNumber}.`);
+                return 'merged';
+              } catch (e) {
+                // Race tolerance: re-fetch the PR to distinguish "genuinely
+                // failed" from "another run (e.g. a concurrent
+                // workflow_dispatch fired by review-handoff) already merged
+                // this PR". Concurrency-group serializes most of this, but
+                // API-level retries / mid-flight races are still possible.
+                try {
+                  const latest = (await github.rest.pulls.get({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    pull_number: prNumber,
+                  })).data;
+                  if (latest.merged) {
+                    console.log(`PR #${prNumber}: merge API errored but PR is already merged. Treating as success.`);
+                    await github.rest.issues.addLabels({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      issue_number: prNumber,
+                      labels: ['auto-merged'],
+                    }).catch((err) => {
+                      console.log(`Could not add auto-merged label to PR #${prNumber}: ${err.message}`);
+                    });
+                    return 'merged';
+                  }
+                } catch (e2) {
+                  console.log(`PR #${prNumber}: could not re-check merged state: ${e2.message}`);
+                }
+
+                console.log(`PR #${prNumber}: merge failed: ${e.message}`);
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: prNumber,
+                  body: `[stuck-check] @claude Merge attempt failed: \`${e.message}\`. ` +
+                        `Please investigate (CI red? branch protection?) and fix.`,
+                });
+                return 'failed';
+              }
+            }
+
             // ---------- 1) Drive each open epic PR ----------
             const prs = await github.rest.pulls.list({
               owner: context.repo.owner,
@@ -90,82 +213,18 @@ jobs:
                 continue;
               }
 
+              // Human-review escape hatch — if a PR has been flagged for human
+              // review (e.g. by hitting max rounds without approval), pause
+              // the automated cycle until the label is removed.
+              if (labels.includes('needs-human-review')) {
+                console.log('PR flagged for human review. Skipping automated actions.');
+                continue;
+              }
+
               // ---- READY-TO-MERGE: perform the merge ourselves ----
               if (labels.includes('ready-to-merge')) {
                 console.log('Has ready-to-merge label. Attempting merge.');
-
-                // mergeable can be null while GitHub is still computing it —
-                // skip and re-check next tick rather than risking a bad merge.
-                if (pr.mergeable === null) {
-                  console.log('Mergeability still computing. Will retry next tick.');
-                  continue;
-                }
-
-                if (pr.mergeable === false) {
-                  console.log('PR not mergeable (conflicts?). Posting fix-it comment.');
-                  await github.rest.issues.createComment({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    issue_number: prNumber,
-                    body: `[stuck-check] @claude This PR is marked \`ready-to-merge\` but has merge conflicts. ` +
-                          `Please rebase against \`main\` and resolve conflicts.`,
-                  });
-                  continue;
-                }
-
-                try {
-                  await github.rest.pulls.merge({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    pull_number: prNumber,
-                    merge_method: 'squash',
-                  });
-                  console.log(`Merged PR #${prNumber}.`);
-
-                  // Delete the source branch (best-effort).
-                  try {
-                    await github.rest.git.deleteRef({
-                      owner: context.repo.owner,
-                      repo: context.repo.repo,
-                      ref: `heads/${pr.head.ref}`,
-                    });
-                  } catch (e) {
-                    console.log(`Could not delete branch: ${e.message}`);
-                  }
-
-                  await github.rest.issues.addLabels({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    issue_number: prNumber,
-                    labels: ['auto-merged'],
-                  });
-
-                  await github.rest.issues.removeLabel({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    issue_number: prNumber,
-                    name: 'ready-to-merge',
-                  }).catch(() => {});
-
-                  // Fan out to next unblocked issues.
-                  await github.rest.actions.createWorkflowDispatch({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    workflow_id: 'migration-orchestrator.yml',
-                    ref: 'main',
-                    inputs: { trigger_all_unblocked: 'true' },
-                  });
-                  console.log('Dispatched migration-orchestrator.');
-                } catch (e) {
-                  console.log(`Merge failed: ${e.message}`);
-                  await github.rest.issues.createComment({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    issue_number: prNumber,
-                    body: `[stuck-check] @claude Merge attempt failed: \`${e.message}\`. ` +
-                          `Please investigate (CI red? branch protection?) and fix.`,
-                  });
-                }
+                await performMerge(pr);
                 continue;
               }
 
@@ -178,10 +237,11 @@ jobs:
               const currentRound = Math.max(...roundLabels.map(l => parseInt(l.split('-')[2])));
 
               const updatedAt = new Date(pr.updated_at);
-              if (updatedAt > staleThreshold) {
-                console.log(`Last activity ${updatedAt.toISOString()} — within staleness window. Skipping.`);
-                continue;
-              }
+              const isFresh = updatedAt > staleThreshold;
+              // Note: do NOT skip here on staleness. Approvals must be acted on
+              // immediately, and round-advance comments are de-duplicated by
+              // `nextRoundTriggered` below. Staleness only gates the "nudge an
+              // already-triggered round" branch in the `nextRoundTriggered` logic.
 
               // Gather all comments (issue_comments) and formal reviews and commits.
               const comments = await github.paginate(
@@ -260,7 +320,7 @@ jobs:
               );
 
               if (approvedRecently && currentRound >= 2) {
-                console.log('Approval detected after >= round 2. Marking ready-to-merge.');
+                console.log('Approval detected after >= round 2. Marking ready-to-merge and attempting merge.');
                 await github.rest.issues.addLabels({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
@@ -272,8 +332,9 @@ jobs:
                   repo: context.repo.repo,
                   issue_number: prNumber,
                   body: `[stuck-check] Approval detected after ${currentRound} review rounds. ` +
-                        `Marking \`ready-to-merge\`; merge will run on the next tick.`,
+                        `Marking \`ready-to-merge\` and attempting merge now.`,
                 });
+                await performMerge(pr);
                 continue;
               }
 
@@ -299,19 +360,29 @@ jobs:
               const candidateRound = currentRound + 1;
 
               if (candidateRound > MAX_ROUNDS) {
-                console.log(`Already at MAX_ROUNDS (${MAX_ROUNDS}). Marking ready-to-merge.`);
+                // Max rounds without approval => STOP auto-merging, ping human.
+                // The agents couldn't converge; the user must decide.
+                if (labels.includes('needs-human-review')) {
+                  console.log(`Already flagged for human review. Skipping.`);
+                  continue;
+                }
+                console.log(`Max rounds (${MAX_ROUNDS}) reached without approval. Flagging for human review.`);
                 await github.rest.issues.addLabels({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   issue_number: prNumber,
-                  labels: ['ready-to-merge'],
-                });
+                  labels: ['needs-human-review'],
+                }).catch((e) => console.log(`Could not add label: ${e.message}`));
                 await github.rest.issues.createComment({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   issue_number: prNumber,
-                  body: `[stuck-check] Max review rounds (${MAX_ROUNDS}) reached without explicit approval. ` +
-                        `Marking \`ready-to-merge\`. Track unresolved findings as \`tech-debt\` issues.`,
+                  body: `[stuck-check] @${context.repo.owner} Max review rounds (${MAX_ROUNDS}) reached without explicit approval. ` +
+                        `The Claude↔Copilot cycle could not converge on this PR. Human review is required — please either:\n\n` +
+                        `1. Manually review and merge if you're satisfied, or\n` +
+                        `2. Post further feedback and remove the \`needs-human-review\` label to re-enter the automated cycle, or\n` +
+                        `3. Close this PR if the approach isn't right.\n\n` +
+                        `Automated cycle is paused until this label is removed.`,
                 });
                 continue;
               }
@@ -324,7 +395,17 @@ jobs:
               );
 
               if (nextRoundTriggered) {
-                // Just nudge whoever the round expects.
+                // Already prompted for this round — only nudge when truly stale,
+                // otherwise we'd post a nudge every 15 min while the agent is
+                // still working.
+                if (isFresh) {
+                  const updatedAgeMin = Math.round((Date.now() - Date.parse(pr.updated_at)) / 60000);
+                  console.log(
+                    `Round ${nextRound} already triggered and PR is fresh ` +
+                    `(${updatedAgeMin}m since updated_at; ${ageMin}m since last meaningful event). No nudge needed.`
+                  );
+                  continue;
+                }
                 const nudgeAgent = (nextRound % 2 === 1) ? '@copilot' : '@claude';
                 await github.rest.issues.createComment({
                   owner: context.repo.owner,

@@ -1,0 +1,22 @@
+# User profiles for chezmoi template rendering
+# Referenced in templates as {{ .users[.chezmoi.username] }}
+# Machine-local overrides go in .chezmoidata/local.yaml (gitignored)
+
+users:
+  naroslife:
+    full_name: "Robert Nagy"
+    email: "robi54321@gmail.com"
+    git_signing_key: ""        # GPG/SSH key ID for signed commits
+    enterprise: false
+    shell: zsh
+    editor: nvim
+    theme: catppuccin-mocha
+
+  enterpriseuser:
+    full_name: "Robert Nagy"
+    email: "robert.4.nagy@aumovio.com"
+    git_signing_key: ""
+    enterprise: true
+    shell: zsh
+    editor: nvim
+    theme: catppuccin-mocha

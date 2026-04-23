@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# run_once_setup-ssh.sh — SSH key setup and permissions
+# Managed by chezmoi. Edit source at home/run_once_setup-ssh.sh.tmpl
+# Runs once per machine (re-runs if this file changes).
+#
+# What this does:
+#   1. Creates ~/.ssh with correct permissions
+#   2. Generates an ed25519 key if none exists
+#   3. Fixes permissions on all existing keys
+{{- $u := index .users (.dotfiles_user | default .chezmoi.username) | default (dict "email" .email "full_name" .chezmoi.username) }}
+
+set -euo pipefail
+
+SSH_DIR="${HOME}/.ssh"
+SSH_KEY="${SSH_DIR}/id_ed25519"
+EMAIL="{{ $u.email }}"
+
+# ── SSH directory ──────────────────────────────────────────────────────────────
+mkdir -p "${SSH_DIR}"
+chmod 700 "${SSH_DIR}"
+
+# ── Generate ed25519 key if missing ───────────────────────────────────────────
+if [[ ! -f "${SSH_KEY}" ]]; then
+  echo "==> Generating SSH key for ${EMAIL} …"
+  ssh-keygen -t ed25519 -C "${EMAIL}" -f "${SSH_KEY}" -N ""
+  echo ""
+  echo "Public key (add to GitHub → Settings → SSH keys):"
+  echo ""
+  cat "${SSH_KEY}.pub"
+  echo ""
+  echo "Direct link: https://github.com/settings/ssh/new"
+  echo ""
+else
+  echo "SSH key already exists: ${SSH_KEY}"
+fi
+
+# ── Fix permissions on all keys ───────────────────────────────────────────────
+find "${SSH_DIR}" -maxdepth 1 -type f ! -name "*.pub" ! -name "config" ! -name "known_hosts" \
+  ! -name "authorized_keys" -exec chmod 600 {} +
+find "${SSH_DIR}" -maxdepth 1 -name "*.pub" -exec chmod 644 {} +
+chmod 600 "${SSH_DIR}/known_hosts" 2>/dev/null || true
+chmod 600 "${SSH_DIR}/authorized_keys" 2>/dev/null || true
+
+echo "SSH setup complete."

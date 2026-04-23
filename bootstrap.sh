@@ -516,7 +516,7 @@ step_apply_chezmoi() {
   export DOTFILES_USER="${USERNAME}"
   log_info "Using profile: ${USERNAME}"
 
-  local chezmoi_source="${SCRIPT_DIR}"
+  local chezmoi_source="${SCRIPT_DIR}/home"
   local chezmoi_config="${HOME}/.config/chezmoi/chezmoi.toml"
 
   # Back up existing configs before the first-time apply
