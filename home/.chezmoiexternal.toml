@@ -1,0 +1,27 @@
+# chezmoi external sources
+# Manages files/dirs from external git repos or archives
+# Docs: https://chezmoi.io/reference/special-files/chezmoiexternal/
+
+# Zsh plugins — cloned into ~/.local/share/zsh/plugins/
+# chezmoi manages the clone; run_onchange_ scripts handle activation
+
+[".local/share/zsh/plugins/zsh-autosuggestions"]
+  type = "git-repo"
+  url  = "https://github.com/zsh-users/zsh-autosuggestions.git"
+  refreshPeriod = "168h"  # weekly
+
+[".local/share/zsh/plugins/zsh-syntax-highlighting"]
+  type = "git-repo"
+  url  = "https://github.com/zsh-users/zsh-syntax-highlighting.git"
+  refreshPeriod = "168h"
+
+[".local/share/zsh/plugins/fzf-tab"]
+  type = "git-repo"
+  url  = "https://github.com/Aloxaf/fzf-tab.git"
+  refreshPeriod = "168h"
+
+# tmux plugin manager — cloned into standard tpm location
+[".tmux/plugins/tpm"]
+  type = "git-repo"
+  url  = "https://github.com/tmux-plugins/tpm.git"
+  refreshPeriod = "168h"

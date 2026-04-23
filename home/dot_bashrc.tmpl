@@ -1,115 +1,76 @@
-# ~/.zshrc — managed by chezmoi
+# ~/.bashrc — managed by chezmoi
 # Machine: {{ .chezmoi.hostname }} | User: {{ .chezmoi.username }}
-# Template rendered by chezmoi — edit source at home/dot_zshrc.tmpl
+# Template rendered by chezmoi — edit source at home/dot_bashrc.tmpl
 
-# ── Performance: skip redundant compinit from system ─────────────────────────
-skip_global_compinit=1
+# Return early for non-interactive shells
+[[ $- != *i* ]] && return
 
 # ── mise activation (must be near top) ───────────────────────────────────────
 if command -v mise &>/dev/null; then
-  eval "$(mise activate zsh)"
+  eval "$(mise activate bash)"
 fi
 
 # ── Path additions ────────────────────────────────────────────────────────────
-typeset -U path  # deduplicate PATH
-path=(
-  "$HOME/.local/bin"
-  "$HOME/.cargo/bin"
-  "$HOME/.go/bin"
-  $path
-)
+export PATH="${HOME}/.local/bin:${HOME}/.cargo/bin:${HOME}/.go/bin:${PATH}"
 
 # ── History ───────────────────────────────────────────────────────────────────
-HISTFILE="${HOME}/.cache/zsh/history"
-mkdir -p "$(dirname "${HISTFILE}")"
+HISTFILE="${HOME}/.bash_history"
 HISTSIZE=50000
-SAVEHIST=50000
-setopt HIST_IGNORE_DUPS
-setopt HIST_IGNORE_SPACE
-setopt SHARE_HISTORY
-setopt EXTENDED_HISTORY
+HISTFILESIZE=100000
+HISTCONTROL=ignoreboth:erasedups
+HISTIGNORE="ls:cd:cd -:pwd:exit:date:* --help:man *:history:clear:fg"
+HISTTIMEFORMAT="%F %T "
+shopt -s histappend
+shopt -s cmdhist
 
-# ── Completion system ─────────────────────────────────────────────────────────
-autoload -Uz compinit
-compinit -d "${HOME}/.cache/zsh/zcompdump-${ZSH_VERSION}"
+# ── Shell options ─────────────────────────────────────────────────────────────
+shopt -s checkwinsize
+shopt -s globstar
+shopt -s nocaseglob
+shopt -s cdspell
+
+# ── Completion ────────────────────────────────────────────────────────────────
+if ! shopt -oq posix; then
+  if [ -f /usr/share/bash-completion/bash_completion ]; then
+    . /usr/share/bash-completion/bash_completion
+  elif [ -f /etc/bash_completion ]; then
+    . /etc/bash_completion
+  fi
+fi
 
 # carapace — universal completions
 if command -v carapace &>/dev/null; then
-  source <(carapace _carapace zsh)
+  source <(carapace _carapace)
 fi
-
-# ── Zsh plugins ───────────────────────────────────────────────────────────────
-ZSH_PLUGIN_DIR="${HOME}/.local/share/zsh/plugins"
-
-_load_plugin() {
-  local plugin_dir="${ZSH_PLUGIN_DIR}/$1"
-  local plugin_file="${plugin_dir}/$2"
-  [[ -f "${plugin_file}" ]] && source "${plugin_file}"
-}
-
-_load_plugin "zsh-autosuggestions"    "zsh-autosuggestions.zsh"
-_load_plugin "zsh-syntax-highlighting" "zsh-syntax-highlighting.zsh"
-_load_plugin "fzf-tab"                "fzf-tab.plugin.zsh"
-
-# ── fzf-tab configuration ─────────────────────────────────────────────────────
-zstyle ':completion:*:git-checkout:*' sort false
-zstyle ':completion:*:descriptions'  format '[%d]'
-zstyle ':completion:*'               list-colors "${(s.:.)LS_COLORS}"
-zstyle ':completion:*'               verbose yes
-zstyle ':completion:*'               group-name ''
-zstyle ':fzf-tab:complete:cd:*'      fzf-preview 'eza -1 --color=always $realpath'
-zstyle ':fzf-tab:*'                  switch-group ',' '.'
-{{ if .is_wsl -}}
-# WSL: disable tmux popup (not supported in all WSL terminals)
-zstyle ':fzf-tab:*'                  fzf-command fzf
-{{ else -}}
-zstyle ':fzf-tab:*'                  fzf-command ftb-tmux-popup
-{{ end -}}
-zstyle ':fzf-tab:*'                  continuous-trigger '/'
 
 # ── Prompt: starship ──────────────────────────────────────────────────────────
 if command -v starship &>/dev/null; then
-  eval "$(starship init zsh)"
+  eval "$(starship init bash)"
 fi
 
 # ── History: atuin ────────────────────────────────────────────────────────────
 if command -v atuin &>/dev/null; then
-  eval "$(atuin init zsh)"
+  eval "$(atuin init bash)"
 fi
 
 # ── Navigation: zoxide ────────────────────────────────────────────────────────
 if command -v zoxide &>/dev/null; then
-  eval "$(zoxide init zsh)"
+  eval "$(zoxide init bash)"
 fi
 
 # ── Directory env: direnv ────────────────────────────────────────────────────
 if command -v direnv &>/dev/null; then
-  eval "$(direnv hook zsh)"
+  eval "$(direnv hook bash)"
 fi
 
 # ── FZF ───────────────────────────────────────────────────────────────────────
 if command -v fzf &>/dev/null; then
-  source <(fzf --zsh)
+  eval "$(fzf --bash)"
 fi
 export FZF_DEFAULT_COMMAND='fd --type f --hidden --follow --exclude .git'
 export FZF_DEFAULT_OPTS='--height 40% --layout=reverse --border --info=inline'
 
-# ── Key bindings ──────────────────────────────────────────────────────────────
-bindkey '^a'    beginning-of-line
-bindkey '^e'    end-of-line
-bindkey '^w'    autosuggest-execute
-bindkey '^k'    up-line-or-search
-bindkey '^j'    down-line-or-search
-bindkey '^W'    backward-kill-word
-bindkey '^[[H'  beginning-of-line    # Home
-bindkey '^[[1~' beginning-of-line    # Home (alt)
-bindkey '^[[F'  end-of-line          # End
-bindkey '^[[4~' end-of-line          # End (alt)
-bindkey '^[[1;5C' forward-word       # Ctrl+Right
-bindkey '^[[1;5D' backward-word      # Ctrl+Left
-
 # ── Aliases ───────────────────────────────────────────────────────────────────
-# Modern CLI replacements (with kill-switch awareness — see scripts/kill-switch.sh)
 if [[ -z "${DOTFILES_NO_ALIASES:-}" ]]; then
   alias cat='bat'
   alias ls='eza'
@@ -174,7 +135,7 @@ alias v='nvim'
 alias rr='ranger'
 
 # ── VSCode shell integration ───────────────────────────────────────────────────
-[[ "$TERM_PROGRAM" == "vscode" ]] && . "$(code --locate-shell-integration-path zsh 2>/dev/null)" 2>/dev/null || true
+[[ "$TERM_PROGRAM" == "vscode" ]] && . "$(code --locate-shell-integration-path bash 2>/dev/null)" 2>/dev/null || true
 
 {{ if .is_wsl -}}
 # ── WSL-specific configuration ────────────────────────────────────────────────
@@ -187,12 +148,20 @@ alias pbpaste='powershell.exe -command "Get-Clipboard"'
 # ── KUBECONFIG ────────────────────────────────────────────────────────────────
 export KUBECONFIG="${HOME}/.kube/config"
 
-# ── Local bin and custom functions ────────────────────────────────────────────
-if [[ -d "${HOME}/.local/bin" ]]; then
-  export PATH="${HOME}/.local/bin:${PATH}"
-fi
+# ── Environment variables ─────────────────────────────────────────────────────
+export EDITOR="nvim"
+export VISUAL="nvim"
+export PAGER="less"
+export LESS="-FRXi"
+export RIPGREP_CONFIG_PATH="${HOME}/.config/ripgrep/config"
+export DOCKER_BUILDKIT=1
+export BUILDKIT_PROGRESS=plain
+export GOPATH="${HOME}/go"
+export GOBIN="${HOME}/go/bin"
+export CARGO_HOME="${HOME}/.cargo"
+export GPG_TTY="$(tty)"
 
-# Load shell function files (managed by chezmoi, installed to ~/.local/share/shell-functions/)
+# ── Local bin and custom functions ────────────────────────────────────────────
 _shell_func_dir="${HOME}/.local/share/shell-functions"
 if [[ -d "${_shell_func_dir}" ]]; then
   for _func_file in "${_shell_func_dir}"/*.sh; do

@@ -1,0 +1,84 @@
+# ~/.config/shell/aliases.sh — managed by chezmoi
+# Shared shell aliases sourced by both .zshrc and .bashrc
+# Edit source at home/dot_config/shell/aliases.sh.tmpl
+
+# ── Modern CLI replacements ───────────────────────────────────────────────────
+# Gated by kill-switch: export DOTFILES_NO_ALIASES=1 to revert
+if [[ -z "${DOTFILES_NO_ALIASES:-}" ]]; then
+  alias cat='bat'
+  alias ls='eza'
+  alias l='eza -l --icons --git -a'
+  alias lt='eza --tree --level=2 --long --icons --git'
+  alias ltree='eza --tree --level=2 --icons --git'
+  alias la='eza --tree --icons --git'
+  alias find='fd'
+  alias grep='rg'
+  alias df='duf'
+  alias du='dust'
+  alias ps='procs'
+  alias top='btm'
+  alias htop='btm'
+  alias ping='gping'
+  alias dig='dog'
+  alias http='xh'
+fi
+
+# ── Git ───────────────────────────────────────────────────────────────────────
+alias gc='git commit -m'
+alias gca='git commit -a -m'
+alias gp='git push origin HEAD'
+alias gpu='git pull origin'
+alias gst='git status'
+alias glog='git log --graph --topo-order --pretty="%w(100,0,6)%C(yellow)%h%C(bold)%C(black)%d %C(cyan)%ar %C(green)%an%n%C(bold)%C(white)%s %N" --abbrev-commit'
+alias gdiff='git diff'
+alias gco='git checkout'
+alias gb='git branch'
+alias gba='git branch -a'
+alias gadd='git add'
+alias ga='git add -p'
+alias gcoall='git checkout -- .'
+alias gr='git remote'
+alias gre='git reset'
+alias gd='git diff'
+alias gdt='git difftool'
+
+# ── Docker ────────────────────────────────────────────────────────────────────
+alias dco='docker compose'
+alias dps='docker ps'
+alias dpa='docker ps -a'
+alias dl='docker ps -l -q'
+alias dx='docker exec -it'
+
+# ── Kubernetes ────────────────────────────────────────────────────────────────
+alias k='kubectl'
+alias ka='kubectl apply -f'
+alias kg='kubectl get'
+alias kd='kubectl describe'
+alias kdel='kubectl delete'
+alias kl='kubectl logs -f'
+alias kgpo='kubectl get pod'
+alias kgd='kubectl get deployments'
+alias kc='kubectx'
+alias ke='kubectl exec -it'
+alias kcns='kubectl config set-context --current --namespace'
+
+# ── Navigation ────────────────────────────────────────────────────────────────
+alias ..='cd ..'
+alias ...='cd ../..'
+alias ....='cd ../../..'
+alias .....='cd ../../../..'
+alias ......='cd ../../../../..'
+alias cl='clear'
+alias v='nvim'
+alias rr='ranger'
+alias nm='nmap -sC -sV -oN nmap'
+
+# ── Dotfiles tools ────────────────────────────────────────────────────────────
+alias vscode-ext='~/.local/bin/vscode-ext'
+alias claude-clean='~/.local/bin/claude-clean'
+
+{{ if .is_wsl -}}
+# ── WSL-specific ──────────────────────────────────────────────────────────────
+alias pbcopy='clip.exe'
+alias pbpaste='powershell.exe -command "Get-Clipboard"'
+{{ end -}}
