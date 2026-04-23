@@ -144,13 +144,23 @@ jobs:
                 continue;
               }
 
-              // Check for an open PR that links this issue (Closes #N or branch hint).
-              const linkedPrs = await github.rest.search.issuesAndPullRequests({
-                q: `repo:${context.repo.owner}/${context.repo.repo} type:pr is:open #${num}`,
-              });
-              const hasOpenPr = linkedPrs.data.items.some(item => {
-                const body = item.body || '';
-                const branch = (item.head && item.head.ref) || '';
+              // Check for an open PR linking this issue. Use pulls.list rather
+              // than search.issuesAndPullRequests because the search API
+              // doesn't return head.ref, which we need for branch-name dedup
+              // (Claude PRs are named `claude/issue-N-...` or
+              // `feat/migration-N`).
+              const openPrs = await github.paginate(
+                github.rest.pulls.list,
+                {
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  state: 'open',
+                  per_page: 100,
+                }
+              );
+              const hasOpenPr = openPrs.some(p => {
+                const body = p.body || '';
+                const branch = p.head?.ref || '';
                 return body.includes(`#${num}`) ||
                        branch.includes(`issue-${num}`) ||
                        branch.includes(`migration-${num}`);

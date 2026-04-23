@@ -70,6 +70,14 @@ jobs:
                 pull_number: context.payload.issue.number,
               });
               pr = prResp.data;
+
+              // Fork guard — the job-level `if:` cannot inspect head.repo for
+              // issue_comment events (the payload only has issue, not pull
+              // request), so we enforce it here, after fetching the PR.
+              if (pr.head.repo.full_name !== `${context.repo.owner}/${context.repo.repo}`) {
+                console.log(`PR is from a fork (${pr.head.repo.full_name}). Skipping issue_comment handoff.`);
+                return;
+              }
             } else {
               pr = context.payload.pull_request;
             }

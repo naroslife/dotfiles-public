@@ -84,9 +84,22 @@ jobs:
 
               if (pr.merged) { console.log('Already merged.'); continue; }
 
+              // Fork guard — never mutate labels/comments or merge PRs from forks.
+              if (pr.head.repo.full_name !== `${context.repo.owner}/${context.repo.repo}`) {
+                console.log(`PR is from a fork (${pr.head.repo.full_name}). Skipping.`);
+                continue;
+              }
+
               // ---- READY-TO-MERGE: perform the merge ourselves ----
               if (labels.includes('ready-to-merge')) {
                 console.log('Has ready-to-merge label. Attempting merge.');
+
+                // mergeable can be null while GitHub is still computing it —
+                // skip and re-check next tick rather than risking a bad merge.
+                if (pr.mergeable === null) {
+                  console.log('Mergeability still computing. Will retry next tick.');
+                  continue;
+                }
 
                 if (pr.mergeable === false) {
                   console.log('PR not mergeable (conflicts?). Posting fix-it comment.');
@@ -238,6 +251,9 @@ jobs:
               console.log(`Latest event: ${latest.kind} by ${latest.author} (${ageMin}m ago)`);
 
               // Approval signal — escalate to ready-to-merge if cycle deep enough.
+              // Accept formal APPROVED reviews from anyone (trusted by GitHub's
+              // review permissions) and approval phrasing from Copilot/Claude
+              // (whose "reviews" arrive as issue_comments).
               const approvedRecently = events.some(e =>
                 (e.kind === 'review' && e.state === 'APPROVED') ||
                 (e.kind === 'comment' && APPROVAL_RE.test(e.body))
@@ -276,8 +292,31 @@ jobs:
                 nextAgent = (currentRound % 2 === 1) ? '@copilot' : '@claude';
               }
 
-              // Don't double-trigger for this round number — only escalate to the NEXT round.
-              const nextRound = Math.min(currentRound + 1, MAX_ROUNDS);
+              // Compute the candidate next round WITHOUT capping so the
+              // `> MAX_ROUNDS` escalation branch is reachable. Capping with
+              // Math.min() before this check would make the cycle nudge
+              // forever at round MAX_ROUNDS instead of marking ready-to-merge.
+              const candidateRound = currentRound + 1;
+
+              if (candidateRound > MAX_ROUNDS) {
+                console.log(`Already at MAX_ROUNDS (${MAX_ROUNDS}). Marking ready-to-merge.`);
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: prNumber,
+                  labels: ['ready-to-merge'],
+                });
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: prNumber,
+                  body: `[stuck-check] Max review rounds (${MAX_ROUNDS}) reached without explicit approval. ` +
+                        `Marking \`ready-to-merge\`. Track unresolved findings as \`tech-debt\` issues.`,
+                });
+                continue;
+              }
+
+              const nextRound = candidateRound;
 
               // If we already commented for nextRound, nudge instead of duplicating.
               const nextRoundTriggered = comments.some(c =>
@@ -293,25 +332,6 @@ jobs:
                   issue_number: prNumber,
                   body: `[stuck-check] ${nudgeAgent} The review cycle is idle for ${ageMin} minutes ` +
                         `at round ${nextRound}. Please continue — review or address pending feedback.`,
-                });
-                continue;
-              }
-
-              // Cycle is at currentRound and someone's turn — advance to nextRound.
-              if (nextRound > MAX_ROUNDS) {
-                console.log(`Already at MAX_ROUNDS (${MAX_ROUNDS}). Marking ready-to-merge.`);
-                await github.rest.issues.addLabels({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: prNumber,
-                  labels: ['ready-to-merge'],
-                });
-                await github.rest.issues.createComment({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: prNumber,
-                  body: `[stuck-check] Max review rounds (${MAX_ROUNDS}) reached without explicit approval. ` +
-                        `Marking \`ready-to-merge\`. Track unresolved findings as \`tech-debt\` issues.`,
                 });
                 continue;
               }

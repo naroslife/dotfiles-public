@@ -19,21 +19,24 @@ jobs:
          github.event.comment.author_association == 'COLLABORATOR' ||
          github.event.comment.user.login == 'github-actions[bot]' ||
          github.event.comment.user.login == 'Copilot' ||
-         github.event.comment.user.login == 'copilot-swe-agent')) ||
+         github.event.comment.user.login == 'copilot-swe-agent' ||
+         github.event.comment.user.login == 'copilot[bot]')) ||
       (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude') &&
         (github.event.comment.author_association == 'OWNER' ||
          github.event.comment.author_association == 'MEMBER' ||
          github.event.comment.author_association == 'COLLABORATOR' ||
          github.event.comment.user.login == 'github-actions[bot]' ||
          github.event.comment.user.login == 'Copilot' ||
-         github.event.comment.user.login == 'copilot-swe-agent')) ||
+         github.event.comment.user.login == 'copilot-swe-agent' ||
+         github.event.comment.user.login == 'copilot[bot]')) ||
       (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude') &&
         (github.event.review.author_association == 'OWNER' ||
          github.event.review.author_association == 'MEMBER' ||
          github.event.review.author_association == 'COLLABORATOR' ||
          github.event.review.user.login == 'github-actions[bot]' ||
          github.event.review.user.login == 'Copilot' ||
-         github.event.review.user.login == 'copilot-swe-agent')) ||
+         github.event.review.user.login == 'copilot-swe-agent' ||
+         github.event.review.user.login == 'copilot[bot]')) ||
       (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')) &&
         (github.event.issue.author_association == 'OWNER' ||
          github.event.issue.author_association == 'MEMBER' ||
