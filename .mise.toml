@@ -30,6 +30,7 @@
   fzf                            = "latest"
   "aqua:ajeetdsouza/zoxide"      = "latest"
   direnv                         = "latest"
+  "github:cantino/mcfly"         = "latest"   # shell history search (replaces Ctrl-R)
 
   # ─── Modern CLI replacements ──────────────────────────────────────────────
   "aqua:sharkdp/bat"             = "latest"
@@ -140,3 +141,11 @@
 [tasks.test]
   description = "Run the dotfiles test suite"
   run         = "./tests/run_tests.sh"
+
+[tasks.doctor]
+  description = "Check tool installations and report missing/broken tools"
+  run         = "./scripts/doctor.sh"
+
+[tasks.kill-switch]
+  description = "Print kill-switch instructions (source the script directly for current-session effect)"
+  run         = "./scripts/kill-switch.sh"
