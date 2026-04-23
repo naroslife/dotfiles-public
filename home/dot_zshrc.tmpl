@@ -20,8 +20,8 @@ export CARGO_HOME="${HOME}/.cargo"
 export RUSTUP_HOME="${HOME}/.rustup"
 # Node: predictable global prefix for `npm install -g`
 export NPM_CONFIG_PREFIX="${HOME}/.npm-global"
-# Maven: cap JVM heap for builds
-export MAVEN_OPTS="-Xmx1024m"
+# Maven: cap JVM heap for builds (preserve caller-set value)
+export MAVEN_OPTS="${MAVEN_OPTS:--Xmx1024m}"
 
 # ── Path additions ────────────────────────────────────────────────────────────
 typeset -U path  # deduplicate PATH

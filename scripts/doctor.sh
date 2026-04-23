@@ -222,7 +222,7 @@ check_binary "lldb"
 
 # strace/ltrace
 if command -v strace &>/dev/null; then
-  if strace -e trace=read echo hello &>/dev/null 2>&1; then
+  if strace -e trace=read echo hello &>/dev/null; then
     log_pass "strace"
   else
     log_warn "strace: running but functional test failed (may need ptrace permissions)"
@@ -240,6 +240,10 @@ else
 fi
 check_binary "automake"
 check_binary "libtool" "libtool"
+
+# Build system helpers (ninja, pkg-config) — also moved to tier3_apt
+check_binary "ninja" "ninja"
+check_binary "pkg-config"
 
 # perf tools (kernel-version-specific, unavailable on WSL2)
 if is_wsl; then

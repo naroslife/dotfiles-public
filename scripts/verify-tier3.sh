@@ -64,8 +64,11 @@ fi
 log_info ""
 log_info "── CMake ──"
 if command -v cmake &>/dev/null; then
-  [[ "${VERBOSE}" == true ]] && log_pass "cmake: $(cmake --version 2>/dev/null | head -1)" \
-    || log_pass "cmake: installed"
+  if [[ "${VERBOSE}" == true ]]; then
+    log_pass "cmake: $(cmake --version 2>/dev/null | head -1)"
+  else
+    log_pass "cmake: installed"
+  fi
 
   # Verify module data accessible — validates share/cmake-*/Modules/ is present
   if cmake --help-module FindThreads &>/dev/null; then
@@ -77,7 +80,7 @@ if command -v cmake &>/dev/null; then
   # find-package mode (deprecated cmake 3.14+ but still validates module resolution)
   tmpdir=$(mktemp -d)
   if cmake --find-package -DNAME=Threads -DCOMPILER_ID=GNU -DLANGUAGE=C -DMODE=EXIST \
-       -B "${tmpdir}" &>/dev/null 2>&1; then
+       -B "${tmpdir}" &>/dev/null; then
     log_pass "cmake: find-package mode resolves Threads"
   else
     log_warn "cmake: --find-package deprecated in this version — Modules/ dir check passed above"
@@ -206,9 +209,9 @@ fi
 
 # ── Build system tools ────────────────────────────────────────────────────────
 # Path deps: share/aclocal/, share/autoconf/, share/automake-*/
-# Install: apt install autoconf automake libtool
+# Install: apt install autoconf automake libtool ninja-build pkg-config
 log_info ""
-log_info "── Build system tools (autoconf, automake, libtool) ──"
+log_info "── Build system tools (autoconf, automake, libtool, ninja, pkg-config) ──"
 for tool in autoconf automake libtool; do
   if command -v "${tool}" &>/dev/null; then
     if [[ "${VERBOSE}" == true ]]; then
@@ -221,12 +224,34 @@ for tool in autoconf automake libtool; do
   fi
 done
 
+# ninja (apt package: ninja-build)
+if command -v ninja &>/dev/null; then
+  if [[ "${VERBOSE}" == true ]]; then
+    log_pass "ninja: $(ninja --version 2>/dev/null | head -1)"
+  else
+    log_pass "ninja"
+  fi
+else
+  log_fail "ninja: not found (install: sudo apt install ninja-build)"
+fi
+
+# pkg-config
+if command -v pkg-config &>/dev/null; then
+  if [[ "${VERBOSE}" == true ]]; then
+    log_pass "pkg-config: $(pkg-config --version 2>/dev/null)"
+  else
+    log_pass "pkg-config"
+  fi
+else
+  log_fail "pkg-config: not found (install: sudo apt install pkg-config)"
+fi
+
 # ── strace / ltrace ───────────────────────────────────────────────────────────
 # Install: apt install strace ltrace
 log_info ""
 log_info "── System tracers (strace, ltrace) ──"
 if command -v strace &>/dev/null; then
-  if strace -c echo hello &>/dev/null 2>&1; then
+  if strace -c echo hello &>/dev/null; then
     log_pass "strace: functional"
   else
     log_warn "strace: installed but may need ptrace permissions (ptrace_scope)"
