@@ -156,7 +156,7 @@ backup_file() {
   if [[ -f "$file" ]]; then
     local backup_path="${file}${backup_suffix}_${timestamp}"
     cp "$file" "$backup_path"
-    log_info "Backed up: $file → $backup_path"
+    log_info "Backed up: $file → $backup_path" >&2
     echo "$backup_path"
   fi
 }
