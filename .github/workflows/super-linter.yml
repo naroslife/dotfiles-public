@@ -7,8 +7,8 @@
 name: Code Quality Checks
 
 on: # yamllint disable-line rule:truthy
-  push: null
-  pull_request: null
+  push: {}
+  pull_request: {}
 jobs:
   run-lint:
     name: Run Lint
@@ -29,7 +29,7 @@ jobs:
           persist-credentials: false
 
       - name: Super Linter
-        uses: super-linter/super-linter@v8
+        uses: super-linter/super-linter@v8.6.0
         env:
           VALIDATE_ALL_CODEBASE: false
           DEFAULT_BRANCH: "main"
@@ -51,6 +51,8 @@ jobs:
         uses: super-linter/super-linter@v8.6.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VALIDATE_ALL_CODEBASE: false
+          DEFAULT_BRANCH: "main"
           # Set your fix mode variables to true
           FIX_SHELL_SHFMT: true
           FIX_YAML_PRETTIER: true
@@ -71,7 +73,8 @@ jobs:
         # - Not on the default branch
         if: >
           github.event_name == 'pull_request' &&
-          github.ref_name != github.event.repository.default_branch
+          github.ref_name != github.event.repository.default_branch &&
+          github.event.pull_request.head.repo.full_name == github.repository
         uses: stefanzweifel/git-auto-commit-action@v7
         with:
           branch: ${{ github.event.pull_request.head.ref || github.head_ref || github.ref }}
