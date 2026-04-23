@@ -239,8 +239,8 @@ jobs:
 
               // Approval signal — escalate to ready-to-merge if cycle deep enough.
               const approvedRecently = events.some(e =>
-                (e.kind === 'review' && e.state === 'APPROVED' && isCopilot(e.author)) ||
-                (e.kind === 'comment' && isCopilot(e.author) && APPROVAL_RE.test(e.body))
+                (e.kind === 'review' && e.state === 'APPROVED') ||
+                (e.kind === 'comment' && APPROVAL_RE.test(e.body))
               );
 
               if (approvedRecently && currentRound >= 2) {
