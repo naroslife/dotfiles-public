@@ -2,26 +2,46 @@
 # Shared shell aliases sourced by both .zshrc and .bashrc
 # Edit source at home/dot_config/shell/aliases.sh.tmpl
 
-# ── Modern CLI replacements ───────────────────────────────────────────────────
-# Gated by kill-switch: export DOTFILES_NO_ALIASES=1 to revert
-if [[ -z "${DOTFILES_NO_ALIASES:-}" ]]; then
-  alias cat='bat'
-  alias ls='eza'
-  alias l='eza -l --icons --git -a'
-  alias lt='eza --tree --level=2 --long --icons --git'
-  alias ltree='eza --tree --level=2 --icons --git'
-  alias la='eza --tree --icons --git'
-  alias find='fd'
-  alias grep='rg'
-  alias df='duf'
-  alias du='dust'
-  alias ps='procs'
-  alias top='btm'
-  alias htop='btm'
-  alias ping='gping'
-  alias dig='dog'
-  alias http='xh'
+# ── Kill switch management (always available, even in classic mode) ───────────
+# Touch ~/.config/shell/use-system-defaults to revert to plain system tools.
+# Delete it (or run `dotfiles-modern`) to re-enable modern CLI replacements.
+alias dotfiles-classic='touch ~/.config/shell/use-system-defaults && exec $SHELL'
+alias dotfiles-modern='rm -f ~/.config/shell/use-system-defaults && exec $SHELL'
+alias dotfiles-status='[[ -f ~/.config/shell/use-system-defaults ]] && echo "Classic mode (system defaults)" || echo "Modern mode (enhanced tools)"'
+
+# ── Kill switch check ──────────────────────────────────────────────────────────
+# Activated by file OR env var (DOTFILES_NO_ALIASES=1 for scripted use)
+_KILL_SWITCH="${HOME}/.config/shell/use-system-defaults"
+if [[ -f "${_KILL_SWITCH}" ]] || [[ -n "${DOTFILES_NO_ALIASES:-}" ]]; then
+  unset -f cd 2>/dev/null || true
+  unset _KILL_SWITCH
+  return 0 2>/dev/null || exit 0
 fi
+unset _KILL_SWITCH
+
+# ── Modern CLI replacements ────────────────────────────────────────────────────
+alias cat='bat'
+alias ls='eza'
+alias l='eza -l --icons --git -a'
+alias lt='eza --tree --level=2 --long --icons --git'
+alias ltree='eza --tree --level=2 --icons --git'
+alias la='eza --tree --icons --git'
+alias find='fd'
+alias grep='rg'
+alias df='duf'
+alias du='dust'
+alias ps='procs'
+alias top='btm'
+alias htop='btm'
+alias ping='gping'
+alias dig='dog'
+alias http='xh'
+
+# ── History tool switching ─────────────────────────────────────────────────────
+# Requires switch_history function from ~/.local/share/shell-functions/
+alias use-atuin='switch_history atuin'
+alias use-mcfly='switch_history mcfly'
+alias history-status='switch_history status'
 
 # ── Git ───────────────────────────────────────────────────────────────────────
 alias gc='git commit -m'
