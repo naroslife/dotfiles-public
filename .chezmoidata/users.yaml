@@ -6,7 +6,9 @@ users:
   naroslife:
     full_name: "Robert Nagy"
     email: "robi54321@gmail.com"
-    git_signing_key: ""        # GPG/SSH key ID for signed commits
+    git_signing_key: ""        # GPG key ID for signed commits (e.g. "ABCD1234")
+    gpg_sign: false            # Set to true once git_signing_key is configured
+    # age_recipient: "age1..."  # Public key: age-keygen -y ~/.config/chezmoi/key.txt
     enterprise: false
     shell: zsh
     editor: nvim
@@ -16,6 +18,8 @@ users:
     full_name: "Robert Nagy"
     email: "robert.4.nagy@aumovio.com"
     git_signing_key: ""
+    gpg_sign: false
+    # age_recipient: "age1..."  # Public key: age-keygen -y ~/.config/chezmoi/key.txt
     enterprise: true
     shell: zsh
     editor: nvim

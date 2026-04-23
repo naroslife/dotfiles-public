@@ -6,6 +6,7 @@ Host *
   # Connection persistence
   ServerAliveInterval 60
   ServerAliveCountMax 3
+  TCPKeepAlive        yes
 
   # Multiplexing for faster repeated connections
   ControlMaster     auto
@@ -13,8 +14,17 @@ Host *
   ControlPersist    10m
 
   # Security
-  HashKnownHosts    yes
-  IdentitiesOnly    yes
+  HashKnownHosts          yes
+  IdentitiesOnly          yes
+  StrictHostKeyChecking   ask
+
+  # Add keys to agent automatically on first use
+  AddKeysToAgent    yes
+
+  # Modern ciphers — disables legacy weak algorithms
+  Ciphers           chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr
+  KexAlgorithms     curve25519-sha256,curve25519-sha256@libssh.org,diffie-hellman-group-exchange-sha256
+  MACs              hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,umac-128-etm@openssh.com
 
   # Forward agent selectively (only on trusted hosts)
   ForwardAgent      no
