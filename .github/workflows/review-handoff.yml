@@ -1,32 +1,50 @@
 name: Review Handoff
 
 # Manages the back-and-forth between Claude and Copilot during review.
-# When one agent finishes (pushes commits or leaves a comment), this workflow
-# tags the other agent to continue the cycle.
+# When one agent finishes (pushes commits, leaves a review, or posts a comment),
+# this workflow tags the other agent to continue the cycle.
 #
 # Flow:
 #   Round 1: Copilot reviews (triggered by pr-review-cycle.yml)
 #   Round 2: Claude addresses Copilot's feedback, then does own review
 #   Round 3: Copilot implements Claude's feedback (or argues back)
 #   Final:   Auto-merge if approved, or escalate after max rounds
+#
+# Note: Many Copilot-triggered runs land in `action_required` state because
+# GitHub treats `Copilot` as an external actor. The authoritative driver of
+# the cycle is `stuck-check.yml`, which polls every 15 minutes and runs as
+# the ORCHESTRATOR_PAT user (always trusted). This workflow is a fast-path
+# optimization; if it skips, stuck-check picks up within 15 minutes.
 
 on:
   # Triggered when either agent pushes fixes
   pull_request:
     types: [synchronize]
-  # Triggered when an agent leaves a review
+  # Triggered when an agent leaves a formal review
   pull_request_review:
     types: [submitted]
+  # Triggered when Copilot (or any user) posts an issue_comment.
+  # Copilot's "review" output is an issue_comment, not a formal review,
+  # so this is the only event that catches it.
+  issue_comment:
+    types: [created]
 
 jobs:
   handoff:
-    # Only on epic PRs that are in an active review cycle
+    # Only on epic PRs that are in an active review cycle.
+    # For issue_comment, also require the comment to be on a PR (not a plain issue).
     if: |
-      ((github.event_name == 'pull_request' &&
-       contains(toJSON(github.event.pull_request.labels), 'review-round-')) ||
-      (github.event_name == 'pull_request_review' &&
-       contains(toJSON(github.event.pull_request.labels), 'review-round-'))) &&
-      github.event.pull_request.head.repo.full_name == github.repository
+      (
+        (github.event_name == 'pull_request' &&
+         contains(toJSON(github.event.pull_request.labels), 'review-round-') &&
+         github.event.pull_request.head.repo.full_name == github.repository) ||
+        (github.event_name == 'pull_request_review' &&
+         contains(toJSON(github.event.pull_request.labels), 'review-round-') &&
+         github.event.pull_request.head.repo.full_name == github.repository) ||
+        (github.event_name == 'issue_comment' &&
+         github.event.issue.pull_request != null &&
+         contains(toJSON(github.event.issue.labels), 'review-round-'))
+      )
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -39,10 +57,32 @@ jobs:
         with:
           github-token: ${{ secrets.ORCHESTRATOR_PAT }}
           script: |
-            const pr = context.payload.pull_request;
-            const prNumber = pr.number;
+            const eventName = context.eventName;
 
-            // Get current labels
+            // Resolve PR object across event shapes.
+            // pull_request / pull_request_review: context.payload.pull_request
+            // issue_comment on a PR: context.payload.issue (has .pull_request)
+            let pr;
+            if (eventName === 'issue_comment') {
+              const prResp = await github.rest.pulls.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: context.payload.issue.number,
+              });
+              pr = prResp.data;
+
+              // Fork guard — the job-level `if:` cannot inspect head.repo for
+              // issue_comment events (the payload only has issue, not pull
+              // request), so we enforce it here, after fetching the PR.
+              if (pr.head.repo.full_name !== `${context.repo.owner}/${context.repo.repo}`) {
+                console.log(`PR is from a fork (${pr.head.repo.full_name}). Skipping issue_comment handoff.`);
+                return;
+              }
+            } else {
+              pr = context.payload.pull_request;
+            }
+
+            const prNumber = pr.number;
             const labels = pr.labels.map(l => l.name);
             const roundLabels = labels.filter(l => l.startsWith('review-round-'));
             const currentRound = roundLabels.length > 0
@@ -51,201 +91,228 @@ jobs:
 
             const MAX_ROUNDS = 3;
 
-            console.log(`PR #${prNumber}, current round: ${currentRound}, event: ${context.eventName}`);
+            console.log(`PR #${prNumber}, current round: ${currentRound}, event: ${eventName}`);
 
-            // Check if already merged or has auto-merge label
             if (labels.includes('auto-merged') || pr.merged) {
               console.log('PR already merged. Skipping.');
               return;
             }
 
-            // Handle review submission
-            if (context.eventName === 'pull_request_review') {
-              const review = context.payload.review;
-              const reviewer = review.user.login;
-              const state = review.state; // APPROVED, CHANGES_REQUESTED, COMMENTED
+            // ---- Helpers ----------------------------------------------------
 
-              console.log(`Review by ${reviewer}: ${state}`);
+            const COPILOT_LOGINS = new Set(['Copilot', 'copilot-swe-agent', 'copilot[bot]']);
+            const CLAUDE_LOGINS = new Set(['claude[bot]', 'github-actions[bot]']);
 
-              if (state === 'APPROVED') {
-                // Check if we have enough approvals for auto-merge
-                const reviews = await github.rest.pulls.listReviews({
+            const isCopilot = (login) => COPILOT_LOGINS.has(login);
+            const isClaude = (login) => CLAUDE_LOGINS.has(login);
+
+            const APPROVAL_RE = /\b(ready to merge|lgtm|approved|no pending feedback|approve this pr|all (?:findings|issues) (?:addressed|resolved))\b/i;
+
+            const alreadyTriggeredRound = async (n) => {
+              const allComments = await github.paginate(
+                github.rest.issues.listComments,
+                {
                   owner: context.repo.owner,
                   repo: context.repo.repo,
-                  pull_number: prNumber,
-                });
-
-                // Get latest review state per reviewer (sort descending by submitted_at)
-                const latestPerReviewer = new Map();
-                for (const r of reviews.data.slice().sort((a, b) =>
-                  new Date(b.submitted_at) - new Date(a.submitted_at)
-                )) {
-                  if (!latestPerReviewer.has(r.user.login)) {
-                    latestPerReviewer.set(r.user.login, r.state);
-                  }
+                  issue_number: prNumber,
+                  per_page: 100,
                 }
-                const uniqueApprovers = new Set(
-                  [...latestPerReviewer.entries()]
-                    .filter(([, state]) => state === 'APPROVED')
-                    .map(([login]) => login)
-                );
+              );
+              return allComments.some(c =>
+                typeof c.body === 'string' &&
+                c.body.includes(`review-cycle:round-${n}`)
+              );
+            };
 
-                if (uniqueApprovers.size >= 1 && currentRound >= 2) {
-                  // Enough rounds + approval → auto-merge
-                  console.log('Sufficient approvals after review cycle. Auto-merging...');
-
-                  // Final check: ask Claude to create follow-up tickets if needed
-                  await github.rest.issues.createComment({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    issue_number: prNumber,
-                    body: `[review-cycle:final] @claude This PR has been approved after ${currentRound} review rounds.
-
-            Before merging:
-            1. Check if there are any remaining concerns that should be tracked as follow-up issues
-            2. If yes, create GitHub issues with label \`tech-debt\` for any deferred items
-            3. Then merge this PR using \`gh pr merge ${prNumber} --squash --delete-branch\`
-            4. Comment "MERGED" when done`
-                  });
-
-                  await github.rest.issues.addLabels({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    issue_number: prNumber,
-                    labels: ['ready-to-merge'],
-                  });
-                  return;
-                }
-
-                if (currentRound < 2) {
-                  // Approved early — still do a cross-review
-                  const nextRound = currentRound + 1;
-                  const nextAgent = reviewer.includes('copilot') ? '@claude' : '@copilot';
-
-                  await github.rest.issues.addLabels({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    issue_number: prNumber,
-                    labels: [`review-round-${nextRound}`],
-                  });
-
-                  await github.rest.issues.createComment({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    issue_number: prNumber,
-                    body: `[review-cycle:round-${nextRound}] ${nextAgent} The previous reviewer approved, but let's do a cross-review for quality.
-
-            Please review this PR independently. Focus on:
-            1. Anything the previous reviewer might have missed
-            2. Architectural concerns or patterns that could be improved
-            3. Whether this aligns with the migration epic goals
-
-            If you agree it's good, approve. If you find issues, request changes.`
-                  });
-                  return;
-                }
-              }
-
-              if (state === 'CHANGES_REQUESTED') {
-                // Determine who should fix
-                const nextRound = currentRound + 1;
-
-                if (nextRound > MAX_ROUNDS) {
-                  // Max rounds reached — merge with tech debt
-                  await github.rest.issues.createComment({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    issue_number: prNumber,
-                    body: `[review-cycle:max-rounds] @claude Maximum review rounds (${MAX_ROUNDS}) reached.
-
-            1. Create a \`tech-debt\` issue for any unresolved review findings
-            2. Merge this PR as-is: \`gh pr merge ${prNumber} --squash --delete-branch\`
-            3. Comment "MERGED" when done`
-                  });
-
-                  await github.rest.issues.addLabels({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    issue_number: prNumber,
-                    labels: ['ready-to-merge'],
-                  });
-                  return;
-                }
-
+            const addRoundLabel = async (n) => {
+              try {
                 await github.rest.issues.addLabels({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   issue_number: prNumber,
-                  labels: [`review-round-${nextRound}`],
+                  labels: [`review-round-${n}`],
                 });
+              } catch (e) {
+                console.log(`Could not add round label: ${e.message}`);
+              }
+            };
 
-                // Tag the implementer to fix (alternate between agents)
-                const fixer = reviewer.includes('copilot') ? '@claude' : '@copilot';
+            const postComment = async (body) => {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body,
+              });
+            };
 
-                await github.rest.issues.createComment({
+            const markReadyToMerge = async () => {
+              try {
+                await github.rest.issues.addLabels({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   issue_number: prNumber,
-                  body: `[review-cycle:round-${nextRound}] ${fixer} The reviewer requested changes. Please:
-
-            1. Address each finding from the review above
-            2. Push your fixes to this branch
-            3. If you disagree with a finding, explain why in a comment — constructive pushback is welcome
-            4. After pushing fixes, tag the other agent for re-review`
+                  labels: ['ready-to-merge'],
                 });
+              } catch (e) {
+                console.log(`Could not add ready-to-merge label: ${e.message}`);
+              }
+            };
+
+            // ---- issue_comment branch (Copilot's reviews land here) --------
+
+            if (eventName === 'issue_comment') {
+              const comment = context.payload.comment;
+              const author = comment.user.login;
+              const body = comment.body || '';
+
+              console.log(`issue_comment by ${author} (assoc: ${comment.author_association})`);
+
+              // Ignore comments posted by the orchestration itself (markers).
+              if (body.includes('[review-cycle:') ||
+                  body.includes('[stuck-check]') ||
+                  body.includes('[orchestrator]')) {
+                console.log('Comment is an orchestration marker. Skipping.');
                 return;
               }
-            }
 
-            // Handle synchronize (new commits pushed — someone fixed something)
-            if (context.eventName === 'pull_request') {
-              // New commits pushed — tag the other agent to re-review
-              const pusher = context.payload.sender?.login || context.actor || pr.user.login;
-              const reviewer = pusher.includes('copilot') ? '@claude' : '@copilot';
-
-              // Check if this was triggered by review fixes (not initial PR creation)
-              if (currentRound >= 1) {
-                const nextRound = currentRound + 1;
-
-                if (nextRound > MAX_ROUNDS) {
-                  return; // Already handled above
+              if (isCopilot(author)) {
+                // Approval signal in plain text => mark ready, let stuck-check merge.
+                if (APPROVAL_RE.test(body) && currentRound >= 2) {
+                  console.log('Copilot signaled approval after >= round 2. Marking ready-to-merge.');
+                  await markReadyToMerge();
+                  await postComment(
+                    `[review-cycle:final] Copilot approved after ${currentRound} rounds. ` +
+                    `Marking \`ready-to-merge\`; stuck-check will perform the merge on its next tick.`
+                  );
+                  return;
                 }
 
-                // Don't duplicate if we already commented for this round
-                const allComments = await github.paginate(
-                  github.rest.issues.listComments,
-                  {
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    issue_number: prNumber,
-                    per_page: 100,
-                  }
-                );
+                // Copilot finished a review but cycle still has rounds: tag Claude.
+                const nextRound = currentRound + 1;
+                if (nextRound > MAX_ROUNDS) {
+                  console.log('Max rounds reached. Marking ready-to-merge with tech debt.');
+                  await markReadyToMerge();
+                  await postComment(
+                    `[review-cycle:max-rounds] Max review rounds (${MAX_ROUNDS}) reached. ` +
+                    `Marking \`ready-to-merge\`; stuck-check will merge on its next tick. ` +
+                    `Any unresolved findings should be tracked as follow-up \`tech-debt\` issues.`
+                  );
+                  return;
+                }
 
-                const roundAlreadyTriggered = allComments.some(c =>
-                  typeof c.body === 'string' &&
-                  c.body.includes(`review-cycle:round-${nextRound}`)
-                );
-                if (roundAlreadyTriggered) {
+                if (await alreadyTriggeredRound(nextRound)) {
                   console.log(`Round ${nextRound} already triggered. Skipping.`);
                   return;
                 }
 
-                await github.rest.issues.addLabels({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: prNumber,
-                  labels: [`review-round-${nextRound}`],
-                });
-
-                await github.rest.issues.createComment({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: prNumber,
-                  body: `[review-cycle:round-${nextRound}] ${reviewer} Fixes have been pushed. Please re-review the changes.
-
-            Focus on whether the previous findings have been adequately addressed.
-            Approve if satisfied, or request further changes if needed.`
-                });
+                await addRoundLabel(nextRound);
+                await postComment(
+                  `[review-cycle:round-${nextRound}] @claude Copilot has commented above with review feedback.\n\n` +
+                  `Please:\n` +
+                  `1. Address each finding from Copilot's review (or the fixes Copilot pushed if it self-fixed)\n` +
+                  `2. Push your changes to this branch\n` +
+                  `3. Add a brief comment summarising the fixes`
+                );
+                return;
               }
+
+              // Claude's plain comments do not need handoff (Claude pushes commits;
+              // synchronize event handles that). Other authors are ignored.
+              console.log(`Comment from ${author} is not Copilot. Ignoring.`);
+              return;
+            }
+
+            // ---- pull_request_review branch --------------------------------
+
+            if (eventName === 'pull_request_review') {
+              const review = context.payload.review;
+              const reviewer = review.user.login;
+              const state = review.state;
+
+              console.log(`Review by ${reviewer}: ${state}`);
+
+              if (state === 'APPROVED') {
+                if (currentRound >= 2) {
+                  console.log('Approval after >= round 2. Marking ready-to-merge.');
+                  await markReadyToMerge();
+                  await postComment(
+                    `[review-cycle:final] ${reviewer} approved after ${currentRound} rounds. ` +
+                    `Marking \`ready-to-merge\`; stuck-check will perform the merge on its next tick.`
+                  );
+                  return;
+                }
+
+                // Early approval — do a cross-review for quality.
+                const nextRound = currentRound + 1;
+                const nextAgent = isCopilot(reviewer) ? '@claude' : '@copilot';
+
+                if (await alreadyTriggeredRound(nextRound)) return;
+                await addRoundLabel(nextRound);
+                await postComment(
+                  `[review-cycle:round-${nextRound}] ${nextAgent} The previous reviewer approved early. ` +
+                  `Please do a cross-review for quality:\n` +
+                  `1. Anything the previous reviewer might have missed\n` +
+                  `2. Architectural concerns or patterns that could be improved\n` +
+                  `3. Whether this aligns with the migration epic goals\n\n` +
+                  `Approve if satisfied, or request changes if needed.`
+                );
+                return;
+              }
+
+              if (state === 'CHANGES_REQUESTED') {
+                const nextRound = currentRound + 1;
+
+                if (nextRound > MAX_ROUNDS) {
+                  await markReadyToMerge();
+                  await postComment(
+                    `[review-cycle:max-rounds] Max review rounds (${MAX_ROUNDS}) reached. ` +
+                    `Marking \`ready-to-merge\`; stuck-check will merge on its next tick.`
+                  );
+                  return;
+                }
+
+                if (await alreadyTriggeredRound(nextRound)) return;
+                await addRoundLabel(nextRound);
+
+                const fixer = isCopilot(reviewer) ? '@claude' : '@copilot';
+                await postComment(
+                  `[review-cycle:round-${nextRound}] ${fixer} The reviewer requested changes. Please:\n\n` +
+                  `1. Address each finding from the review above\n` +
+                  `2. Push your fixes to this branch\n` +
+                  `3. If you disagree with a finding, explain why in a comment — constructive pushback is welcome\n` +
+                  `4. After pushing fixes, the next agent is automatically re-engaged`
+                );
+                return;
+              }
+              return;
+            }
+
+            // ---- synchronize branch (someone pushed) ------------------------
+
+            if (eventName === 'pull_request') {
+              if (currentRound < 1) {
+                console.log('Sync before round-1 — initial PR setup. Skipping.');
+                return;
+              }
+
+              const pusher = context.payload.sender?.login || context.actor || pr.user.login;
+              const reviewer = isCopilot(pusher) ? '@claude' : '@copilot';
+
+              const nextRound = currentRound + 1;
+              if (nextRound > MAX_ROUNDS) return;
+              if (await alreadyTriggeredRound(nextRound)) {
+                console.log(`Round ${nextRound} already triggered. Skipping.`);
+                return;
+              }
+
+              await addRoundLabel(nextRound);
+              await postComment(
+                `[review-cycle:round-${nextRound}] ${reviewer} Fixes have been pushed by \`${pusher}\`. ` +
+                `Please re-review the changes.\n\n` +
+                `Focus on whether the previous findings have been adequately addressed.\n` +
+                `Approve (or comment "ready to merge"/"lgtm" if you don't do formal reviews) if satisfied, ` +
+                `or request further changes if needed.`
+              );
+              return;
             }

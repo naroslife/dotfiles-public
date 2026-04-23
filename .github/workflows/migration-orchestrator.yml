@@ -118,7 +118,9 @@ jobs:
               return;
             }
 
-            // Check which issues already have a @claude comment to avoid duplicates
+            // Check which issues already have a @claude comment OR an open PR
+            // (which would mean work is already in flight — re-triggering would
+            // duplicate the PR, as happened on Apr 10 producing #49+#52 and #50+#53).
             for (const num of toTrigger) {
               console.log(`\nProcessing issue #${num}...`);
 
@@ -139,6 +141,32 @@ jobs:
 
               if (alreadyTriggered) {
                 console.log(`Issue #${num} already has an orchestrator trigger. Skipping.`);
+                continue;
+              }
+
+              // Check for an open PR linking this issue. Use pulls.list rather
+              // than search.issuesAndPullRequests because the search API
+              // doesn't return head.ref, which we need for branch-name dedup
+              // (Claude PRs are named `claude/issue-N-...` or
+              // `feat/migration-N`).
+              const openPrs = await github.paginate(
+                github.rest.pulls.list,
+                {
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  state: 'open',
+                  per_page: 100,
+                }
+              );
+              const hasOpenPr = openPrs.some(p => {
+                const body = p.body || '';
+                const branch = p.head?.ref || '';
+                return body.includes(`#${num}`) ||
+                       branch.includes(`issue-${num}`) ||
+                       branch.includes(`migration-${num}`);
+              });
+              if (hasOpenPr) {
+                console.log(`Issue #${num} already has an open PR. Skipping orchestrator trigger.`);
                 continue;
               }
 

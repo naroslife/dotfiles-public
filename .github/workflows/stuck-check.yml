@@ -1,140 +1,416 @@
 name: Stuck Check
 
-# Runs hourly to detect stalled PRs/issues in the migration epic.
-# Nudges agents forward if no activity for >2 hours.
+# Primary driver of the Claude<->Copilot review cycle.
+#
+# Why this is the primary driver (not review-handoff.yml):
+#   GitHub Actions queues runs triggered by `Copilot` (the Copilot agent)
+#   in `action_required` state because that actor lacks Actions-write perms.
+#   Event-driven workflows therefore stall whenever Copilot pushes/comments.
+#   This workflow runs on a schedule under ORCHESTRATOR_PAT (a trusted user),
+#   so its actions are never gated.
+#
+# Tick (every 15 min) does:
+#   1. For every open PR with the `epic:nix-migration` label and a `review-round-N`
+#      label, decide whose turn it is from the most recent meaningful event
+#      (last commit, last formal review, last comment author) and post the
+#      missing @claude/@copilot ping if the cycle is idle.
+#   2. If a PR is labeled `ready-to-merge`, merge it (squash + delete branch),
+#      then dispatch migration-orchestrator.yml so the next unblocked issues
+#      fan out immediately.
+#   3. For issues labeled `in-progress, epic:nix-migration` with no PR for too
+#      long, nudge with @claude.
+#   4. If actionable epic issues exist but no orchestrator run happened recently,
+#      dispatch the orchestrator.
 
 on:
   schedule:
-    - cron: '0 * * * *'  # Every hour
-  workflow_dispatch: {}   # Manual trigger
+    - cron: '*/15 * * * *'  # Every 15 minutes
+  workflow_dispatch: {}
 
 jobs:
-  check-stuck:
+  drive-cycle:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       issues: write
       pull-requests: write
+      actions: write
 
     steps:
-      - name: Check for stuck work
+      - name: Drive review cycle
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.ORCHESTRATOR_PAT }}
           script: |
-            const STALE_HOURS = 2;
+            const STALE_MINUTES = 12;  // a bit less than the 15-min tick so we don't double-fire
+            const MAX_ROUNDS = 3;
+            const COPILOT_LOGINS = new Set(['Copilot', 'copilot-swe-agent', 'copilot[bot]']);
+            const CLAUDE_LOGINS = new Set(['claude[bot]', 'github-actions[bot]']);
+            const APPROVAL_RE = /\b(ready to merge|lgtm|approved|no pending feedback|approve this pr|all (?:findings|issues) (?:addressed|resolved))\b/i;
+            const ORCHESTRATION_MARKERS = ['[review-cycle:', '[stuck-check]', '[orchestrator]'];
+
+            const isCopilot = (login) => COPILOT_LOGINS.has(login);
+            const isClaude = (login) => CLAUDE_LOGINS.has(login);
+            const isOrchestrationMarker = (body) =>
+              typeof body === 'string' && ORCHESTRATION_MARKERS.some(m => body.includes(m));
+
             const now = new Date();
-            const staleThreshold = new Date(now - STALE_HOURS * 60 * 60 * 1000);
+            const staleThreshold = new Date(now - STALE_MINUTES * 60 * 1000);
 
-            console.log(`Checking for items stale since ${staleThreshold.toISOString()}`);
+            console.log(`Tick @ ${now.toISOString()} — staleness threshold ${STALE_MINUTES}m`);
 
-            // Check open PRs with review-round labels
+            // ---------- 1) Drive each open epic PR ----------
             const prs = await github.rest.pulls.list({
               owner: context.repo.owner,
               repo: context.repo.repo,
               state: 'open',
-              per_page: 20,
+              per_page: 50,
             });
 
-            for (const pr of prs.data) {
-              const hasReviewLabel = pr.labels.some(l => l.name.startsWith('review-round-'));
-              const hasReadyLabel = pr.labels.some(l => l.name === 'ready-to-merge');
+            for (const prListing of prs.data) {
+              const labels = prListing.labels.map(l => l.name);
+              if (!labels.includes('epic:nix-migration')) continue;
 
-              if (!hasReviewLabel && !hasReadyLabel) continue;
+              const prNumber = prListing.number;
+              console.log(`\n--- PR #${prNumber}: ${prListing.title}`);
+              console.log(`Labels: ${labels.join(', ')}`);
 
-              const updatedAt = new Date(pr.updated_at);
-              if (updatedAt > staleThreshold) continue;
-
-              const hoursSinceUpdate = Math.round((now - updatedAt) / (60 * 60 * 1000));
-
-              // Check if we already nudged recently (use since: to get only recent comments)
-              const comments = await github.rest.issues.listComments({
+              // Re-fetch PR to ensure we have head sha + merged state.
+              const pr = (await github.rest.pulls.get({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                issue_number: pr.number,
-                since: staleThreshold.toISOString(),
-                per_page: 20,
-              });
+                pull_number: prNumber,
+              })).data;
 
-              const recentNudge = comments.data.some(c =>
-                c.body.includes('[stuck-check]') &&
-                new Date(c.created_at) > staleThreshold
-              );
+              if (pr.merged) { console.log('Already merged.'); continue; }
 
-              if (recentNudge) {
-                console.log(`PR #${pr.number} already nudged recently. Skipping.`);
+              // Fork guard — never mutate labels/comments or merge PRs from forks.
+              if (pr.head.repo.full_name !== `${context.repo.owner}/${context.repo.repo}`) {
+                console.log(`PR is from a fork (${pr.head.repo.full_name}). Skipping.`);
                 continue;
               }
 
-              console.log(`PR #${pr.number} stale for ${hoursSinceUpdate}h`);
+              // ---- READY-TO-MERGE: perform the merge ourselves ----
+              if (labels.includes('ready-to-merge')) {
+                console.log('Has ready-to-merge label. Attempting merge.');
 
-              if (hasReadyLabel) {
-                // Should have been merged — nudge Claude
-                await github.rest.issues.createComment({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: pr.number,
-                  body: `[stuck-check] @claude This PR has been marked \`ready-to-merge\` but hasn't been merged yet (${hoursSinceUpdate}h stale). Please merge it now: \`gh pr merge ${pr.number} --squash --delete-branch\``
-                });
-              } else {
-                // Review cycle stalled — derive who's turn from round label (odd=copilot, even=claude)
-                const currentRoundLabel = pr.labels.find(l => l.name.startsWith('review-round-'));
-                const roundNum = currentRoundLabel ? parseInt(currentRoundLabel.name.split('-')[2]) : 1;
-                const waitingFor = roundNum % 2 === 1 ? '@copilot' : '@claude';
+                // mergeable can be null while GitHub is still computing it —
+                // skip and re-check next tick rather than risking a bad merge.
+                if (pr.mergeable === null) {
+                  console.log('Mergeability still computing. Will retry next tick.');
+                  continue;
+                }
 
-                await github.rest.issues.createComment({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: pr.number,
-                  body: `[stuck-check] ${waitingFor} This PR's review cycle has been inactive for ${hoursSinceUpdate} hours. Please continue — review or address the pending feedback.`
-                });
+                if (pr.mergeable === false) {
+                  console.log('PR not mergeable (conflicts?). Posting fix-it comment.');
+                  await github.rest.issues.createComment({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: prNumber,
+                    body: `[stuck-check] @claude This PR is marked \`ready-to-merge\` but has merge conflicts. ` +
+                          `Please rebase against \`main\` and resolve conflicts.`,
+                  });
+                  continue;
+                }
+
+                try {
+                  await github.rest.pulls.merge({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    pull_number: prNumber,
+                    merge_method: 'squash',
+                  });
+                  console.log(`Merged PR #${prNumber}.`);
+
+                  // Delete the source branch (best-effort).
+                  try {
+                    await github.rest.git.deleteRef({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      ref: `heads/${pr.head.ref}`,
+                    });
+                  } catch (e) {
+                    console.log(`Could not delete branch: ${e.message}`);
+                  }
+
+                  await github.rest.issues.addLabels({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: prNumber,
+                    labels: ['auto-merged'],
+                  });
+
+                  await github.rest.issues.removeLabel({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: prNumber,
+                    name: 'ready-to-merge',
+                  }).catch(() => {});
+
+                  // Fan out to next unblocked issues.
+                  await github.rest.actions.createWorkflowDispatch({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    workflow_id: 'migration-orchestrator.yml',
+                    ref: 'main',
+                    inputs: { trigger_all_unblocked: 'true' },
+                  });
+                  console.log('Dispatched migration-orchestrator.');
+                } catch (e) {
+                  console.log(`Merge failed: ${e.message}`);
+                  await github.rest.issues.createComment({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: prNumber,
+                    body: `[stuck-check] @claude Merge attempt failed: \`${e.message}\`. ` +
+                          `Please investigate (CI red? branch protection?) and fix.`,
+                  });
+                }
+                continue;
               }
-            }
 
-            // Check issues with in-progress label but no PR
-            const issues = await github.rest.issues.listForRepo({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              labels: 'in-progress,epic:nix-migration',
-              state: 'open',
-              per_page: 20,
-            });
+              // ---- ACTIVE REVIEW CYCLE: classify state and advance ----
+              const roundLabels = labels.filter(l => l.startsWith('review-round-'));
+              if (roundLabels.length === 0) {
+                console.log('No review-round label. Skipping (review cycle hasn\'t started).');
+                continue;
+              }
+              const currentRound = Math.max(...roundLabels.map(l => parseInt(l.split('-')[2])));
 
-            for (const issue of issues.data) {
-              if (issue.pull_request) continue; // skip PRs
+              const updatedAt = new Date(pr.updated_at);
+              if (updatedAt > staleThreshold) {
+                console.log(`Last activity ${updatedAt.toISOString()} — within staleness window. Skipping.`);
+                continue;
+              }
 
-              const updatedAt = new Date(issue.updated_at);
-              if (updatedAt > staleThreshold) continue;
-
-              const hoursSinceUpdate = Math.round((now - updatedAt) / (60 * 60 * 1000));
-
-              const comments = await github.rest.issues.listComments({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: issue.number,
-                since: staleThreshold.toISOString(),
-                per_page: 20,
-              });
-
-              const recentNudge = comments.data.some(c =>
-                c.body.includes('[stuck-check]') &&
-                new Date(c.created_at) > staleThreshold
+              // Gather all comments (issue_comments) and formal reviews and commits.
+              const comments = await github.paginate(
+                github.rest.issues.listComments,
+                {
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: prNumber,
+                  per_page: 100,
+                }
               );
 
-              if (recentNudge) continue;
+              const reviews = await github.paginate(
+                github.rest.pulls.listReviews,
+                {
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  pull_number: prNumber,
+                  per_page: 100,
+                }
+              );
 
-              console.log(`Issue #${issue.number} in-progress but stale for ${hoursSinceUpdate}h`);
+              const commits = (await github.rest.pulls.listCommits({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: prNumber,
+                per_page: 100,
+              })).data;
+
+              // Find the most recent meaningful event (excluding our own orchestration markers).
+              const events = [];
+              for (const c of comments) {
+                if (isOrchestrationMarker(c.body)) continue;
+                events.push({
+                  ts: new Date(c.created_at),
+                  kind: 'comment',
+                  author: c.user?.login || '',
+                  body: c.body || '',
+                });
+              }
+              for (const r of reviews) {
+                events.push({
+                  ts: new Date(r.submitted_at),
+                  kind: 'review',
+                  author: r.user?.login || '',
+                  body: r.body || '',
+                  state: r.state,
+                });
+              }
+              for (const cm of commits) {
+                events.push({
+                  ts: new Date(cm.commit.author?.date || cm.commit.committer?.date),
+                  kind: 'commit',
+                  author: cm.author?.login || cm.commit.author?.name || '',
+                  body: cm.commit.message || '',
+                });
+              }
+
+              if (events.length === 0) {
+                console.log('No meaningful events found. Skipping.');
+                continue;
+              }
+
+              events.sort((a, b) => b.ts - a.ts);
+              const latest = events[0];
+              const ageMin = Math.round((now - latest.ts) / 60000);
+              console.log(`Latest event: ${latest.kind} by ${latest.author} (${ageMin}m ago)`);
+
+              // Approval signal — escalate to ready-to-merge if cycle deep enough.
+              // Accept formal APPROVED reviews from anyone (trusted by GitHub's
+              // review permissions) and approval phrasing from Copilot/Claude
+              // (whose "reviews" arrive as issue_comments).
+              const approvedRecently = events.some(e =>
+                (e.kind === 'review' && e.state === 'APPROVED') ||
+                (e.kind === 'comment' && APPROVAL_RE.test(e.body))
+              );
+
+              if (approvedRecently && currentRound >= 2) {
+                console.log('Approval detected after >= round 2. Marking ready-to-merge.');
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: prNumber,
+                  labels: ['ready-to-merge'],
+                });
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: prNumber,
+                  body: `[stuck-check] Approval detected after ${currentRound} review rounds. ` +
+                        `Marking \`ready-to-merge\`; merge will run on the next tick.`,
+                });
+                continue;
+              }
+
+              // Decide whose turn it is.
+              // Last event from Copilot => Claude's turn.
+              // Last event from Claude => Copilot's turn.
+              // Last event from a human (orchestrator PAT) => infer from round parity.
+              let nextAgent;
+              if (isCopilot(latest.author)) {
+                nextAgent = '@claude';
+              } else if (isClaude(latest.author)) {
+                nextAgent = '@copilot';
+              } else {
+                // Human orchestrator comment — fall back to round parity.
+                // Round 1 => copilot reviews, Round 2 => claude reviews, Round 3 => copilot.
+                nextAgent = (currentRound % 2 === 1) ? '@copilot' : '@claude';
+              }
+
+              // Compute the candidate next round WITHOUT capping so the
+              // `> MAX_ROUNDS` escalation branch is reachable. Capping with
+              // Math.min() before this check would make the cycle nudge
+              // forever at round MAX_ROUNDS instead of marking ready-to-merge.
+              const candidateRound = currentRound + 1;
+
+              if (candidateRound > MAX_ROUNDS) {
+                console.log(`Already at MAX_ROUNDS (${MAX_ROUNDS}). Marking ready-to-merge.`);
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: prNumber,
+                  labels: ['ready-to-merge'],
+                });
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: prNumber,
+                  body: `[stuck-check] Max review rounds (${MAX_ROUNDS}) reached without explicit approval. ` +
+                        `Marking \`ready-to-merge\`. Track unresolved findings as \`tech-debt\` issues.`,
+                });
+                continue;
+              }
+
+              const nextRound = candidateRound;
+
+              // If we already commented for nextRound, nudge instead of duplicating.
+              const nextRoundTriggered = comments.some(c =>
+                typeof c.body === 'string' && c.body.includes(`review-cycle:round-${nextRound}`)
+              );
+
+              if (nextRoundTriggered) {
+                // Just nudge whoever the round expects.
+                const nudgeAgent = (nextRound % 2 === 1) ? '@copilot' : '@claude';
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: prNumber,
+                  body: `[stuck-check] ${nudgeAgent} The review cycle is idle for ${ageMin} minutes ` +
+                        `at round ${nextRound}. Please continue — review or address pending feedback.`,
+                });
+                continue;
+              }
+
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                labels: [`review-round-${nextRound}`],
+              }).catch((e) => console.log(`Could not add round label: ${e.message}`));
+
+              const promptBody = nextAgent === '@claude'
+                ? `[review-cycle:round-${nextRound}] @claude Copilot has finished reviewing/pushing above.\n\n` +
+                  `Please:\n` +
+                  `1. Read Copilot's latest review/comment/commit\n` +
+                  `2. Address each finding (or push your own changes if Copilot self-fixed)\n` +
+                  `3. Push to this branch and add a brief summary comment`
+                : `[review-cycle:round-${nextRound}] @copilot Claude has pushed updates above.\n\n` +
+                  `Please re-review:\n` +
+                  `1. Verify previous findings are addressed\n` +
+                  `2. Note any new issues introduced by the fix\n` +
+                  `3. Approve (formal review or "ready to merge"/"lgtm" comment) or request changes`;
 
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
+                issue_number: prNumber,
+                body: promptBody,
+              });
+              console.log(`Posted ${nextAgent} prompt for round ${nextRound}`);
+            }
+
+            // ---------- 2) Nudge issues with in-progress label but no PR ----------
+            const inProgressIssues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'in-progress,epic:nix-migration',
+              state: 'open',
+              per_page: 30,
+            });
+
+            for (const issue of inProgressIssues.data) {
+              if (issue.pull_request) continue;
+
+              const updatedAt = new Date(issue.updated_at);
+              if (updatedAt > staleThreshold) continue;
+
+              // Make sure no PR exists linking this issue.
+              const linkedPrs = await github.rest.search.issuesAndPullRequests({
+                q: `repo:${context.repo.owner}/${context.repo.repo} type:pr is:open #${issue.number}`,
+              });
+              if (linkedPrs.data.total_count > 0) {
+                console.log(`Issue #${issue.number} already has open PR — skipping nudge.`);
+                continue;
+              }
+
+              const recentComments = await github.rest.issues.listComments({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
                 issue_number: issue.number,
-                body: `[stuck-check] @claude This issue has been in-progress for ${hoursSinceUpdate} hours without a PR. Please continue implementation or report what's blocking you.`
+                since: staleThreshold.toISOString(),
+                per_page: 20,
+              });
+              const recentlyNudged = recentComments.data.some(c =>
+                typeof c.body === 'string' && c.body.includes('[stuck-check]')
+              );
+              if (recentlyNudged) continue;
+
+              const ageMin = Math.round((now - updatedAt) / 60000);
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: `[stuck-check] @claude This issue has been \`in-progress\` for ${ageMin} minutes ` +
+                      `without an open PR. Please continue implementation or comment what's blocking you.`,
               });
             }
 
-            // Check if orchestrator should trigger next issues
-            // (in case a PR was merged but orchestrator didn't fire)
+            // ---------- 3) Dispatch orchestrator if actionable issues idle ----------
             const epicIssues = await github.rest.issues.listForRepo({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -156,16 +432,13 @@ jobs:
                 workflow_id: 'migration-orchestrator.yml',
                 per_page: 10,
               });
-
-              const recentDispatchThreshold = new Date(now.getTime() - 60 * 60 * 1000);
-              const recentOrchestratorRun = orchestratorRuns.data.workflow_runs.some(run =>
+              const recentDispatchThreshold = new Date(now.getTime() - 30 * 60 * 1000);
+              const recentlyRan = orchestratorRuns.data.workflow_runs.some(run =>
                 new Date(run.created_at) > recentDispatchThreshold
               );
 
-              if (recentOrchestratorRun) {
-                console.log('Skipping orchestrator dispatch — already ran within the last hour.');
-              } else {
-                console.log(`${dispatchCandidates.length} actionable epic issues. Triggering orchestrator...`);
+              if (!recentlyRan) {
+                console.log(`${dispatchCandidates.length} actionable issues. Dispatching orchestrator.`);
                 try {
                   await github.rest.actions.createWorkflowDispatch({
                     owner: context.repo.owner,
@@ -174,11 +447,10 @@ jobs:
                     ref: 'main',
                     inputs: { trigger_all_unblocked: 'true' },
                   });
-                  console.log('Orchestrator triggered to check for unblocked issues');
                 } catch (e) {
-                  console.log(`Could not trigger orchestrator: ${e.message}`);
+                  console.log(`Could not dispatch orchestrator: ${e.message}`);
                 }
               }
             }
 
-            console.log('Stuck check complete.');
+            console.log('\nStuck check tick complete.');
