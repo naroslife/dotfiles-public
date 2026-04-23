@@ -34,7 +34,7 @@ jobs:
           VALIDATE_ALL_CODEBASE: false
           DEFAULT_BRANCH: "main"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          
+
   fix-lint-issues:
     permissions:
       # To write linting fixes
