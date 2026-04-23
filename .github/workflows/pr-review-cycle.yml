@@ -10,13 +10,11 @@ on:
 
 jobs:
   start-review-cycle:
-    # Only run on epic PRs opened by Claude (the implementer)
+    # Run on any epic PR from this repo. Author check is just defense-in-depth —
+    # the `epic:nix-migration` label is the real intent signal (only the
+    # orchestrator/Claude flow attaches it).
     if: |
       contains(toJSON(github.event.pull_request.labels), 'epic:nix-migration') &&
-      (
-        github.event.pull_request.user.login == 'claude[bot]' ||
-        github.event.pull_request.user.login == 'github-actions[bot]'
-      ) &&
       github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     permissions:
@@ -34,6 +32,13 @@ jobs:
             const prNumber = pr.number;
 
             console.log(`Starting review cycle for PR #${prNumber}`);
+
+            // Idempotency: skip if review-round-1 already present (PR re-opened, label race).
+            const existingLabels = pr.labels.map(l => l.name);
+            if (existingLabels.includes('review-round-1')) {
+              console.log('review-round-1 label already present. Skipping.');
+              return;
+            }
 
             // Add tracking label
             await github.rest.issues.addLabels({

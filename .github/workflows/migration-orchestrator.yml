@@ -118,7 +118,9 @@ jobs:
               return;
             }
 
-            // Check which issues already have a @claude comment to avoid duplicates
+            // Check which issues already have a @claude comment OR an open PR
+            // (which would mean work is already in flight — re-triggering would
+            // duplicate the PR, as happened on Apr 10 producing #49+#52 and #50+#53).
             for (const num of toTrigger) {
               console.log(`\nProcessing issue #${num}...`);
 
@@ -139,6 +141,22 @@ jobs:
 
               if (alreadyTriggered) {
                 console.log(`Issue #${num} already has an orchestrator trigger. Skipping.`);
+                continue;
+              }
+
+              // Check for an open PR that links this issue (Closes #N or branch hint).
+              const linkedPrs = await github.rest.search.issuesAndPullRequests({
+                q: `repo:${context.repo.owner}/${context.repo.repo} type:pr is:open #${num}`,
+              });
+              const hasOpenPr = linkedPrs.data.items.some(item => {
+                const body = item.body || '';
+                const branch = (item.head && item.head.ref) || '';
+                return body.includes(`#${num}`) ||
+                       branch.includes(`issue-${num}`) ||
+                       branch.includes(`migration-${num}`);
+              });
+              if (hasOpenPr) {
+                console.log(`Issue #${num} already has an open PR. Skipping orchestrator trigger.`);
                 continue;
               }
 
