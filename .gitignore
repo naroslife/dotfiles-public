@@ -15,6 +15,9 @@ result-*
 # Local configuration overrides
 local.nix
 
+# chezmoi machine-local data (per-machine secrets, not for VCS)
+home/.chezmoidata/local.yaml
+
 # Editor temporary files
 *~
 .*.swp

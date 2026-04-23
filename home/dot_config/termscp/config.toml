@@ -1,0 +1,11 @@
+# termscp configuration — managed by chezmoi
+# Edit source at home/dot_config/termscp/config.toml
+
+[user_interface]
+text_editor = "/usr/bin/nano"
+default_protocol = "SCP"
+show_hidden_files = true
+check_for_updates = true
+prompt_on_file_replace = true
+notifications = true
+notification_threshold = 536870912

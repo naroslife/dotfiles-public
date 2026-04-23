@@ -1,0 +1,13 @@
+# chezmoi ignore — applies when home/ is the source directory
+# Everything in home/ is a dotfile and should be deployed to ~/
+# Exceptions are machine-conditional:
+
+# WSL-only binaries (skip on non-WSL)
+{{ if not .is_wsl }}
+dot_local/bin/wsl-*
+{{ end }}
+
+# Enterprise-only config (skip on personal machines)
+{{ if not .is_enterprise }}
+dot_config/enterprise/
+{{ end }}
