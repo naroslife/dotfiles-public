@@ -126,8 +126,8 @@
   run         = "chezmoi apply"
 
 [tasks.update]
-  description = "Update all mise tools"
-  run         = "mise upgrade"
+  description = "Pull latest dotfiles and upgrade all mise tools"
+  run         = ["chezmoi update", "mise upgrade"]
 
 [tasks.offline-bundle]
   description = "Pre-download all tools for air-gapped deployment"
@@ -153,3 +153,11 @@
 [tasks.kill-switch]
   description = "Print kill-switch instructions (source the script directly for current-session effect)"
   run         = "./scripts/kill-switch.sh"
+
+[tasks.kill-switch-on]
+  description = "Enable kill switch: disable all dotfiles aliases system-wide (persistent)"
+  run         = "touch ~/.config/shell/use-system-defaults && echo 'Classic mode enabled. Restart shell.'"
+
+[tasks.kill-switch-off]
+  description = "Disable kill switch: re-enable modern dotfiles aliases"
+  run         = "rm -f ~/.config/shell/use-system-defaults && echo 'Modern mode enabled. Restart shell.'"
