@@ -1,214 +1,204 @@
 #!/usr/bin/env bash
-# filepath: /home/naroslife/dotfiles-public/deploy-remote.sh
+# deploy-remote.sh — Deploy dotfiles to a remote restricted machine
+#
+# Builds a self-contained offline bundle locally (or uses a provided one),
+# transfers it to the remote via scp, rsyncs the dotfiles repo, then runs
+# bootstrap.sh --offline on the remote.
+#
+# Usage:
+#   ./deploy-remote.sh user@host
+#   ./deploy-remote.sh user@host --bundle /path/to/bundle.tar.gz
+#   ./deploy-remote.sh user@host --user enterpriseuser -y
+#
+# Transfer alternatives (when scp is unavailable — see docs/OFFLINE_DEPLOYMENT.md):
+#   S3:     aws s3 cp bundle.tar.gz s3://bucket/
+#           ssh user@host 'aws s3 cp s3://bucket/bundle.tar.gz /tmp/'
+#   Docker: docker save image | gzip | ssh user@host docker load
 
 set -euo pipefail
 
-# Colors and emojis for output (matching apply.sh style)
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Function to print colored output
-print_info() { echo "✅ $1"; }
-print_warn() { echo "⚠️  $1"; }
-print_error() { echo "❌ $1"; }
-
-# Check if remote host is provided
-if [[ $# -ne 1 ]]; then
-    print_error "Usage: $0 <user@host>"
-    echo "   Example: $0 user@192.168.1.100"
-    exit 1
-fi
-
-REMOTE_HOST="$1"
-REMOTE_USER="${REMOTE_HOST%%@*}"
-
-echo "🚀 Deploying Home Manager configuration to ${REMOTE_HOST}..."
-
-# Verify SSH connection
-echo "🔌 Testing SSH connection..."
-if ! ssh -o ConnectTimeout=5 -o BatchMode=yes "${REMOTE_HOST}" "echo 'SSH connection successful'" &>/dev/null; then
-    print_error "Cannot connect to ${REMOTE_HOST}. Please check SSH access."
-    echo "   Ensure you have SSH key authentication set up"
-    exit 1
-fi
-
-# Check if Nix is installed locally
-if ! command -v nix &> /dev/null; then
-    print_error "Nix is not installed locally. Please install Nix first:"
-    echo "   curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install"
-    exit 1
-fi
-
-# Check if flakes are enabled locally
-if ! nix --version | grep -q "flakes" 2>/dev/null; then
-    echo "📝 Enabling flakes and nix-command locally..."
-    mkdir -p ~/.config/nix
-    if ! grep -q "experimental-features = nix-command flakes" ~/.config/nix/nix.conf 2>/dev/null; then
-        echo "experimental-features = nix-command flakes" >> ~/.config/nix/nix.conf
-    fi
-fi
-
-# Initialize submodules if they exist
-if [[ -f ".gitmodules" ]]; then
-    echo "📦 Initializing git submodules..."
-    git submodule update --init --recursive
-fi
-
-# Build the Home Manager configuration locally
-echo "🔨 Building Home Manager configuration locally..."
-BUILD_OUTPUT=$(mktemp)
-if ! nix build --no-link --print-out-paths .#homeConfigurations.naroslife.activationPackage 2>&1 | tee "${BUILD_OUTPUT}"; then
-    print_error "Failed to build configuration"
-    rm -f "${BUILD_OUTPUT}"
-    exit 1
-fi
-
-# Extract the store path from build result
-STORE_PATH=$(tail -n1 "${BUILD_OUTPUT}")
-rm -f "${BUILD_OUTPUT}"
-print_info "Built configuration at: ${STORE_PATH}"
-
-# Compute closure to get all dependencies
-echo "📊 Computing closure (all dependencies)..."
-CLOSURE=$(nix-store -qR "${STORE_PATH}")
-CLOSURE_SIZE=$(nix path-info -S "${STORE_PATH}" | awk '{print $2}')
-CLOSURE_SIZE_MB=$((CLOSURE_SIZE / 1024 / 1024))
-echo "📦 Total closure size: ${CLOSURE_SIZE_MB} MB"
-
-# Check if Determinate Nix is installed on remote
-echo "🔍 Checking Nix installation on remote..."
-REMOTE_HAS_NIX=$(ssh "${REMOTE_HOST}" "command -v nix >/dev/null 2>&1 && echo 'yes' || echo 'no'")
-
-if [[ "${REMOTE_HAS_NIX}" == "no" ]]; then
-    print_warn "Nix is not installed on remote."
-    echo "📥 Installing Determinate Systems' Nix on remote..."
-    
-    # Download installer locally and copy to remote (for restricted environments)
-    echo "   Downloading installer locally first..."
-    curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix -o /tmp/nix-installer.sh
-    
-    echo "   Copying installer to remote..."
-    scp /tmp/nix-installer.sh "${REMOTE_HOST}:/tmp/"
-    rm -f /tmp/nix-installer.sh
-    
-    echo "   Running installer on remote..."
-    ssh -t "${REMOTE_HOST}" "bash /tmp/nix-installer.sh install --no-confirm && rm -f /tmp/nix-installer.sh" || {
-        print_error "Failed to install Nix on remote"
-        print_warn "You may need to install Nix manually on the remote machine:"
-        echo "   1. Copy the installer from https://install.determinate.systems/nix"
-        echo "   2. Run: sh nix-installer.sh install"
-        echo "   3. Re-run this deployment script"
-        exit 1
-    }
-    
-    # Wait for daemon to start
-    echo "⏳ Waiting for Nix daemon to start..."
-    sleep 5
-fi
-
-# Enable flakes on remote if needed
-echo "📝 Ensuring flakes are enabled on remote..."
-ssh "${REMOTE_HOST}" "mkdir -p ~/.config/nix && grep -q 'experimental-features = nix-command flakes' ~/.config/nix/nix.conf 2>/dev/null || echo 'experimental-features = nix-command flakes' >> ~/.config/nix/nix.conf"
-
-# Copy the closure to remote machine
-echo "📤 Copying Nix store paths to remote..."
-echo "   This may take a while (${CLOSURE_SIZE_MB} MB)..."
-
-# Use nix copy with SSH store - Determinate Nix supports this well
-if ! nix copy --to "ssh://${REMOTE_HOST}" "${STORE_PATH}" --no-check-sigs; then
-    print_error "Failed to copy store paths to remote"
-    echo "   Trying alternative method..."
-    
-    # Alternative: use nix-store export/import
-    echo "📦 Creating NAR archive..."
-    NAR_FILE=$(mktemp -d)/closure.nar
-    nix-store --export $(nix-store -qR "${STORE_PATH}") > "${NAR_FILE}"
-    
-    echo "📤 Copying NAR archive to remote..."
-    scp "${NAR_FILE}" "${REMOTE_HOST}:/tmp/closure.nar"
-    
-    echo "📥 Importing on remote..."
-    ssh "${REMOTE_HOST}" "nix-store --import < /tmp/closure.nar && rm -f /tmp/closure.nar"
-    
-    rm -rf "$(dirname "${NAR_FILE}")"
-fi
-
-print_info "Store paths copied successfully"
-
-# Copy the dotfiles-public repository to remote
-echo "📁 Syncing dotfiles-public repository to remote..."
-ssh "${REMOTE_HOST}" "mkdir -p ~/dotfiles-public"
-
-# Use rsync to efficiently copy files
-if command -v rsync &> /dev/null; then
-    rsync -av \
-        --exclude='.git' \
-        --exclude='result' \
-        --exclude='result-*' \
-        --exclude='*.swp' \
-        --exclude='.direnv' \
-        ./ "${REMOTE_HOST}:~/dotfiles-public/"
+# ── Colors ────────────────────────────────────────────────────────────────────
+if [[ -t 1 ]]; then
+  COLOR_RED='\033[0;31m'
+  COLOR_GREEN='\033[0;32m'
+  COLOR_YELLOW='\033[1;33m'
+  COLOR_BOLD='\033[1m'
+  COLOR_NC='\033[0m'
 else
-    # Fallback to tar over SSH
-    tar czf - \
-        --exclude='.git' \
-        --exclude='result' \
-        --exclude='result-*' \
-        . | ssh "${REMOTE_HOST}" "cd ~/dotfiles-public && tar xzf -"
+  COLOR_RED='' COLOR_GREEN='' COLOR_YELLOW='' COLOR_BOLD='' COLOR_NC=''
 fi
 
-# Create and run activation script on remote
-echo "🎯 Activating configuration on remote..."
-ssh "${REMOTE_HOST}" bash <<REMOTE_SCRIPT
-set -euo pipefail
+log_info()  { echo -e "${COLOR_GREEN}[INFO]${COLOR_NC}  $*"; }
+log_warn()  { echo -e "${COLOR_YELLOW}[WARN]${COLOR_NC}  $*" >&2; }
+log_error() { echo -e "${COLOR_RED}[ERROR]${COLOR_NC} $*" >&2; }
+log_step()  { echo -e "\n${COLOR_BOLD}==> $*${COLOR_NC}"; }
+die()       { log_error "$1"; exit "${2:-1}"; }
 
-echo "🏠 Activating Home Manager configuration..."
+# ── Argument parsing ──────────────────────────────────────────────────────────
+REMOTE_HOST=""
+BUNDLE_PATH=""
+REMOTE_USERNAME=""
+ASSUME_YES=false
+# Literal '~' is intentionally preserved here for expansion by the *remote* shell
+# shellcheck disable=SC2088
+REMOTE_DOTFILES_DIR='~/dotfiles-public'
 
-# Ensure user's nix profile exists
-mkdir -p /nix/var/nix/profiles/per-user/${REMOTE_USER}
+show_help() {
+  cat <<EOF
+deploy-remote.sh — Deploy dotfiles to a remote restricted machine
 
-# Create a profile link
-nix-env --profile /nix/var/nix/profiles/per-user/${REMOTE_USER}/home-manager --set "${STORE_PATH}"
+USAGE:
+    $0 <user@host> [OPTIONS]
 
-# Run the activation
-"${STORE_PATH}/activate"
+OPTIONS:
+    --bundle <path>        Use existing bundle (skip local build step)
+    --user <username>      User profile for bootstrap (naroslife, enterpriseuser)
+    -y, --yes              Non-interactive (auto-confirm all prompts)
+    -h, --help             Show this help
 
-echo "✅ Home Manager configuration activated!"
-REMOTE_SCRIPT
+EXAMPLES:
+    $0 user@192.168.1.100
+    $0 user@host --bundle /tmp/bundle.tar.gz
+    $0 user@host --user enterpriseuser -y
 
-# Create update helper script on remote
-echo "📝 Creating update helper script on remote..."
-ssh "${REMOTE_HOST}" "cat > ~/dotfiles-public/update-from-local.sh" <<'UPDATE_SCRIPT'
-#!/usr/bin/env bash
-set -euo pipefail
+PRE-REQUISITES (before first run):
+    MISE_ALWAYS_KEEP_DOWNLOAD=1 mise install   # ensure mise cache is populated
+    scripts/install-zsh-plugins.sh             # ensure zsh plugins are pre-cloned
 
-echo "🔄 This script should be run from a machine with internet access:"
-echo "   cd ~/dotfiles-public"
-echo "   ./deploy-remote.sh $(whoami)@$(hostname)"
-echo ""
-echo "Current activation package:"
-readlink -f ~/.nix-profile
-UPDATE_SCRIPT
+TRANSFER ALTERNATIVES (when scp is unavailable):
+    S3:     aws s3 cp bundle.tar.gz s3://bucket/
+            ssh user@host 'aws s3 cp s3://bucket/bundle.tar.gz /tmp/'
+    Docker: see docs/OFFLINE_DEPLOYMENT.md
 
-ssh "${REMOTE_HOST}" "chmod +x ~/dotfiles-public/update-from-local.sh"
+EOF
+}
 
-print_info "Deployment complete! 🎉"
-echo "📍 The Home Manager environment is now active on ${REMOTE_HOST}"
-echo ""
-echo "📚 Notes:"
-echo "   • The remote machine won't be able to update without network access"
-echo "   • To update, run this script again from an unrestricted machine"
-echo "   • Configuration is available at ~/dotfiles-public on the remote"
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -h|--help) show_help; exit 0 ;;
+    --bundle)
+      shift
+      BUNDLE_PATH="${1:?--bundle requires a path}"
+      ;;
+    --user|-u)
+      shift
+      REMOTE_USERNAME="${1:?--user requires a value}"
+      ;;
+    -y|--yes)
+      ASSUME_YES=true
+      ;;
+    *)
+      if [[ -z "$REMOTE_HOST" && "$1" != -* ]]; then
+        REMOTE_HOST="$1"
+      else
+        die "Unknown option: $1. Use --help for usage."
+      fi
+      ;;
+  esac
+  shift
+done
 
-if [[ -d "base" ]] && [[ -f "base/base.sh" ]]; then
-    echo "   • Base shell framework will be automatically sourced"
+if [[ -z "$REMOTE_HOST" ]]; then
+  log_error "Remote host is required."
+  show_help
+  exit 1
 fi
 
-if [[ -d "stdlib.sh" ]] && [[ -f "stdlib.sh/stdlib.sh" ]]; then
-    echo "   • Stdlib.sh will be automatically sourced"
+# ── Step 0: Verify SSH connection ─────────────────────────────────────────────
+log_step "Verifying SSH connection to ${REMOTE_HOST}..."
+if ! ssh -o ConnectTimeout=10 -o BatchMode=yes "${REMOTE_HOST}" "echo OK" &>/dev/null; then
+  die "Cannot connect to ${REMOTE_HOST}. Ensure SSH key authentication is set up."
+fi
+log_info "SSH connection OK"
+
+# ── Step 1: Build or validate offline bundle ──────────────────────────────────
+if [[ -n "$BUNDLE_PATH" ]]; then
+  log_step "Using existing bundle: ${BUNDLE_PATH}"
+  [[ -f "$BUNDLE_PATH" ]] || die "Bundle not found: $BUNDLE_PATH"
+  log_info "Bundle size: $(du -sh "${BUNDLE_PATH}" | cut -f1)"
+else
+  log_step "Building offline bundle locally..."
+
+  if [[ ! -x "${SCRIPT_DIR}/scripts/build-offline-bundle.sh" ]]; then
+    die "scripts/build-offline-bundle.sh not found. Cannot build bundle."
+  fi
+
+  BUNDLE_PATH="${SCRIPT_DIR}/dotfiles-offline-bundle-$(date +%Y%m%d-%H%M%S).tar.gz"
+  trap 'rm -f "${BUNDLE_PATH}" 2>/dev/null || true' EXIT
+
+  "${SCRIPT_DIR}/scripts/build-offline-bundle.sh" --output "${BUNDLE_PATH}"
+  log_info "Bundle built: ${BUNDLE_PATH} ($(du -sh "${BUNDLE_PATH}" | cut -f1))"
 fi
 
+# ── Step 2: Transfer bundle to remote ─────────────────────────────────────────
+REMOTE_BUNDLE_PATH="/tmp/$(basename "${BUNDLE_PATH}")"
+log_step "Transferring bundle to ${REMOTE_HOST}:${REMOTE_BUNDLE_PATH}..."
+log_info "Size: $(du -sh "${BUNDLE_PATH}" | cut -f1) — this may take a few minutes..."
+
+scp "${BUNDLE_PATH}" "${REMOTE_HOST}:${REMOTE_BUNDLE_PATH}"
+log_info "Bundle transferred"
+
+# ── Step 3: Sync dotfiles repo to remote ──────────────────────────────────────
+log_step "Syncing dotfiles to ${REMOTE_HOST}:${REMOTE_DOTFILES_DIR}..."
+ssh "${REMOTE_HOST}" "mkdir -p ${REMOTE_DOTFILES_DIR}"
+
+RSYNC_EXCLUDES=(
+  --exclude='.git'
+  --exclude='result' --exclude='result-*'
+  --exclude='*.swp' --exclude='.direnv'
+  --exclude='dotfiles-offline-bundle-*.tar.gz'
+)
+
+if command -v rsync &>/dev/null; then
+  rsync -av "${RSYNC_EXCLUDES[@]}" \
+    "${SCRIPT_DIR}/" "${REMOTE_HOST}:${REMOTE_DOTFILES_DIR}/"
+else
+  log_warn "rsync not found — falling back to tar over SSH"
+  tar czf - \
+    --exclude='.git' \
+    --exclude='result' \
+    --exclude='result-*' \
+    --exclude='dotfiles-offline-bundle-*.tar.gz' \
+    -C "${SCRIPT_DIR}" . \
+    | ssh "${REMOTE_HOST}" "cd ${REMOTE_DOTFILES_DIR} && tar xzf -"
+fi
+log_info "Dotfiles synced"
+
+# ── Step 4: Run bootstrap on remote ──────────────────────────────────────────
+log_step "Running bootstrap on ${REMOTE_HOST}..."
+
+BOOTSTRAP_ARGS=(--offline --archive "${REMOTE_BUNDLE_PATH}")
+[[ "$ASSUME_YES" == true ]]  && BOOTSTRAP_ARGS+=(-y)
+[[ -n "$REMOTE_USERNAME" ]]  && BOOTSTRAP_ARGS+=(--user "${REMOTE_USERNAME}")
+
+# Build a properly quoted command string for the remote shell
+BOOTSTRAP_CMD="cd ${REMOTE_DOTFILES_DIR} && bash bootstrap.sh"
+for arg in "${BOOTSTRAP_ARGS[@]}"; do
+  BOOTSTRAP_CMD+=" $(printf '%q' "$arg")"
+done
+
+# Allocate a TTY for interactive prompts unless -y was given
+if [[ "$ASSUME_YES" == true ]]; then
+  ssh "${REMOTE_HOST}" "${BOOTSTRAP_CMD}"
+else
+  ssh -t "${REMOTE_HOST}" "${BOOTSTRAP_CMD}"
+fi
+
+# ── Step 5: Clean up remote bundle ────────────────────────────────────────────
+log_info "Cleaning up remote bundle..."
+ssh "${REMOTE_HOST}" "rm -f ${REMOTE_BUNDLE_PATH}" || true
+
+# ── Done ──────────────────────────────────────────────────────────────────────
 echo ""
-echo "🎉 Please reload your shell or restart your terminal on the remote machine."
+echo -e "${COLOR_BOLD}${COLOR_GREEN}✓ Deployment complete!${COLOR_NC}"
+echo ""
+echo -e "${COLOR_BOLD}Remote machine:${COLOR_NC}  ${REMOTE_HOST}"
+echo -e "${COLOR_BOLD}Dotfiles at:${COLOR_NC}     ${REMOTE_DOTFILES_DIR}"
+echo ""
+echo -e "${COLOR_BOLD}To update later:${COLOR_NC}"
+echo "  Run this script again from an unrestricted machine, or:"
+echo "  - If apt is accessible: bootstrap.sh handles Tier 3 tools via apt"
+echo "  - Rebuild bundle:  scripts/build-offline-bundle.sh"
+echo "  - See:             docs/OFFLINE_DEPLOYMENT.md"

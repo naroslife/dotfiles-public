@@ -607,8 +607,13 @@ step_install_zsh_plugins() {
 
   log_step "Installing Zsh plugins"
 
+  local install_args=()
+  if [[ "$OFFLINE" == true ]]; then
+    install_args+=(--offline)
+  fi
+
   if [[ -x "${SCRIPT_DIR}/scripts/install-zsh-plugins.sh" ]]; then
-    "${SCRIPT_DIR}/scripts/install-zsh-plugins.sh"
+    "${SCRIPT_DIR}/scripts/install-zsh-plugins.sh" "${install_args[@]}"
   else
     log_warn "scripts/install-zsh-plugins.sh not found — skipping"
   fi
@@ -649,7 +654,7 @@ step_wsl_setup() {
   fi
 }
 
-# Extract an offline bundle archive and add its bin/ to PATH
+# Extract an offline bundle archive: install binaries, restore mise cache + Zsh plugins
 step_extract_archive() {
   if [[ -z "$ARCHIVE_PATH" ]]; then
     return 0
@@ -668,9 +673,27 @@ step_extract_archive() {
 
   tar -xzf "$ARCHIVE_PATH" -C "$extract_dir"
 
+  # Install bundled binaries to ~/.local/bin so they persist beyond this session
   if [[ -d "${extract_dir}/bin" ]]; then
-    export PATH="${extract_dir}/bin:${PATH}"
-    log_info "Added ${extract_dir}/bin to PATH"
+    mkdir -p "${HOME}/.local/bin"
+    cp "${extract_dir}/bin/"* "${HOME}/.local/bin/" 2>/dev/null || true
+    chmod +x "${HOME}/.local/bin/"* 2>/dev/null || true
+    export PATH="${HOME}/.local/bin:${PATH}"
+    log_info "Installed bundled binaries to ${HOME}/.local/bin"
+  fi
+
+  # Restore mise tool cache (downloads + installs) so mise can run fully offline
+  if [[ -f "${extract_dir}/mise-cache.tar.gz" ]]; then
+    log_info "Restoring mise tool cache..."
+    tar -xzf "${extract_dir}/mise-cache.tar.gz" -C "${HOME}"
+    log_info "mise cache restored to ${HOME}/.local/share/mise/"
+  fi
+
+  # Restore pre-cloned Zsh plugins and tpm from the bundle
+  if [[ -f "${extract_dir}/zsh-plugins.tar.gz" ]]; then
+    log_info "Restoring Zsh plugins..."
+    tar -xzf "${extract_dir}/zsh-plugins.tar.gz" -C "${HOME}"
+    log_info "Zsh plugins restored to ${HOME}/.local/share/zsh/plugins/"
   fi
 
   log_debug "Archive extraction complete"
