@@ -1,0 +1,17 @@
+{
+  "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+  "json": {
+    "parser": {
+      "allowComments": true,
+      "allowTrailingCommas": true
+    }
+  },
+  "files": {
+    "ignore": [
+      ".mcp/memory.json",
+      "home/dot_mcp/memory.json",
+      "nvim/lazy-lock.json",
+      "home/dot_config/nvim/lazy-lock.json"
+    ]
+  }
+}
