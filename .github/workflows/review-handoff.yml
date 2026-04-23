@@ -157,6 +157,20 @@ jobs:
               } catch (e) {
                 console.log(`Could not add ready-to-merge label: ${e.message}`);
               }
+
+              // Dispatch stuck-check immediately so the merge fires in seconds,
+              // not up to 15 min later on the next scheduled tick.
+              try {
+                await github.rest.actions.createWorkflowDispatch({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  workflow_id: 'stuck-check.yml',
+                  ref: 'main',
+                });
+                console.log('Dispatched stuck-check to merge ready-to-merge PR immediately.');
+              } catch (e) {
+                console.log(`Could not dispatch stuck-check: ${e.message}`);
+              }
             };
 
             // ---- issue_comment branch (Copilot's reviews land here) --------
