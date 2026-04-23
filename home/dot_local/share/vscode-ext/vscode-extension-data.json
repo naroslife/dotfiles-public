@@ -1,0 +1,700 @@
+{
+  "extensions": [
+    {
+      "id": "ms-vscode.cpptools-extension-pack",
+      "nix": null,
+      "description": "C++ development",
+      "category": "language"
+    },
+    {
+      "id": "ms-vscode-remote.remote-ssh",
+      "nix": "ms-vscode-remote.remote-ssh",
+      "description": "Remote development via SSH",
+      "category": "remote"
+    },
+    {
+      "id": "ms-vscode-remote.remote-containers",
+      "nix": "ms-vscode-remote.remote-containers",
+      "description": "Development in containers",
+      "category": "remote"
+    },
+    {
+      "id": "esbenp.prettier-vscode",
+      "nix": "esbenp.prettier-vscode",
+      "description": "Prettier formatting",
+      "category": "formatter"
+    },
+    {
+      "id": "mads-hartmann.bash-ide-vscode",
+      "nix": null,
+      "description": "Bash IDE extensions",
+      "category": "language"
+    },
+    {
+      "id": "ms-python.python",
+      "nix": "ms-python.python",
+      "description": "Python extensions",
+      "category": "language"
+    },
+    {
+      "id": "ms-python.vscode-pylance",
+      "nix": "ms-python.vscode-pylance",
+      "description": "Python language server",
+      "category": "language"
+    },
+    {
+      "id": "mattn.vscode-elvish",
+      "nix": null,
+      "description": "Elvish shell extension",
+      "category": "language"
+    },
+    {
+      "id": "github.vscode-pull-request-github",
+      "nix": null,
+      "description": "GitHub PR extensions",
+      "category": "git"
+    },
+    {
+      "id": "eamodio.gitlens",
+      "nix": "eamodio.gitlens",
+      "description": "GitLens for Git integration",
+      "category": "git"
+    },
+    {
+      "id": "gitkraken.gitkraken-authentication",
+      "nix": null,
+      "description": "GitKraken extension",
+      "category": "git"
+    },
+    {
+      "id": "ms-azuretools.vscode-docker",
+      "nix": "ms-azuretools.vscode-docker",
+      "description": "Docker support",
+      "category": "containers"
+    },
+    {
+      "id": "ms-vsliveshare.vsliveshare",
+      "nix": null,
+      "description": "Live Share for collaboration",
+      "category": "productivity"
+    },
+    {
+      "id": "ms-vscode-remote.remote-ssh-edit",
+      "nix": null,
+      "description": "Remote SSH editing",
+      "category": "remote"
+    },
+    {
+      "id": "ms-vscode-remote.remote-ssh-explorer",
+      "nix": null,
+      "description": "Remote SSH explorer",
+      "category": "remote"
+    },
+    {
+      "id": "ms-vscode-remote.remote-wsl",
+      "nix": null,
+      "description": "WSL support",
+      "category": "remote"
+    },
+    {
+      "id": "johnpapa.vscode-peacock",
+      "nix": null,
+      "description": "Peacock for color customization",
+      "category": "themes"
+    },
+    {
+      "id": "be5invis.vscode-icontheme-nomo-dark",
+      "nix": null,
+      "description": "Nomo Dark icon theme",
+      "category": "themes"
+    },
+    {
+      "id": "christian-kohler.path-intellisense",
+      "nix": "christian-kohler.path-intellisense",
+      "description": "Path IntelliSense",
+      "category": "productivity"
+    },
+    {
+      "id": "editorconfig.editorconfig",
+      "nix": "editorconfig.editorconfig",
+      "description": "EditorConfig support",
+      "category": "productivity"
+    },
+    {
+      "id": "github.copilot",
+      "nix": "github.copilot",
+      "description": "GitHub Copilot AI",
+      "category": "ai"
+    },
+    {
+      "id": "github.copilot-chat",
+      "nix": "github.copilot-chat",
+      "description": "GitHub Copilot Chat",
+      "category": "ai"
+    },
+    {
+      "id": "k--kato.intellij-idea-keybindings",
+      "nix": null,
+      "description": "IntelliJ IDEA keybindings",
+      "category": "productivity"
+    },
+    {
+      "id": "mikestead.dotenv",
+      "nix": null,
+      "description": ".env file support",
+      "category": "productivity"
+    },
+    {
+      "id": "redhat.vscode-yaml",
+      "nix": "redhat.vscode-yaml",
+      "description": "YAML language support",
+      "category": "language"
+    },
+    {
+      "id": "jeff-hykin.better-cpp-syntax",
+      "nix": null,
+      "description": "Better C++ syntax",
+      "category": "language"
+    },
+    {
+      "id": "ms-vscode.cpptools-themes",
+      "nix": null,
+      "description": "C++ tools themes",
+      "category": "themes"
+    },
+    {
+      "id": "wholroyd.jinja",
+      "nix": null,
+      "description": "Jinja template support",
+      "category": "language"
+    },
+    {
+      "id": "kevinrose.vsc-python-indent",
+      "nix": null,
+      "description": "Python indent support",
+      "category": "language"
+    },
+    {
+      "id": "njpwerner.autodocstring",
+      "nix": "njpwerner.autodocstring",
+      "description": "Python autodocstring",
+      "category": "language"
+    },
+    {
+      "id": "ms-python.debugpy",
+      "nix": null,
+      "description": "Python debugger",
+      "category": "language"
+    },
+    {
+      "id": "atlassian.atlascode",
+      "nix": null,
+      "description": "Atlassian/Jira integration",
+      "category": "productivity"
+    },
+    {
+      "id": "actboy168.tasks",
+      "nix": null,
+      "description": "Tasks extension",
+      "category": "productivity"
+    },
+    {
+      "id": "augustocdias.tasks-shell-input",
+      "nix": null,
+      "description": "Tasks shell input",
+      "category": "productivity"
+    },
+    {
+      "id": "rioj7.command-variable",
+      "nix": null,
+      "description": "Command variable support",
+      "category": "productivity"
+    },
+    {
+      "id": "xaver.clang-format",
+      "nix": null,
+      "description": "Clang-Format support",
+      "category": "formatter"
+    },
+    {
+      "id": "llvm-vs-code-extensions.vscode-clangd",
+      "nix": null,
+      "description": "clangd language server",
+      "category": "language"
+    },
+    {
+      "id": "ms-vscode.makefile-tools",
+      "nix": null,
+      "description": "Makefile tools",
+      "category": "productivity"
+    },
+    {
+      "id": "cschlosser.doxdocgen",
+      "nix": null,
+      "description": "Doxygen documentation",
+      "category": "productivity"
+    },
+    {
+      "id": "tabeyti.jenkins-jack",
+      "nix": null,
+      "description": "Jenkins integration",
+      "category": "productivity"
+    },
+    {
+      "id": "streetsidesoftware.code-spell-checker",
+      "nix": "streetsidesoftware.code-spell-checker",
+      "description": "Code spell checker",
+      "category": "productivity"
+    },
+    {
+      "id": "wayou.vscode-todo-highlight",
+      "nix": null,
+      "description": "TODO highlight",
+      "category": "productivity"
+    },
+    {
+      "id": "usernamehw.errorlens",
+      "nix": "usernamehw.errorlens",
+      "description": "Error lens",
+      "category": "productivity"
+    },
+    {
+      "id": "mhutchie.git-graph",
+      "nix": "mhutchie.git-graph",
+      "description": "Git graph visualization",
+      "category": "git"
+    },
+    {
+      "id": "codezombiech.gitignore",
+      "nix": null,
+      "description": ".gitignore support",
+      "category": "git"
+    },
+    {
+      "id": "xyz.local-history",
+      "nix": null,
+      "description": "Local history tracking",
+      "category": "productivity"
+    },
+    {
+      "id": "matepek.vscode-catch2-test-adapter",
+      "nix": null,
+      "description": "Catch2 test adapter",
+      "category": "testing"
+    },
+    {
+      "id": "jebbs.plantuml",
+      "nix": null,
+      "description": "PlantUML support",
+      "category": "productivity"
+    },
+    {
+      "id": "humao.rest-client",
+      "nix": null,
+      "description": "REST client",
+      "category": "productivity"
+    },
+    {
+      "id": "spencerwmiles.vscode-task-buttons",
+      "nix": null,
+      "description": "Task buttons",
+      "category": "productivity"
+    },
+    {
+      "id": "pkief.material-icon-theme",
+      "nix": "pkief.material-icon-theme",
+      "description": "Material icon theme",
+      "category": "themes"
+    },
+    {
+      "id": "dracula-theme.theme-dracula",
+      "nix": null,
+      "description": "Dracula theme",
+      "category": "themes"
+    },
+    {
+      "id": "donjayamanne.githistory",
+      "nix": "donjayamanne.githistory",
+      "description": "Git history",
+      "category": "git"
+    },
+    {
+      "id": "gruntfuggly.todo-tree",
+      "nix": "gruntfuggly.todo-tree",
+      "description": "TODO tree",
+      "category": "productivity"
+    },
+    {
+      "id": "ms-python.black-formatter",
+      "nix": "ms-python.black-formatter",
+      "description": "Black Python formatter",
+      "category": "formatter"
+    },
+    {
+      "id": "rust-lang.rust-analyzer",
+      "nix": "rust-lang.rust-analyzer",
+      "description": "Rust analyzer",
+      "category": "language"
+    },
+    {
+      "id": "golang.go",
+      "nix": "golang.go",
+      "description": "Go language support",
+      "category": "language"
+    },
+    {
+      "id": "hashicorp.terraform",
+      "nix": "hashicorp.terraform",
+      "description": "Terraform support",
+      "category": "language"
+    },
+    {
+      "id": "timonwong.shellcheck",
+      "nix": "timonwong.shellcheck",
+      "description": "ShellCheck linter",
+      "category": "language"
+    },
+    {
+      "id": "foxundermoon.shell-format",
+      "nix": "foxundermoon.shell-format",
+      "description": "Shell script formatter",
+      "category": "formatter"
+    },
+    {
+      "id": "jnoortheen.nix-ide",
+      "nix": "jnoortheen.nix-ide",
+      "description": "Nix IDE support",
+      "category": "language"
+    },
+    {
+      "id": "kamadorueda.alejandra",
+      "nix": "kamadorueda.alejandra",
+      "description": "Alejandra Nix formatter",
+      "category": "formatter"
+    },
+    {
+      "id": "ms-kubernetes-tools.vscode-kubernetes-tools",
+      "nix": "ms-kubernetes-tools.vscode-kubernetes-tools",
+      "description": "Kubernetes tools",
+      "category": "containers"
+    },
+    {
+      "id": "ms-vscode.remote-explorer",
+      "nix": "ms-vscode.remote-explorer",
+      "description": "Remote explorer",
+      "category": "remote"
+    },
+    {
+      "id": "yzhang.markdown-all-in-one",
+      "nix": "yzhang.markdown-all-in-one",
+      "description": "Markdown all-in-one",
+      "category": "language"
+    },
+    {
+      "id": "bierner.markdown-mermaid",
+      "nix": "bierner.markdown-mermaid",
+      "description": "Markdown Mermaid diagrams",
+      "category": "language"
+    },
+    {
+      "id": "vscodevim.vim",
+      "nix": "vscodevim.vim",
+      "description": "Vim keybindings",
+      "category": "productivity"
+    },
+    {
+      "id": "formulahendry.auto-rename-tag",
+      "nix": "formulahendry.auto-rename-tag",
+      "description": "Auto rename tag",
+      "category": "productivity"
+    },
+    {
+      "id": "naumovs.color-highlight",
+      "nix": "naumovs.color-highlight",
+      "description": "Color highlight",
+      "category": "productivity"
+    },
+    {
+      "id": "ms-vscode.cpptools",
+      "nix": "ms-vscode.cpptools",
+      "description": "C++ tools",
+      "category": "language"
+    },
+    {
+      "id": "1yib.rust-bundle",
+      "nix": null,
+      "description": "Rust bundle (alternative)",
+      "category": "language"
+    },
+    {
+      "id": "afractal.node-essentials",
+      "nix": null,
+      "description": "Node essentials",
+      "category": "language"
+    },
+    {
+      "id": "akiramiyakoda.cppincludeguard",
+      "nix": null,
+      "description": "C++ include guard",
+      "category": "language"
+    },
+    {
+      "id": "amazonwebservices.aws-toolkit-vscode",
+      "nix": null,
+      "description": "AWS Toolkit",
+      "category": "cloud"
+    },
+    {
+      "id": "anthropic.claude-code",
+      "nix": null,
+      "description": "Claude Code assistant",
+      "category": "ai"
+    },
+    {
+      "id": "arrterian.nix-env-selector",
+      "nix": null,
+      "description": "Nix environment selector",
+      "category": "language"
+    },
+    {
+      "id": "brobeson.ctest-lab",
+      "nix": null,
+      "description": "CTest integration",
+      "category": "testing"
+    },
+    {
+      "id": "cheshirekow.cmake-format",
+      "nix": null,
+      "description": "CMake formatter",
+      "category": "formatter"
+    },
+    {
+      "id": "christian-kohler.npm-intellisense",
+      "nix": null,
+      "description": "NPM IntelliSense",
+      "category": "language"
+    },
+    {
+      "id": "dbaeumer.vscode-eslint",
+      "nix": null,
+      "description": "ESLint",
+      "category": "formatter"
+    },
+    {
+      "id": "docker.docker",
+      "nix": null,
+      "description": "Docker official extension",
+      "category": "containers"
+    },
+    {
+      "id": "dotjoshjohnson.xml",
+      "nix": null,
+      "description": "XML tools",
+      "category": "language"
+    },
+    {
+      "id": "elves.elvish",
+      "nix": null,
+      "description": "Alternative Elvish extension",
+      "category": "language"
+    },
+    {
+      "id": "george-alisson.html-preview-vscode",
+      "nix": null,
+      "description": "HTML preview",
+      "category": "productivity"
+    },
+    {
+      "id": "github.codespaces",
+      "nix": null,
+      "description": "GitHub Codespaces",
+      "category": "cloud"
+    },
+    {
+      "id": "gitlab.gitlab-workflow",
+      "nix": null,
+      "description": "GitLab workflow",
+      "category": "git"
+    },
+    {
+      "id": "ibm.output-colorizer",
+      "nix": null,
+      "description": "Output colorizer",
+      "category": "productivity"
+    },
+    {
+      "id": "jasonlhy.hungry-delete",
+      "nix": null,
+      "description": "Hungry delete",
+      "category": "productivity"
+    },
+    {
+      "id": "krosf.vscode-valgrind",
+      "nix": null,
+      "description": "Valgrind integration",
+      "category": "testing"
+    },
+    {
+      "id": "mechatroner.rainbow-csv",
+      "nix": null,
+      "description": "Rainbow CSV",
+      "category": "productivity"
+    },
+    {
+      "id": "mkhl.direnv",
+      "nix": null,
+      "description": "direnv support",
+      "category": "productivity"
+    },
+    {
+      "id": "ms-azuretools.vscode-containers",
+      "nix": null,
+      "description": "Containers extension",
+      "category": "containers"
+    },
+    {
+      "id": "ms-python.autopep8",
+      "nix": null,
+      "description": "Autopep8 formatter",
+      "category": "formatter"
+    },
+    {
+      "id": "ms-python.vscode-python-envs",
+      "nix": null,
+      "description": "Python environments",
+      "category": "language"
+    },
+    {
+      "id": "ms-vscode.cmake-tools",
+      "nix": "ms-vscode.cmake-tools",
+      "description": "CMake tools",
+      "category": "language"
+    },
+    {
+      "id": "ms-vscode.powershell",
+      "nix": null,
+      "description": "PowerShell",
+      "category": "language"
+    },
+    {
+      "id": "ms-vscode.vscode-typescript-next",
+      "nix": null,
+      "description": "TypeScript nightly",
+      "category": "language"
+    },
+    {
+      "id": "necatiarslan.environment-variable-vscode-extension",
+      "nix": null,
+      "description": "Environment variables",
+      "category": "productivity"
+    },
+    {
+      "id": "notskm.clang-tidy",
+      "nix": null,
+      "description": "Clang-tidy",
+      "category": "formatter"
+    },
+    {
+      "id": "orta.vscode-jest",
+      "nix": null,
+      "description": "Jest testing",
+      "category": "testing"
+    },
+    {
+      "id": "pinage404.nix-extension-pack",
+      "nix": null,
+      "description": "Nix extension pack",
+      "category": "language"
+    },
+    {
+      "id": "pnp.polacode",
+      "nix": null,
+      "description": "Code snapshots",
+      "category": "productivity"
+    },
+    {
+      "id": "redhat.ansible",
+      "nix": null,
+      "description": "Ansible",
+      "category": "language"
+    },
+    {
+      "id": "redhat.java",
+      "nix": null,
+      "description": "Java language support",
+      "category": "language"
+    },
+    {
+      "id": "rogalmic.bash-debug",
+      "nix": null,
+      "description": "Bash debugger",
+      "category": "language"
+    },
+    {
+      "id": "slevesque.vscode-multiclip",
+      "nix": null,
+      "description": "Multiple clipboards",
+      "category": "productivity"
+    },
+    {
+      "id": "sonarsource.sonarlint-vscode",
+      "nix": null,
+      "description": "SonarLint",
+      "category": "formatter"
+    },
+    {
+      "id": "vadimcn.vscode-lldb",
+      "nix": null,
+      "description": "LLDB debugger",
+      "category": "language"
+    },
+    {
+      "id": "visualstudioexptteam.intellicode-api-usage-examples",
+      "nix": null,
+      "description": "IntelliCode API examples",
+      "category": "ai"
+    },
+    {
+      "id": "visualstudioexptteam.vscodeintellicode",
+      "nix": null,
+      "description": "IntelliCode",
+      "category": "ai"
+    },
+    {
+      "id": "vscjava.vscode-java-pack",
+      "nix": null,
+      "description": "Java extension pack",
+      "category": "language"
+    },
+    {
+      "id": "wallabyjs.quokka-vscode",
+      "nix": null,
+      "description": "Quokka.js",
+      "category": "testing"
+    },
+    {
+      "id": "webfreak.debug",
+      "nix": null,
+      "description": "Native debug",
+      "category": "language"
+    },
+    {
+      "id": "wix.vscode-import-cost",
+      "nix": null,
+      "description": "Import cost",
+      "category": "productivity"
+    },
+    {
+      "id": "zainchen.json",
+      "nix": null,
+      "description": "JSON tools",
+      "category": "language"
+    },
+    {
+      "id": "zardoy.outline-utils",
+      "nix": null,
+      "description": "Outline utilities",
+      "category": "productivity"
+    }
+  ]
+}

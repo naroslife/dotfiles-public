@@ -1,0 +1,22 @@
+# ~/.config/tmuxinator/retek1.yml
+# Managed by chezmoi — edit source at home/dot_config/tmuxinator/retek1.yml
+# Requires: retek1ssh alias/function defined in your shell config (connects to retek1 server)
+
+name: retek1
+root: ~/retek2_retek3_retek1
+
+windows:
+  - retek1board:
+      layout: main-horizontal
+      panes:
+        - retek2Bins:
+          - sleep 1
+          - clear
+          - retek1ssh
+          - cd retek2Bins
+        - trigger:
+          - sleep 1
+          - clear
+          - retek1ssh
+          - cd trigger
+          - ./triggerRun.sh
