@@ -27,6 +27,15 @@ on:
     - cron: '*/15 * * * *'  # Every 15 minutes
   workflow_dispatch: {}
 
+# Serialize runs so the new immediate-dispatch (from review-handoff) can't
+# race the scheduled tick: two overlapping runs on the same PR would have
+# the loser hit an "already merged" error and post a spurious failure
+# comment. cancel-in-progress:false means queued runs wait rather than
+# clobber an in-progress merge.
+concurrency:
+  group: stuck-check
+  cancel-in-progress: false
+
 jobs:
   drive-cycle:
     runs-on: ubuntu-latest
@@ -110,14 +119,18 @@ jobs:
                   repo: context.repo.repo,
                   issue_number: prNumber,
                   labels: ['auto-merged'],
-                }).catch(() => {});
+                }).catch((e) => {
+                  console.log(`Could not add auto-merged label to PR #${prNumber}: ${e.message}`);
+                });
 
                 await github.rest.issues.removeLabel({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   issue_number: prNumber,
                   name: 'ready-to-merge',
-                }).catch(() => {});
+                }).catch((e) => {
+                  console.log(`Could not remove ready-to-merge label from PR #${prNumber}: ${e.message}`);
+                });
 
                 // Fan out to next unblocked issues.
                 await github.rest.actions.createWorkflowDispatch({
@@ -130,6 +143,33 @@ jobs:
                 console.log(`Dispatched migration-orchestrator after merging #${prNumber}.`);
                 return 'merged';
               } catch (e) {
+                // Race tolerance: re-fetch the PR to distinguish "genuinely
+                // failed" from "another run (e.g. a concurrent
+                // workflow_dispatch fired by review-handoff) already merged
+                // this PR". Concurrency-group serializes most of this, but
+                // API-level retries / mid-flight races are still possible.
+                try {
+                  const latest = (await github.rest.pulls.get({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    pull_number: prNumber,
+                  })).data;
+                  if (latest.merged) {
+                    console.log(`PR #${prNumber}: merge API errored but PR is already merged. Treating as success.`);
+                    await github.rest.issues.addLabels({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      issue_number: prNumber,
+                      labels: ['auto-merged'],
+                    }).catch((err) => {
+                      console.log(`Could not add auto-merged label to PR #${prNumber}: ${err.message}`);
+                    });
+                    return 'merged';
+                  }
+                } catch (e2) {
+                  console.log(`PR #${prNumber}: could not re-check merged state: ${e2.message}`);
+                }
+
                 console.log(`PR #${prNumber}: merge failed: ${e.message}`);
                 await github.rest.issues.createComment({
                   owner: context.repo.owner,

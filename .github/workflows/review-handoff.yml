@@ -166,6 +166,7 @@ jobs:
             };
 
             const markReadyToMerge = async () => {
+              let labeled = false;
               try {
                 await github.rest.issues.addLabels({
                   owner: context.repo.owner,
@@ -173,8 +174,26 @@ jobs:
                   issue_number: prNumber,
                   labels: ['ready-to-merge'],
                 });
+                labeled = true;
               } catch (e) {
                 console.log(`Could not add ready-to-merge label: ${e.message}`);
+                // Re-check: maybe the label was already present (e.g. prior
+                // handoff). If so, we still want stuck-check to run.
+                try {
+                  const cur = (await github.rest.issues.get({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: prNumber,
+                  })).data;
+                  labeled = cur.labels.some(l => (l.name || l) === 'ready-to-merge');
+                } catch (e2) {
+                  console.log(`Could not re-check labels: ${e2.message}`);
+                }
+              }
+
+              if (!labeled) {
+                console.log('ready-to-merge not applied — skipping stuck-check dispatch.');
+                return;
               }
 
               // Dispatch stuck-check immediately so the merge fires in seconds,
