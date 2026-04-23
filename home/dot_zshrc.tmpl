@@ -10,12 +10,26 @@ if command -v mise &>/dev/null; then
   eval "$(mise activate zsh)"
 fi
 
+# ── Tier 3: Development toolchain env vars ────────────────────────────────────
+# JAVA_HOME: auto-set by `mise activate` — no explicit setting needed
+# Go: GOROOT auto-set by mise; GOPATH/GOBIN set here for conventional layout
+export GOPATH="${HOME}/go"
+export GOBIN="${HOME}/go/bin"
+# Rust: mise activate puts ~/.cargo/bin on PATH; explicit homes for tools that query them
+export CARGO_HOME="${HOME}/.cargo"
+export RUSTUP_HOME="${HOME}/.rustup"
+# Node: predictable global prefix for `npm install -g`
+export NPM_CONFIG_PREFIX="${HOME}/.npm-global"
+# Maven: cap JVM heap for builds (preserve caller-set value)
+export MAVEN_OPTS="${MAVEN_OPTS:--Xmx1024m}"
+
 # ── Path additions ────────────────────────────────────────────────────────────
 typeset -U path  # deduplicate PATH
 path=(
   "$HOME/.local/bin"
-  "$HOME/.cargo/bin"
-  "$HOME/.go/bin"
+  "${CARGO_HOME}/bin"
+  "${GOBIN}"
+  "${NPM_CONFIG_PREFIX}/bin"
   $path
 )
 

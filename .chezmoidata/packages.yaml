@@ -124,34 +124,35 @@ tier2:
 
 # Tier 3: Complex toolchains — apt preferred, mise for JVM/Go/Node/Rust
 tier3_apt:
-  - gdb
-  - gcc
+  - gdb               # install: apt; verify: gdb -ex "python print('ok')" -ex quit
+  - gcc               # install: apt; verify: echo 'int main(){}' | gcc -x c - -o /dev/null
   - g++
   - build-essential
-  - clang-format
+  - clang-format      # install: apt; verify: echo '{}' | clang-format
   - clang-tidy
-  - valgrind
+  - valgrind          # install: apt; verify: valgrind /tmp/trivial-binary
   - lldb
   - autoconf
   - automake
   - libtool
   - strace
   - ltrace
-  - linux-tools-generic   # perf — actual pkg: linux-tools-$(uname -r)
+  - cmake             # install: apt; verify: cmake --help-module FindThreads
+  - ninja-build
+  - pkg-config
+  - linux-tools-generic   # perf — actual pkg: linux-tools-$(uname -r); WSL2: not supported
 
-tier3_mise_full_prefix:  # mise manages full toolchain prefix
-  - java@temurin-17
-  - maven
+tier3_apt_optional:
+  - rr    # Record & Replay debugger; apt if available; WSL2: not supported (no perf_event)
+
+tier3_mise_full_prefix:  # mise manages full toolchain prefix with JAVA_HOME/GOROOT/etc.
+  - java@temurin-17   # env: JAVA_HOME (auto via mise activate)
+  - maven             # env: MAVEN_OPTS=-Xmx1024m
   - gradle
-  - go
-  - node
-  - rust
-  - python
-  - cmake
-  - ninja
-
-tier3_apt_or_build:
-  - rr    # Record & Replay debugger — apt if available, else build from source
+  - go                # env: GOPATH=~/go, GOBIN=~/go/bin
+  - node              # env: NPM_CONFIG_PREFIX=~/.npm-global
+  - rust              # env: CARGO_HOME=~/.cargo, RUSTUP_HOME=~/.rustup
+  - python            # verify: python3 -m venv /tmp/test-venv
 
 tier3_mise_aqua:
   - bazel

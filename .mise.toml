@@ -146,6 +146,10 @@
   description = "Check tool installations and report missing/broken tools"
   run         = "./scripts/doctor.sh"
 
+[tasks.tier3-verify]
+  description = "Run deep verification tests for Tier 3 complex toolchains"
+  run         = "./scripts/verify-tier3.sh"
+
 [tasks.kill-switch]
   description = "Print kill-switch instructions (source the script directly for current-session effect)"
   run         = "./scripts/kill-switch.sh"
