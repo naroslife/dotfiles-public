@@ -173,6 +173,14 @@ jobs:
                 continue;
               }
 
+              // Human-review escape hatch — if a PR has been flagged for human
+              // review (e.g. by hitting max rounds without approval), pause
+              // the automated cycle until the label is removed.
+              if (labels.includes('needs-human-review')) {
+                console.log('PR flagged for human review. Skipping automated actions.');
+                continue;
+              }
+
               // ---- READY-TO-MERGE: perform the merge ourselves ----
               if (labels.includes('ready-to-merge')) {
                 console.log('Has ready-to-merge label. Attempting merge.');
@@ -312,21 +320,30 @@ jobs:
               const candidateRound = currentRound + 1;
 
               if (candidateRound > MAX_ROUNDS) {
-                console.log(`Already at MAX_ROUNDS (${MAX_ROUNDS}). Marking ready-to-merge and attempting merge.`);
+                // Max rounds without approval => STOP auto-merging, ping human.
+                // The agents couldn't converge; the user must decide.
+                if (labels.includes('needs-human-review')) {
+                  console.log(`Already flagged for human review. Skipping.`);
+                  continue;
+                }
+                console.log(`Max rounds (${MAX_ROUNDS}) reached without approval. Flagging for human review.`);
                 await github.rest.issues.addLabels({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   issue_number: prNumber,
-                  labels: ['ready-to-merge'],
-                });
+                  labels: ['needs-human-review'],
+                }).catch((e) => console.log(`Could not add label: ${e.message}`));
                 await github.rest.issues.createComment({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   issue_number: prNumber,
-                  body: `[stuck-check] Max review rounds (${MAX_ROUNDS}) reached without explicit approval. ` +
-                        `Marking \`ready-to-merge\` and attempting merge now. Track unresolved findings as \`tech-debt\` issues.`,
+                  body: `[stuck-check] @${context.repo.owner} Max review rounds (${MAX_ROUNDS}) reached without explicit approval. ` +
+                        `The Claude↔Copilot cycle could not converge on this PR. Human review is required — please either:\n\n` +
+                        `1. Manually review and merge if you're satisfied, or\n` +
+                        `2. Post further feedback and remove the \`needs-human-review\` label to re-enter the automated cycle, or\n` +
+                        `3. Close this PR if the approach isn't right.\n\n` +
+                        `Automated cycle is paused until this label is removed.`,
                 });
-                await performMerge(pr);
                 continue;
               }
 
