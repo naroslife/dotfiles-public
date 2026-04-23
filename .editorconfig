@@ -20,6 +20,11 @@ indent_size = 2
 indent_style = space
 indent_size = 2
 
+# chezmoi executable scripts (no .sh extension)
+[executable_*]
+indent_style = space
+indent_size = 2
+
 # Elvish scripts
 [*.elv]
 indent_style = space

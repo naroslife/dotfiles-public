@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# run_once_install-wsl-packages.sh — Install WSL-specific packages
+# Managed by chezmoi — edit source at home/run_once_install-wsl-packages.sh.tmpl
+# Runs once per machine on first apply (re-runs if this file changes).
+# shellcheck disable=SC1054,SC1073,SC1072,SC1009,SC1083
+{{ if .is_wsl }}
+set -euo pipefail
+
+echo "==> Installing WSL-specific packages..."
+
+# wslu: WSL utilities — wslview (open in Windows), wslpath (path conversion), wslvar (Windows env access)
+if ! command -v wslview &>/dev/null; then
+  sudo apt-get install -y wslu
+  echo "wslu installed: wslview, wslpath, wslvar now available"
+else
+  echo "wslu already installed: $(wslview --version 2>/dev/null || echo 'version unknown')"
+fi
+
+echo "WSL package setup complete."
+{{ else }}
+# Non-WSL machine — nothing to do
+exit 0
+{{ end }}
