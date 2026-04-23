@@ -11,8 +11,9 @@ if command -v claude &>/dev/null; then
 fi
 
 if ! command -v npm &>/dev/null; then
-  echo "npm not found. Install Node.js via mise: mise use node@lts"
-  exit 1
+  echo "WARNING: npm not found. Skipping Claude Code installation."
+  echo "Install Node.js via mise and re-run: mise use node@lts && chezmoi apply"
+  exit 0
 fi
 
 echo "Installing Claude Code via npm..."
