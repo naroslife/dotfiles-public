@@ -22,8 +22,6 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
 # ── Defaults ──────────────────────────────────────────────────────────────────
 OUTPUT_FILE="dotfiles-offline-bundle-$(date +%Y%m%d).tar.gz"
 SKIP_ZSH_PLUGINS=false
@@ -92,6 +90,13 @@ CHEZMOI_BIN=$(command -v chezmoi 2>/dev/null) \
   || die "chezmoi not found. Install: sh -c \"\$(curl -fsSL https://get.chezmoi.io)\""
 MISE_BIN=$(command -v mise 2>/dev/null) \
   || die "mise not found. Install: curl -fsSL https://mise.run | sh"
+
+# Warn if the bundled binaries may not match the remote machine's architecture
+LOCAL_ARCH=$(uname -m)
+log_info "Local arch:  ${LOCAL_ARCH}"
+log_warn "Bundled binaries (chezmoi, mise) are built for ${LOCAL_ARCH}."
+log_warn "If the target machine has a different CPU architecture, those binaries will not run."
+log_warn "  Cross-arch workaround: run with --skip-mise-cache and install binaries natively on the target."
 
 log_info "chezmoi: ${CHEZMOI_BIN} ($(chezmoi --version 2>/dev/null || echo 'unknown'))"
 log_info "mise:    ${MISE_BIN} ($(mise --version 2>/dev/null || echo 'unknown'))"

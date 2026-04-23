@@ -41,8 +41,9 @@ REMOTE_HOST=""
 BUNDLE_PATH=""
 REMOTE_USERNAME=""
 ASSUME_YES=false
-REMOTE_DOTFILES_DIR="~/dotfiles-public"
-BUNDLE_CLEANUP=false
+# Literal '~' is intentionally preserved here for expansion by the *remote* shell
+# shellcheck disable=SC2088
+REMOTE_DOTFILES_DIR='~/dotfiles-public'
 
 show_help() {
   cat <<EOF
@@ -125,7 +126,6 @@ else
   fi
 
   BUNDLE_PATH="${SCRIPT_DIR}/dotfiles-offline-bundle-$(date +%Y%m%d-%H%M%S).tar.gz"
-  BUNDLE_CLEANUP=true
   trap 'rm -f "${BUNDLE_PATH}" 2>/dev/null || true' EXIT
 
   "${SCRIPT_DIR}/scripts/build-offline-bundle.sh" --output "${BUNDLE_PATH}"
