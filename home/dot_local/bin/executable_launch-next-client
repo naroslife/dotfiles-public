@@ -61,16 +61,16 @@ if [[ ! -f "$PREFERENCE_FILE" ]]; then
 
   if [[ $REPLY =~ ^[Ss]$ ]]; then
     USE_HW_ACCEL="no"
-    echo "software" > "$PREFERENCE_FILE"
+    echo "software" >"$PREFERENCE_FILE"
     echo "Preference saved: Software rendering"
   else
     USE_HW_ACCEL="yes"
-    echo "hardware" > "$PREFERENCE_FILE"
+    echo "hardware" >"$PREFERENCE_FILE"
     echo "Preference saved: Hardware acceleration"
   fi
   echo ""
 else
-  PREFERENCE="$(tr -d '[:space:]' < "$PREFERENCE_FILE")"
+  PREFERENCE="$(tr -d '[:space:]' <"$PREFERENCE_FILE")"
   [[ "$PREFERENCE" == "software" ]] && USE_HW_ACCEL="no" || USE_HW_ACCEL="yes"
 fi
 
