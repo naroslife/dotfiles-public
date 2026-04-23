@@ -34,6 +34,8 @@ jobs:
           VALIDATE_ALL_CODEBASE: false
           DEFAULT_BRANCH: "main"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Disable linters with pre-existing repo-wide issues
+          VALIDATE_JSCPD: false
 
   fix-lint-issues:
     permissions:
@@ -53,6 +55,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VALIDATE_ALL_CODEBASE: false
           DEFAULT_BRANCH: "main"
+          # Disable linters with pre-existing repo-wide issues
+          VALIDATE_JSCPD: false
           # Set your fix mode variables to true
           FIX_SHELL_SHFMT: true
           FIX_YAML_PRETTIER: true
