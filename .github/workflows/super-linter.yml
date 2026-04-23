@@ -39,7 +39,8 @@ jobs:
           # Disable linters with pre-existing repo-wide issues not relevant to this codebase
           VALIDATE_JSCPD: false
           VALIDATE_CHECKOV: false
-          VALIDATE_BIOME: false
+          VALIDATE_BIOME_FORMAT: false
+          VALIDATE_BIOME_LINT: false
 
   fix-lint-issues:
     permissions:
@@ -62,7 +63,8 @@ jobs:
           # Disable linters with pre-existing repo-wide issues not relevant to this codebase
           VALIDATE_JSCPD: false
           VALIDATE_CHECKOV: false
-          VALIDATE_BIOME: false
+          VALIDATE_BIOME_FORMAT: false
+          VALIDATE_BIOME_LINT: false
           # Set your fix mode variables to true
           FIX_SHELL_SHFMT: true
           FIX_YAML_PRETTIER: true
