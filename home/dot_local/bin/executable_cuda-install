@@ -166,7 +166,7 @@ configure_environment() {
         *)    shell_rc="$HOME/.bashrc" ;;
     esac
 
-    if grep -q "CUDA_HOME" "$shell_rc" 2>/dev/null; then
+    if grep -q "# NVIDIA CUDA Configuration (added by cuda-install)" "$shell_rc" 2>/dev/null; then
         log_warning "CUDA configuration already exists in $shell_rc"
         return 0
     fi
