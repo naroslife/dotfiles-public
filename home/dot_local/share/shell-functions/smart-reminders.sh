@@ -1,7 +1,23 @@
 #!/usr/bin/env bash
 # Smart reminders for modern CLI tools
 
-# Counter for tracking command usage
+# Skip entirely when kill switch is active (classic/system-defaults mode)
+_SR_KILL_SWITCH="${HOME}/.config/shell/use-system-defaults"
+if [[ -f "${_SR_KILL_SWITCH}" ]] || [[ -n "${DOTFILES_NO_ALIASES:-}" ]]; then
+  unset _SR_KILL_SWITCH
+  return 0 2>/dev/null || exit 0
+fi
+unset _SR_KILL_SWITCH
+
+# Ensure is_agent is available; define a fallback if agent-detect.sh was not
+# sourced (e.g. when this file is tested in isolation).
+if ! declare -f is_agent > /dev/null 2>&1; then
+  is_agent() {
+    [[ -n "${CLAUDE:-}" ]] || [[ -n "${CODEX:-}" ]] || [[ -n "${COPILOT:-}" ]] || [[ -n "${AI_AGENT:-}" ]]
+  }
+fi
+
+# Counter file initialization
 if [[ ! -f ~/.command_counter ]]; then
   {
     echo "cd=0"
@@ -20,35 +36,34 @@ if [[ ! -f ~/.command_counter ]]; then
   } > ~/.command_counter
 fi
 
-# Function to show reminder and increment counter
+# Show a reminder and increment counter.
+# Reminders are suppressed in agent mode or when SMART_REMINDERS=0.
 show_reminder() {
-  # Skip reminders if running under Claude (suppress noise)
-  if [ -n "${CLAUDE:-}" ]; then return 0; fi
   local cmd="$1"
   local alternative="$2"
   local description="$3"
   local counter_file=~/.command_counter
   local current_count
+
+  if is_agent || [[ "${SMART_REMINDERS:-1}" == "0" ]]; then
+    return 0
+  fi
+
   current_count=$(grep "^$cmd=" "$counter_file" | cut -d= -f2 2>/dev/null || echo 0)
 
-  # Show reminder every 5th usage
   if (( current_count % 5 == 4 )); then
     echo "💡 Reminder: Try '$alternative' instead of '$cmd' - $description"
   fi
 
-  # Increment counter
   sed -i "s/^$cmd=.*/$cmd=$((current_count + 1))/" "$counter_file" 2>/dev/null || echo "$cmd=1" >> "$counter_file"
 }
 
-# Command overrides with smart reminders
+# cd: use zoxide when available (kill switch is OFF at this point);
+# reminders are suppressed in agent mode via show_reminder.
 cd() {
   show_reminder "cd" "br" "interactive directory navigation with broot"
-  if [ -z "${CLAUDE:-}" ]; then
-    if command -v __zoxide_z >/dev/null 2>&1; then
-      __zoxide_z "$@"
-    else
-      builtin cd "$@" || return
-    fi
+  if command -v __zoxide_z >/dev/null 2>&1; then
+    __zoxide_z "$@"
   else
     builtin cd "$@" || return
   fi
@@ -109,7 +124,6 @@ wc() {
   command wc "$@"
 }
 
-# Git improvements (only show occasionally, not aliased)
 git() {
   if [[ "$1" == "diff" ]]; then
     show_reminder "git_diff" "git difftool" "use delta for syntax-highlighted diffs"
