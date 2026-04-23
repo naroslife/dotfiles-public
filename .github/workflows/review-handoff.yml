@@ -1,5 +1,7 @@
 name: Review Handoff
 
+permissions: read-all
+
 # Manages the back-and-forth between Claude and Copilot during review.
 # When one agent finishes (pushes commits, leaves a review, or posts a comment),
 # this workflow tags the other agent to continue the cycle.
