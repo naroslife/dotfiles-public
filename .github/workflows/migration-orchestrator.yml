@@ -1,7 +1,5 @@
 name: Migration Orchestrator
 
-permissions: read-all
-
 # Chains the nix-migration epic issues in dependency order.
 # When a PR with the epic label is merged, triggers the next unblocked issue(s).
 # Can also be triggered manually to kick off or resume the chain.
@@ -12,11 +10,11 @@ on:
   workflow_dispatch:
     inputs:
       issue_number:
-        description: "Issue number to trigger (e.g., 20)"
+        description: 'Issue number to trigger (e.g., 20)'
         required: false
         type: string
       trigger_all_unblocked:
-        description: "Find and trigger all unblocked issues"
+        description: 'Find and trigger all unblocked issues'
         required: false
         type: boolean
         default: false

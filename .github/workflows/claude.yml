@@ -1,7 +1,5 @@
 name: Claude Code
 
-permissions: read-all
-
 on:
   issue_comment:
     types: [created]

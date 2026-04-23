@@ -1,7 +1,5 @@
 name: PR Review Cycle
 
-permissions: read-all
-
 # Autonomous review cycle: Claude implements → Copilot reviews → Claude fixes →
 # Claude reviews → Copilot fixes → auto-merge. Agents tag each other via comments.
 # Uses ORCHESTRATOR_PAT so comments trigger other workflows.
