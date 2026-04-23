@@ -178,10 +178,11 @@ jobs:
               const currentRound = Math.max(...roundLabels.map(l => parseInt(l.split('-')[2])));
 
               const updatedAt = new Date(pr.updated_at);
-              if (updatedAt > staleThreshold) {
-                console.log(`Last activity ${updatedAt.toISOString()} — within staleness window. Skipping.`);
-                continue;
-              }
+              const isFresh = updatedAt > staleThreshold;
+              // Note: do NOT skip here on staleness. Approvals must be acted on
+              // immediately, and round-advance comments are de-duplicated by
+              // `nextRoundTriggered` below. Staleness only gates the "nudge an
+              // already-triggered round" branch (line ~330).
 
               // Gather all comments (issue_comments) and formal reviews and commits.
               const comments = await github.paginate(
@@ -324,7 +325,13 @@ jobs:
               );
 
               if (nextRoundTriggered) {
-                // Just nudge whoever the round expects.
+                // Already prompted for this round — only nudge when truly stale,
+                // otherwise we'd post a nudge every 15 min while the agent is
+                // still working.
+                if (isFresh) {
+                  console.log(`Round ${nextRound} already triggered and PR is fresh (${ageMin}m). No nudge needed.`);
+                  continue;
+                }
                 const nudgeAgent = (nextRound % 2 === 1) ? '@copilot' : '@claude';
                 await github.rest.issues.createComment({
                   owner: context.repo.owner,
