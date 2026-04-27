@@ -1,6 +1,21 @@
 #!/usr/bin/env bash
 # Smart reminders for modern CLI tools
 
+# Kill switch: if active, skip all overrides so system defaults apply
+_KILL_SWITCH="${HOME}/.config/shell/use-system-defaults"
+if [[ -f "${_KILL_SWITCH}" ]] || [[ -n "${DOTFILES_NO_ALIASES:-}" ]]; then
+  unset _KILL_SWITCH
+  return 0 2>/dev/null || exit 0
+fi
+unset _KILL_SWITCH
+
+# is_agent fallback — defined here so this file works standalone (e.g. tests)
+if ! declare -f is_agent >/dev/null 2>&1; then
+  is_agent() {
+    [[ -n "${CLAUDE:-}" ]] || [[ -n "${CODEX:-}" ]] || [[ -n "${COPILOT:-}" ]] || [[ -n "${AI_AGENT:-}" ]]
+  }
+fi
+
 # Counter for tracking command usage
 if [[ ! -f ~/.command_counter ]]; then
   {
@@ -22,8 +37,8 @@ fi
 
 # Function to show reminder and increment counter
 show_reminder() {
-  # Skip reminders if running under Claude (suppress noise)
-  if [ -n "${CLAUDE:-}" ]; then return 0; fi
+  # Skip reminders in agent mode or when explicitly disabled
+  if is_agent || [[ "${SMART_REMINDERS:-1}" == "0" ]]; then return 0; fi
   local cmd="$1"
   local alternative="$2"
   local description="$3"
@@ -41,14 +56,11 @@ show_reminder() {
 }
 
 # Command overrides with smart reminders
+# cd: use zoxide when available (silently in agent mode, with reminders interactively)
 cd() {
   show_reminder "cd" "br" "interactive directory navigation with broot"
-  if [ -z "${CLAUDE:-}" ]; then
-    if command -v __zoxide_z >/dev/null 2>&1; then
-      __zoxide_z "$@"
-    else
-      builtin cd "$@" || return
-    fi
+  if command -v __zoxide_z >/dev/null 2>&1; then
+    __zoxide_z "$@"
   else
     builtin cd "$@" || return
   fi

@@ -98,6 +98,9 @@ export GOBIN="${HOME}/go/bin"
 export CARGO_HOME="${HOME}/.cargo"
 export GPG_TTY="$(tty)"
 
+# ── Agent detection ───────────────────────────────────────────────────────────
+[[ -f "${HOME}/.config/shell/agent-detect.sh" ]] && source "${HOME}/.config/shell/agent-detect.sh"
+
 # ── Shell functions ───────────────────────────────────────────────────────────
 # Load shell function files managed by chezmoi (~/.local/share/shell-functions/)
 # Bash uses history-tools.sh; history-tools-zsh.sh is zsh-specific.
