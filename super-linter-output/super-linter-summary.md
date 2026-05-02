@@ -7,6 +7,9 @@
 | GITHUB_ACTIONS_ZIZMOR      | Pass ✅           |
 | GITLEAKS                   | Pass ✅           |
 | GIT_MERGE_CONFLICT_MARKERS | Pass ✅           |
+| MARKDOWN                   | Pass ✅           |
+| MARKDOWN_PRETTIER          | Pass ✅           |
+| NATURAL_LANGUAGE           | Pass ✅           |
 | PRE_COMMIT                 | Pass ✅           |
 | SPELL_CODESPELL            | Pass ✅           |
 | TRIVY                      | Pass ✅           |
@@ -15,6 +18,6 @@
 
 All files and directories linted successfully
 
-For more information, see the [GitHub Actions workflow run](https://github.com/naroslife/dotfiles-public/actions/runs/25263477198)
+For more information, see the [GitHub Actions workflow run](https://github.com/naroslife/dotfiles-public/actions/runs/25263954559)
 
 Powered by [Super-linter](https://github.com/super-linter/super-linter)
