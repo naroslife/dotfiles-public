@@ -158,6 +158,9 @@ fi
 # ── KUBECONFIG ────────────────────────────────────────────────────────────────
 export KUBECONFIG="${HOME}/.kube/config"
 
+# ── Agent detection ───────────────────────────────────────────────────────────
+[[ -f "${HOME}/.config/shell/agent-detect.sh" ]] && source "${HOME}/.config/shell/agent-detect.sh"
+
 # ── Shell functions ───────────────────────────────────────────────────────────
 # Load shell function files managed by chezmoi (~/.local/share/shell-functions/)
 # Zsh uses history-tools-zsh.sh; history-tools.sh is bash-specific.
