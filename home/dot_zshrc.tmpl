@@ -139,7 +139,19 @@ bindkey '^[^[[D'  backward-word      # Ctrl+Left (alternate)
 {{ if .is_wsl -}}
 # ── WSL-specific configuration ────────────────────────────────────────────────
 export BROWSER='wslview'
-export DISPLAY="${DISPLAY:-$(ip route | awk '/^default/{print $3}'):0}"
+export DISPLAY="${DISPLAY:-:0}"
+export WSLENV="PATH/l:XDG_CONFIG_HOME/up"
+export TMPDIR="/tmp"
+
+# CUDA support (if NVIDIA GPU present)
+if [[ -d "/usr/local/cuda" ]]; then
+  export CUDA_HOME="/usr/local/cuda"
+  export CUDA_PATH="/usr/local/cuda"
+  export LD_LIBRARY_PATH="/usr/lib/wsl/lib:/usr/local/cuda/lib64:${LD_LIBRARY_PATH:-}"
+fi
+
+# DBus, WSLg fixes, daily reminders
+[[ -f "${HOME}/.config/shell/wsl-fixes.sh" ]] && source "${HOME}/.config/shell/wsl-fixes.sh"
 {{ end -}}
 
 # ── GPG & SSH agent ───────────────────────────────────────────────────────────

@@ -1,0 +1,78 @@
+#!/usr/bin/env bash
+#
+# Fix DBus for Electron/GUI apps in WSL2
+# Managed by chezmoi — edit source at home/dot_local/bin/executable_fix-dbus-wsl
+#
+# Designed to be sourced (not executed) so it can export env vars to the current shell:
+#   source ~/.local/bin/fix-dbus-wsl
+#
+# shellcheck disable=SC2317  # exit fallbacks after return are intentional (source vs execute)
+
+# If DBUS_SESSION_BUS_ADDRESS is already set and working, nothing to do
+if [[ -n "${DBUS_SESSION_BUS_ADDRESS:-}" ]]; then
+  if dbus-send --session --print-reply --dest=org.freedesktop.DBus /org/freedesktop/DBus org.freedesktop.DBus.ListNames &>/dev/null; then
+    echo "DBus already configured: $DBUS_SESSION_BUS_ADDRESS"
+    return 0 2>/dev/null || exit 0
+  else
+    unset DBUS_SESSION_BUS_ADDRESS
+    unset DBUS_SESSION_BUS_PID
+  fi
+fi
+
+# Try to load existing DBus session from saved file
+if [[ -f ~/.dbus-session ]]; then
+  # shellcheck source=/dev/null
+  source ~/.dbus-session 2>/dev/null
+  if [[ -n "${DBUS_SESSION_BUS_ADDRESS:-}" ]]; then
+    if dbus-send --session --print-reply --dest=org.freedesktop.DBus /org/freedesktop/DBus org.freedesktop.DBus.ListNames &>/dev/null; then
+      export DBUS_SESSION_BUS_ADDRESS
+      export DBUS_SESSION_BUS_PID
+      [[ -n "${DBUS_SESSION_BUS_PID:-}" ]] &&
+        echo "Reusing saved DBus session (PID: $DBUS_SESSION_BUS_PID)" ||
+        echo "Reusing saved DBus session"
+      echo "DBus configured: $DBUS_SESSION_BUS_ADDRESS"
+      return 0 2>/dev/null || exit 0
+    else
+      rm -f ~/.dbus-session 2>/dev/null
+      unset DBUS_SESSION_BUS_ADDRESS
+      unset DBUS_SESSION_BUS_PID
+    fi
+  fi
+fi
+
+# Check if systemd DBus socket exists and is responsive
+if [[ -S "/run/user/$(id -u)/bus" ]]; then
+  DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$(id -u)/bus"
+  export DBUS_SESSION_BUS_ADDRESS
+  if dbus-send --session --print-reply --dest=org.freedesktop.DBus /org/freedesktop/DBus org.freedesktop.DBus.ListNames &>/dev/null; then
+    echo "export DBUS_SESSION_BUS_ADDRESS='$DBUS_SESSION_BUS_ADDRESS'" >~/.dbus-session
+    echo "Using system DBus daemon at /run/user/$(id -u)/bus"
+    echo "DBus configured: $DBUS_SESSION_BUS_ADDRESS"
+    return 0 2>/dev/null || exit 0
+  else
+    unset DBUS_SESSION_BUS_ADDRESS
+  fi
+fi
+
+# No existing session found, start a new one
+echo "Starting new DBus session..."
+
+pkill -u "$(id -u)" dbus-daemon 2>/dev/null || true
+sleep 0.2
+
+eval "$(dbus-launch --sh-syntax --exit-with-session)"
+
+if [[ -z "${DBUS_SESSION_BUS_ADDRESS:-}" ]]; then
+  echo "Error: Failed to start DBus session"
+  return 1 2>/dev/null || exit 1
+fi
+
+echo "export DBUS_SESSION_BUS_ADDRESS='$DBUS_SESSION_BUS_ADDRESS'" >~/.dbus-session
+[[ -n "${DBUS_SESSION_BUS_PID:-}" ]] && echo "export DBUS_SESSION_BUS_PID='$DBUS_SESSION_BUS_PID'" >>~/.dbus-session
+
+sleep 0.3
+
+[[ -n "${DBUS_SESSION_BUS_PID:-}" ]] &&
+  echo "Started new DBus session (PID: $DBUS_SESSION_BUS_PID)" ||
+  echo "Started new DBus session"
+echo "DBus configured: $DBUS_SESSION_BUS_ADDRESS"
